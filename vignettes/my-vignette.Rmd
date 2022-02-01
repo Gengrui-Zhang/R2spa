@@ -1,0 +1,86 @@
+---
+title: "my-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+# library(R2spa)
+library(lavaan)
+```
+
+```{r}
+myModel <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+   # regressions
+     dem60 ~ ind60
+'
+fit <- sem(model = myModel,
+           data  = PoliticalDemocracy)
+summary(fit)
+semPlot::semPaths(fit)
+standardizedSolution(fit)
+```
+
+# 2S-PA
+
+```{r}
+# CFA
+my_cfa <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit <- cfa(model = my_cfa,
+               data  = PoliticalDemocracy)
+semPlot::semPaths(cfa_fit)
+# Compute factor scores using lavPredict
+lavPredict(cfa_fit, se = "standard")
+# reliability of factor scores
+rel_ind60 <- 0.9651282
+rel_dem60 <- 0.9055203
+```
+
+## Step 2
+
+```{r}
+# Put factor scores to data set
+fs_dat <- lavPredict(cfa_fit, se = "standard")
+colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+my2spa <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ ev1 * fs_ind60
+     fs_dem60 ~~ ev2 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ ind60
+   # reliability constraints (reliability = v / (v + ev))
+   # v = reliability / (1 - reliability) * ev
+     v1 == 0.9651282 / (1 - 0.9651282) * ev1
+     v2 == 0.9055203 / (1 - 0.9055203) * ev2
+'
+tspa_fit <- sem(model = my2spa,
+                data  = fs_dat)
+summary(tspa_fit)
+semPlot::semPaths(tspa_fit)
+standardizedSolution(tspa_fit)
+standardizedSolution(fit)
+```
+
