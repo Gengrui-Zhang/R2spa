@@ -1,3 +1,13 @@
+library(lavaan)
+my_cfa <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit <- cfa(model = my_cfa,
+               data  = PoliticalDemocracy)
+fs_dat <- lavPredict(cfa_fit, se = "standard")
+
 test_that("example in the vignette", {
   expect_equal(round(
     parameterEstimates(
