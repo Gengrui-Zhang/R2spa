@@ -1,11 +1,12 @@
-tspa <- function(model, data, reliability = NULL) {
-  # Expand the syntax
+#' Two-Stage Path Analysis
+#' @param model A string variable describing the structural path model.
+#' @param data A dataframe containing factor scores.
+#' @param reliability A numeric vector representing the reliability indexes
+#'   of each latent factor.
+#' @example
+#' tspa(model = "dem60 ~ ind60", data = fs_dat,
+#'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
-  # Run lavaan::sem()
-
-}
-
-# model-building code w/o test on actual data
 tspa <- function(model, data, reliability = NULL) {
   models <- strsplit(model, split = " ~ ")
   x <- models[[1]][2]
