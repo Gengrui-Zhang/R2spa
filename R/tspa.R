@@ -8,44 +8,28 @@
 #'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
 tspa <- function(model, data, reliability = NULL) {
-  reliability <- as.data.frame(reliability)
-  len <- nrow(reliability)
+  var <- names(reliability)
+  len <- length(reliability)
+  fs <- colnames(data)
 
-  rel_list <- list() # create an empty list for storing the variable names
-
-  for (x in 1:len) {
-    rel_list <- c(rel_list, row.names(reliability)[[x]])
-  }
-
-  fs <- list() # create an empty list for storing the factor score names
-
-  for (x in 1:len) {
-    fs <- c(fs, colnames(data)[x])
-  }
-
-  tspaModel <- ''
+  tspaModel <- rep(NA, len)
+  latent_var <- rep(NA, len)
+  error_constraint <- rep(NA, len)
+  latent_variance <- rep(NA, len)
+  reliability_constraint <- rep(NA, len)
 
   for (x in 1:len) {
-    tspaModel <- paste0(tspaModel,
-                        rel_list[[x]], ' =~ 1 * ', fs[[x]], '\n')
+    latent_var[x] <- paste0(var[x], ' =~ 1 * ', fs[x], '\n')
+    error_constraint[x] <- paste0(fs[x], ' ~~ ev', x, ' * ', fs[x], '\n')
+    latent_variance[x] <- paste0(var[x], ' ~~ v', x, ' * ', var[x], '\n')
+    reliability_constraint[x] <- paste0('v', x, ' == ', toString(reliability[x]), ' / ', toString(1 - reliability[x]), ' * ev', x, '\n')
   }
 
-  for (x in 1:len) {
-    tspaModel <- paste0(tspaModel,
-                        fs[x], ' ~~ ev', x, ' * ', fs[x], '\n')
-  }
-
-  for (x in 1:len) {
-    tspaModel <- paste0(tspaModel,
-                        rel_list[x], ' ~~ v', x, ' * ', rel_list[x], '\n')
-  }
-
-  tspaModel <- paste0(tspaModel, model, '\n')
-
-  for (x in 1:len) {
-    tspaModel <- paste0(tspaModel,
-                        'v', x, ' == ', toString(reliability[x,]), ' / ', toString(1 - reliability[x,]), ' * ev', x, '\n')
-  }
+  latent_var_str <- paste(latent_var, collapse="")
+  error_constraint_str <- paste(error_constraint, collapse="")
+  latent_variance_str <- paste(latent_variance, collapse="")
+  reliability_constraint_str <- paste(reliability_constraint, collapse="")
+  tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, '\n', reliability_constraint_str)
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data)
