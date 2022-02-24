@@ -1,13 +1,12 @@
-tspa <- function(model, data, reliability = NULL) {
-  # Expand the syntax
+#' Two-Stage Path Analysis
+#' @param model A string variable describing the structural path model.
+#' @param data A dataframe containing factor scores.
+#' @param reliability A numeric vector representing the reliability indexes
+#'   of each latent factor.
+#' @example
+#' tspa(model = "dem60 ~ ind60", data = fs_dat,
+#'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
-  # Run lavaan::sem()
-
-}
-
-# question: can only retrieve parameter names, but what if c(x=1, y=2) ? how to retrieve "x" and "y"?
-
-# model-building code w/o test on actual data
 tspa <- function(model, data, reliability = NULL) {
   reliability <- as.data.frame(reliability)
   len <- nrow(reliability)
