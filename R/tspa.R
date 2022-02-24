@@ -8,21 +8,45 @@
 #'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
 tspa <- function(model, data, reliability = NULL) {
-  models <- strsplit(model, split = " ~ ")
-  x <- models[[1]][2]
-  y <- models[[1]][1]
-  fs_x <- colnames(data)[1]
-  fs_y <- colnames(data)[2]
-  tspaModel <- paste0(x, ' =~ 1 * ', fs_x, '\n',
-    y, ' =~ 1 * ', fs_y, '\n',
-    fs_x, ' ~~ ev1 * ', fs_x, '\n',
-    fs_y, ' ~~ ev2 * ', fs_y, '\n',
-    x, ' ~~ v1 * ', x, '\n',
-    y, ' ~~ v2 * ', y, '\n',
-    model, '\n',
-    'v1 == ', toString(reliability[1]), ' / ', toString(1 - reliability[1]), ' * ev1\n',
-    'v2 == ', toString(reliability[2]), ' / ', toString(1 - reliability[2]), ' * ev2\n')
+  reliability <- as.data.frame(reliability)
+  len <- nrow(reliability)
+
+  rel_list <- list() # create an empty list for storing the variable names
+
+  for (x in 1:len) {
+    rel_list <- c(rel_list, row.names(reliability)[[x]])
+  }
+
+  fs <- list() # create an empty list for storing the factor score names
+
+  for (x in 1:len) {
+    fs <- c(fs, colnames(data)[x])
+  }
+
+  for (x in 1:len) {
+    tspaModel <- paste0(tspaModel,
+                        rel_list[x], ' =~ 1 * ', fs[x], '\n')
+  }
+
+  for (x in 1:len) {
+    tspaModel <- paste0(tspaModel,
+                        fs[x], ' ~~ ev', x, ' * ', fs[x], '\n')
+  }
+
+  for (x in 1:len) {
+    tspaModel <- paste0(tspaModel,
+                        rel_list[x], ' ~~ v', x, ' * ', rel_list[x], '\n')
+  }
+
+  tspaModel <- paste0(tspaModel, model, '\n')
+
+  for (x in 1:len) {
+    tspaModel <- paste0(tspaModel,
+                        'v', x, ' == ', toString(reliability[x]), ' / ', toString(1 - reliability[x]), ' * ev', x, '\n')
+  }
+
   tspa_fit <- sem(model = tspaModel,
                   data  = data)
   return (tspa_fit)
 }
+
