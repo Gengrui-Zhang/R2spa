@@ -23,9 +23,11 @@ tspa <- function(model, data, reliability = NULL) {
     fs <- c(fs, colnames(data)[x])
   }
 
+  tspaModel <- ''
+
   for (x in 1:len) {
     tspaModel <- paste0(tspaModel,
-                        rel_list[x], ' =~ 1 * ', fs[x], '\n')
+                        rel_list[[x]], ' =~ 1 * ', fs[[x]], '\n')
   }
 
   for (x in 1:len) {
@@ -42,11 +44,11 @@ tspa <- function(model, data, reliability = NULL) {
 
   for (x in 1:len) {
     tspaModel <- paste0(tspaModel,
-                        'v', x, ' == ', toString(reliability[x]), ' / ', toString(1 - reliability[x]), ' * ev', x, '\n')
+                        'v', x, ' == ', toString(reliability[x,]), ' / ', toString(1 - reliability[x,]), ' * ev', x, '\n')
   }
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data)
-  return (tspa_fit)
+  return (list(tspa_fit, tspaModel))
 }
 
