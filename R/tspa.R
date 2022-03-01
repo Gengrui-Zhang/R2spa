@@ -26,3 +26,4 @@ tspa <- function(model, data, reliability = NULL) {
                   data  = data)
   return (tspa_fit)
 }
+
