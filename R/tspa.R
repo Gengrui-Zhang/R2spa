@@ -8,22 +8,31 @@
 #'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
 tspa <- function(model, data, reliability = NULL) {
-  models <- strsplit(model, split = " ~ ")
-  x <- models[[1]][2]
-  y <- models[[1]][1]
-  fs_x <- colnames(data)[1]
-  fs_y <- colnames(data)[2]
-  tspaModel <- paste0(x, ' =~ 1 * ', fs_x, '\n',
-    y, ' =~ 1 * ', fs_y, '\n',
-    fs_x, ' ~~ ev1 * ', fs_x, '\n',
-    fs_y, ' ~~ ev2 * ', fs_y, '\n',
-    x, ' ~~ v1 * ', x, '\n',
-    y, ' ~~ v2 * ', y, '\n',
-    model, '\n',
-    'v1 == ', toString(reliability[1]), ' / ', toString(1 - reliability[1]), ' * ev1\n',
-    'v2 == ', toString(reliability[2]), ' / ', toString(1 - reliability[2]), ' * ev2\n')
+  var <- names(reliability)
+  len <- length(reliability)
+  fs <- colnames(data)
+
+  tspaModel <- rep(NA, len)
+  latent_var <- rep(NA, len)
+  error_constraint <- rep(NA, len)
+  latent_variance <- rep(NA, len)
+  reliability_constraint <- rep(NA, len)
+
+  for (x in 1:len) {
+    latent_var[x] <- paste0(var[x], ' =~ 1 * ', fs[x], '\n')
+    error_constraint[x] <- paste0(fs[x], ' ~~ ev', x, ' * ', fs[x], '\n')
+    latent_variance[x] <- paste0(var[x], ' ~~ v', x, ' * ', var[x], '\n')
+    reliability_constraint[x] <- paste0('v', x, ' == ', toString(reliability[x]), ' / ', toString(1 - reliability[x]), ' * ev', x, '\n')
+  }
+
+  latent_var_str <- paste(latent_var, collapse="")
+  error_constraint_str <- paste(error_constraint, collapse="")
+  latent_variance_str <- paste(latent_variance, collapse="")
+  reliability_constraint_str <- paste(reliability_constraint, collapse="")
+  tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, '\n', reliability_constraint_str)
+
   tspa_fit <- sem(model = tspaModel,
                   data  = data)
-  return (tspa_fit)
+  return (list(tspa_fit, tspaModel))
 }
 
