@@ -7,10 +7,23 @@
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
 #'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
-tspa <- function(model, data, reliability = NULL) {
+tspa <- function(model, data, reliability = NULL, display=FALSE) {
   var <- names(reliability)
   len <- length(reliability)
+
+  if (len < 2) {
+    stop("Reliability len is smaller than 2, unable to build model. Reliability needs to consist of at least 2 variables.");
+  }
+
   fs <- colnames(data)
+
+  if (length(fs) < 2) {
+    stop("Data column len is smaller than 2, unable to build model. Data needs to consist of at least 2 columns.");
+  }
+
+  if(len != lenth(fs)) {
+    stop("Data length does not match reliability length");
+  }
 
   tspaModel <- rep(NA, len)
   latent_var <- rep(NA, len)
@@ -33,6 +46,11 @@ tspa <- function(model, data, reliability = NULL) {
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data)
-  return (list(tspa_fit, tspaModel))
+  if(display == TRUE) {
+    return (list(tspa_fit, tspaModel));
+  }
+  else {
+    return (list(tspa_fit, ""));
+  }
 }
 
