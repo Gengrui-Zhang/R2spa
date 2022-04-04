@@ -15,7 +15,7 @@ tspa <- function(model, data, reliability = NULL, display=FALSE) {
     stop("Reliability len is smaller than 2, unable to build model. Reliability needs to consist of at least 2 variables.");
   }
 
-  fs <- colnames(data)
+  fs <- paste0("fs_", var) #colnames(data)
 
   if (length(fs) < 2) {
     stop("Data column len is smaller than 2, unable to build model. Data needs to consist of at least 2 columns.");
