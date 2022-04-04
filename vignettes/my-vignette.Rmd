@@ -151,10 +151,10 @@ lavPredict(cfa_3var_fit, se = "standard")
 # reliability of factor scores
 # 1 - fx_se^2 / fx_psi
 1 - unlist(attributes(lavPredict(cfa_3var_fit, se = "standard"))$se)^2 / 
-  parameterestimates(cfa_3var_fit)[23:25, ]$est
-rel_ind60 <- 0.9968282
-rel_dem60 <- 0.8503460
-rel_dem65 <- 0.8430526
+  parameterestimates(cfa_3var_fit)[29:31, ]$est
+rel_ind60 <- 0.9641579
+rel_dem60 <- 0.9046802
+rel_dem65 <- 0.9165594
 ```
 
 
