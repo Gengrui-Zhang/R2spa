@@ -15,7 +15,7 @@ tspa <- function(model, data, reliability = NULL) {
     stop("Reliability len is smaller than 2, unable to build model. Reliability needs to consist of at least 2 variables.");
   }
   col <- colnames(data)
-  fs <- rep(NA, len)
+  fs <- paste0('fs_', var)
 
   if (length(fs) < 2) {
     stop("Data column len is smaller than 2, unable to build model. Data needs to consist of at least 2 columns.");
@@ -27,11 +27,11 @@ tspa <- function(model, data, reliability = NULL) {
   latent_variance <- rep(NA, len)
   reliability_constraint <- rep(NA, len)
 
+  if(fs %in% col == FALSE) {
+    stop("data columns does not match with reliability")
+  }
+
   for (x in 1:len) {
-    fs[x] <- paste0('fs_', var[x])
-    if(fs[x] %in% col == FALSE) {
-        stop("data columns does not match with reliability")
-    }
     latent_var[x] <- paste0(var[x], ' =~ 1 * ', fs[x], '\n')
     error_constraint[x] <- paste0(fs[x], ' ~~ ev', x, ' * ', fs[x], '\n')
     latent_variance[x] <- paste0(var[x], ' ~~ v', x, ' * ', var[x], '\n')
@@ -50,7 +50,6 @@ tspa <- function(model, data, reliability = NULL) {
   # tspaModel <- cat(tspaModel)
   attributes(tspa_fit)$tspaModel <- tspaModel
   # to access the attribute, use attr(x,"tspaModel")
-  # exploring s3,s4 class
   return (tspa_fit)
 }
 

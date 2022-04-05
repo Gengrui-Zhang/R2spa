@@ -151,10 +151,10 @@ lavPredict(cfa_3var_fit, se = "standard")
 # reliability of factor scores
 # 1 - fx_se^2 / fx_psi
 1 - unlist(attributes(lavPredict(cfa_3var_fit, se = "standard"))$se)^2 / 
-  parameterestimates(cfa_3var_fit)[23:25, ]$est
-rel_ind60 <- 0.9968282
-rel_dem60 <- 0.8503460
-rel_dem65 <- 0.8430526
+  parameterestimates(cfa_3var_fit)[29:31, ]$est
+rel_ind60 <- 0.9641579
+rel_dem60 <- 0.9046802
+rel_dem65 <- 0.9165594
 ```
 
 
@@ -235,103 +235,3 @@ semPlot::semPaths(tspa_3var_fit)
 standardizedSolution(tspa_3var_fit)
 ```
 
-## Example of Lui (2019)
-
-```{r}
-lui2018 <- read_sav("https://osf.io/wxjsg/download") %>%
-  filter_at(vars(class14, audit1:audit3), ~ !is.na(.)) %>% 
-  filter(eth %in% 1:4) %>%
-  mutate_at(vars(class1:class15, audit1:audit10), as.numeric) %>%
-  mutate(campuslive = factor(campuslive), 
-         eth = factor(eth, 1:4)) %>%
-  arrange(eth)
-```
-
-
-[WT]: # (Estimating fx and fy in the same model yields similar results as estimating them in two separate models, although a few parameter estiamtes differ slightly.)
-
-```{r}
-# partial scalar model on X, and scalar model on Y
-ps_mod <- "
-fx =~ class1 + class2 + class3 + class4 + class5 + class6 + 
-      class7 + class8 + class9 + class10 + class11 + class12 + 
-      class13 + class14 + class15
-fy =~ audit1 + audit2 + audit3
-
-class1 ~ c(i1, i1, i1, i1.h)*1
-class2 ~ c(i2, i2, i2, i2.h)*1
-class4 ~ c(i4.w, i4, i4, i4)*1
-class6 ~ c(i6, i6, i6.b, i6)*1
-class10 ~ c(i10, i10.a, i10, i10)*1
-class11 ~ c(i11, i11, i11, i11.h)*1
-class12 ~ c(i12, i12.a, i12, i12)*1
-class13 ~ c(i13, i13, i13.b, i13)*1
-class14 ~ c(i14.w, i14, i14, i14)*1
-class15 ~ c(i15, i15.a, i15, i15)*1
-"
-```
-
-```{r}
-psfit_eth <- cfa(model = ps_mod, 
-                 data = lui2018, 
-                 group = "eth", 
-                 group.label = 1:4, 
-                 group.equal = c("loadings", "intercepts"), 
-                 std.lv = TRUE)
-```
-
-```{r}
-# Compute factor scores using lavPredict
-lavPredict(psfit_eth, se = "standard")
-
-# Reliability of factor scores (1 - fx_se^2 / fx_psi)
-1 - unlist(attributes(lavPredict(psfit_eth, se = "standard"))$se)^2 / 1
-
-# Four groups: white (w), asian (a), black (b), hispanic (h)
-rel_fx_w <- 0.9280397
-rel_fx_a <- 0.8854708
-rel_fx_b <- 0.9241833
-rel_fx_h <- 0.9389290
-rel_fy_w <- 0.9122641
-rel_fy_a <- 0.9108694
-rel_fy_b <- 0.9172431
-rel_fy_h <- 0.9120363
-```
-
-```{r eval=FALSE}
-# Put factor scores to data set
-fs_lui <- cbind(do.call(rbind, lavPredict(psfit_eth, se = "standard")), 
-                    rep(1:4, table(lui2018$eth)))
-colnames(fs_lui) <- c("fs_fx", "fs_fy", "eth")
-my2spa_lui <- '
-   # latent variables (indicated by factor scores)
-     fx =~ 1 * fs_fx
-     fy =~ 1 * fs_fy
-   # constrain the errors
-     fs_fx ~~ ev1 * fs_fx
-     fs_fy ~~ ev2 * fs_fy
-   # latent variances
-     fx ~~ v1 * fx
-     fy ~~ v2 * fy
-   # regressions
-     fy ~ b1 * fx
-   # reliability constraints (reliability = v / (v + ev))
-   # v = reliability / (1 - reliability) * ev
-     v1 == c(0.9280397 / (1 - 0.9280397), 
-             0.8854708 / (1 - 0.8854708), 
-             0.9241833 / (1 - 0.9241833), 
-             0.9389290 / (1 - 0.9389290)) * ev1
-     v2 == c(0.9122641 / (1 - 0.9122641), 
-             0.9108694 / (1 - 0.9108694), 
-             0.9172431 / (1 - 0.9172431), 
-             0.9120363 / (1 - 0.9120363)) * ev2 - b1^2 * v1
-'
-# does not work
-tspa_lui_fit <- sem(model = my2spa_lui,
-                    data  = fs_lui, 
-                    group = "eth", 
-                    group.label = 1:4, )
-summary(tspa_lui_fit)
-semPlot::semPaths(tspa_lui_fit)
-standardizedSolution(tspa_lui_fit)
-```
