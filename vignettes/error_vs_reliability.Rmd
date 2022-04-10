@@ -1,0 +1,212 @@
+---
+title: "Error vs. Reliability Constraints"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{error-vs-reliability}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+# library(R2spa)
+library(lavaan)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+# Full SEM
+
+```{r}
+myModel <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+   # regressions
+     dem60 ~ ind60
+'
+fit <- sem(model = myModel,
+           data  = PoliticalDemocracy)
+summary(fit)
+semPlot::semPaths(fit)
+standardizedSolution(fit)
+```
+
+# 2S-PA With Two-Factor CFA
+
+## Stage 1: CFA
+
+```{r}
+# CFA
+my_cfa <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit <- cfa(model = my_cfa,
+               data  = PoliticalDemocracy,
+               std.lv = TRUE)
+# Compute factor scores using lavPredict
+fs_dat <- lavPredict(cfa_fit, acov = "standard")
+colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+# Alpha reliability
+alpha_x <- psych::alpha(PoliticalDemocracy[c("x1", "x2", "x3")])$total$raw_alpha
+alpha_y <- psych::alpha(PoliticalDemocracy[c("y1", "y2", "y3", "y4")])$total$raw_alpha
+```
+
+## Stage 2
+
+### Fixing errors
+
+```{r}
+my2spa <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ 0.036168769 * fs_ind60
+     fs_dem60 ~~ 0.104325893 * fs_dem60
+     fs_ind60 ~~ 0.002202184 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ ind60
+'
+tspa_fit1 <- sem(model = my2spa, data  = fs_dat)
+standardizedSolution(tspa_fit1)
+```
+
+### Constraining Reliability
+
+```{r}
+# Reliability
+cfa_psi <- lavInspect(cfa_fit, what = "est")$psi
+1 - attr(fs_dat, "se")[[1]]^2 / diag(cfa_psi)
+my2spa <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ ev1 * fs_ind60
+     fs_dem60 ~~ ev2 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ b1 * ind60
+   # reliability constraints (reliability = v / (v + ev))
+   # v = reliability / (1 - reliability) * ev
+     v1 == 0.9638312 / (1 - 0.9638312) * ev1
+     v2 == 0.895674 / (1 - 0.895674) * ev2 - b1^2 * v1
+'
+tspa_fit2 <- sem(model = my2spa, data  = fs_dat)
+standardizedSolution(tspa_fit2)
+```
+
+# 2S-PA With Separate One-Factor CFAs
+
+## Stage 1: CFA
+
+```{r}
+# CFA
+my_cfa1 <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+'
+cfa_fit1 <- cfa(model = my_cfa1,
+                data  = PoliticalDemocracy,
+                std.lv = TRUE)
+my_cfa2 <- '
+   # latent variables
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit2 <- cfa(model = my_cfa2,
+                data  = PoliticalDemocracy,
+                std.lv = TRUE)
+# Compute factor scores using lavPredict
+fs1 <- lavPredict(cfa_fit1, se = "standard", acov = "standard")
+fs2 <- lavPredict(cfa_fit2, se = "standard", acov = "standard")
+fs_dat2 <- data.frame(fs1, fs2)
+colnames(fs_dat2) <- c("fs_ind60", "fs_dem60")
+```
+
+## Stage 2
+
+### Fixing errors
+
+```{r}
+my2spasep <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ 0.03423273 * fs_ind60
+     fs_dem60 ~~ 0.1131951 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ ind60
+'
+tspasep_fit1 <- sem(model = my2spasep, data  = fs_dat2)
+standardizedSolution(tspasep_fit1)
+```
+
+### Constraining Reliability
+
+```{r}
+# Reliability
+cfa_psi1 <- lavInspect(cfa_fit1, what = "est")$psi
+1 - attr(fs1, "se")[[1]]^2 / diag(cfa_psi1)
+cfa_psi2 <- lavInspect(cfa_fit2, what = "est")$psi
+1 - attr(fs2, "se")[[1]]^2 / diag(cfa_psi2)
+my2spasep <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ ev1 * fs_ind60
+     fs_dem60 ~~ ev2 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ b1 * ind60
+   # reliability constraints (reliability = v / (v + ev))
+   # v = reliability / (1 - reliability) * ev
+     v1 == 0.9657673 / (1 - 0.9657673) * ev1
+     v2 == 0.8868049 / (1 - 0.8868049) * ev2 - b1^2 * v1
+'
+tspasep_fit2 <- sem(model = my2spasep, data  = fs_dat2)
+standardizedSolution(tspasep_fit2)
+```
+
+# Summarize Results
+
+```{r}
+extract_b <- function(object) {
+  ss <- standardizedSolution(object)
+  ss[ss$lhs == "dem60" & ss$op == "~" & ss$rhs == "ind60", 
+     c("lhs", "op", "rhs", "est.std", "se", "z", "pvalue",
+       "ci.lower", "ci.upper")]
+}
+coef_bs <- lapply(list(`sem` = fit,
+                       `2spa-joint-error` = tspa_fit1,
+                       `2spa-joint-reliability` = tspa_fit2,
+                       `2spa-sep-error` = tspasep_fit1,
+                       `2spa-sep-reliability` = tspasep_fit2),
+                  FUN = extract_b)
+knitr::kable(do.call(rbind, coef_bs), digits = 3)
+```
+
+## Observations
+
+- Inflated latent correlation with the two-factor model for obtaining factor scores. Unclear why this happens. Factor score covariances seem higher than (or equal to) latent covariances, so perhaps attenuation does not apply to factor score covariances?
+
