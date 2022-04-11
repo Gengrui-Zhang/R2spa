@@ -3,7 +3,7 @@
 #' @param data A dataframe containing factor scores.
 #' @param reliability A numeric vector representing the reliability indexes
 #'   of each latent factor.
-#' @example
+#' @examples
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
 #'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
 
