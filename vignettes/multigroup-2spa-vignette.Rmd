@@ -115,7 +115,8 @@ my2spa_lui <- '
 tspa_lui_fit <- sem(model = my2spa_lui,
                     data  = fs_lui, 
                     group = "eth", 
-                    group.label = 1:4)
+                    group.label = 1:4, 
+                    group.equal = "regressions")
 summary(tspa_lui_fit)
 ```
 
@@ -141,12 +142,13 @@ my2spa_lui <- '
      fx ~~ c(v11, v12, v13, v14) * fx
      fy ~~ c(v21, v22, v23, v24) * fy
    # regressions
-     fy ~ c(b1, b1, b1, b1) * fx
+     fy ~ fx
 '
 tspa_lui_fit <- sem(model = my2spa_lui,
                     data  = fs_lui, 
                     group = "eth", 
-                    group.label = 1:4)
+                    group.label = 1:4, 
+                    group.equal = "regressions")
 summary(tspa_lui_fit)
 ```
 

@@ -4,8 +4,95 @@
 #' @param reliability A numeric vector representing the reliability indexes
 #'   of each latent factor.
 #' @examples
+#' ### single-group example
+#'
+#' # cfa model
+#' my_cfa <- '
+#' # latent variables
+#' ind60 =~ x1 + x2 + x3
+#' dem60 =~ y1 + y2 + y3 + y4
+#' '
+#' cfa_fit <- cfa(model = my_cfa,
+#'                data  = PoliticalDemocracy)
+#'
+#' # create a data frame for factor scores
+#' fs_dat <- lavPredict(cfa_fit, se = "standard")
+#' colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+#'
+#' # tspa model
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      reliability = c(ind60 = 0.9651282, dem60 = 0.9055203))
+#'      se = data.frame(ind60 = 0.1273703, dem60 = 0.6761707))
+#'
+#'
+#' ### three-variable single-group example
+#'
+#' # cfa model
+#' cfa_3var <- '
+#' # latent variables
+#' ind60 =~ x1 + x2 + x3
+#' dem60 =~ y1 + y2 + y3 + y4
+#' dem65 =~ y5 + y6 + y7 + y8
+#' # residual correlations
+#' y1 ~~ y5
+#' y2 ~~ y4 + y6
+#' y3 ~~ y7
+#' y4 ~~ y8
+#' y6 ~~ y8
+#' '
+#' cfa_3var_fit <- cfa(model = cfa_3var,
+#'                     data  = PoliticalDemocracy)
+#'
+#' # create a data frame for factor scores
+#' fs_3var_dat <- lavPredict(cfa_3var_fit, se = "standard")
+#' colnames(fs_3var_dat) <- c("fs_ind60", "fs_dem60", "fs_dem65")
+#'
+#' # tspa model
+#' tspa(model = "dem60 ~ ind60
+#'               dem65 ~ ind60 + dem60",
+#'      data = fs_3var_dat,
+#'      se = data.frame(ind60 = 0.1267792, dem60 = 0.6863648, dem65 = 0.6074362))
+#'
+#'
+#' ### multigroup example
+#'
+#' # partial scalar model
+#' ps_mod <- '
+#' fx =~ class1 + class2 + class3 + class4 + class5 + class6 +
+#'       class7 + class8 + class9 + class10 + class11 + class12 +
+#'       class13 + class14 + class15
+#' fy =~ audit1 + audit2 + audit3
+#'
+#' class1 ~ c(i1, i1, i1, i1.h)*1
+#' class2 ~ c(i2, i2, i2, i2.h)*1
+#' class4 ~ c(i4.w, i4, i4, i4)*1
+#' class6 ~ c(i6, i6, i6.b, i6)*1
+#' class10 ~ c(i10, i10.a, i10, i10)*1
+#' class11 ~ c(i11, i11, i11, i11.h)*1
+#' class12 ~ c(i12, i12.a, i12, i12)*1
+#' class13 ~ c(i13, i13, i13.b, i13)*1
+#' class14 ~ c(i14.w, i14, i14, i14)*1
+#' class15 ~ c(i15, i15.a, i15, i15)*1
+#' '
+#' psfit_eth <- cfa(model = ps_mod,
+#'                  data = lui2018,
+#'                  group = "eth",
+#'                  group.label = 1:4,
+#'                  group.equal = c("loadings", "intercepts"),
+#'                  std.lv = TRUE)
+#'
+#' # create a data frame for factor scores
+#' fs_lui <- cbind(do.call(rbind, lavPredict(psfit_eth, se = "standard")),
+#' rep(1:4, table(lui2018$eth)))
+#' colnames(fs_lui) <- c("fs_fx", "fs_fy", "eth")
+#'
+#' # tspa model
+#' tspa(model = "fy ~ fx", data = fs_lui,
+#'      se = data.frame(fy = c(0.07196033, 0.07581671, 0.08773593, 0.08275693),
+#'                      fx = c(0.11452919, 0.06107097, 0.08913058, 0.08796366)),
+#'      group = "eth",
+#'      group.equal = "regressions")
+
+
 
 
 # # modify for multiple group tspa model
@@ -56,7 +143,7 @@
 # }
 
 
-tspa <- function(model, data, reliability = NULL, se = NULL) {
+tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
   var <- names(reliability)
   len <- length(reliability)
   group <- length(reliability[1])
@@ -114,7 +201,8 @@ tspa <- function(model, data, reliability = NULL, se = NULL) {
 
   # tspa_fit, fit the model for the data
   tspa_fit <- sem(model = tspaModel,
-                  data  = data)
+                  data  = data,
+                  ...)
 
   # tspaModel <- cat(tspaModel)
   attributes(tspa_fit)$tspaModel <- tspaModel
