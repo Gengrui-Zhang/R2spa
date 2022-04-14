@@ -55,6 +55,10 @@ lavPredict(cfa_fit, se = "standard")
 # reliability of factor scores
 rel_ind60 <- 0.9651282
 rel_dem60 <- 0.9055203
+# standard error of factor scores
+attributes(lavPredict(cfa_fit, se = "standard"))$se
+se_ind60 <- 0.1273703
+se_dem60 <- 0.6761707
 ```
 
 ## Step 2
@@ -155,6 +159,11 @@ lavPredict(cfa_3var_fit, se = "standard")
 rel_ind60 <- 0.9641579
 rel_dem60 <- 0.9046802
 rel_dem65 <- 0.9165594
+# standard error of factor scores
+attributes(lavPredict(cfa_3var_fit, se = "standard"))$se
+se_ind60 <- 0.1267792
+se_dem60 <- 0.6863648
+se_dem65 <- 0.6074362
 ```
 
 
