@@ -17,11 +17,17 @@
 #'            data = HolzingerSwineford1939,
 #'            group = "school")
 #' get_fs(HolzingerSwineford1939, hs_model, group = "school")
+#' # Or without the model
+#' get_fs(HolzingerSwineford1939[c("school", "x4", "x5", "x6")],
+#'        group = "school")
 
 get_fs <- function(data, model = NULL, group = NULL, ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
-  ind_names <- colnames(data)
   if (is.null(model)) {
+    ind_names <- colnames(data)
+    if (!is.null(group)) {
+      ind_names <- setdiff(ind_names, group)
+    }
     model <- paste("f1 =~",
                    paste(ind_names, collapse = " + "))
   }
