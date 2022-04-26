@@ -3,6 +3,8 @@
 #' @param model An optional string specifying the measurement model
 #'              in \code{lavaan} syntax.
 #'              See \code{\link[lavaan]{model.syntax}} for more information.
+#' @param group Character. Name of the grouping variable for multiple group
+#'              analysis, which is passed to \code{\link[lavaan]{cfa}}.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (prefaced with "fs_"),
