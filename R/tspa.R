@@ -145,7 +145,7 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
-    if(length(se[1]) == 1){
+    if(nrow(se) == 1){
         tspaModel <- tspaSingleGroup(model, data, se)
         tspa_fit <- sem(model = tspaModel,
                         data  = data,
@@ -153,7 +153,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
         attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
         return (tspa_fit)
     }
-    else if(length(se[1]) > 1){
+    else if(nrow(se) > 1){
         tspaModel <- tspaMultipleGroupSe(model, data, se)
         tspa_fit <- sem(model = tspaModel,
                         data  = data,
@@ -233,7 +233,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
 }
 
 tspaSingleGroup <- function(model, data, se = NULL) {
-    if (length(se) != 0){
+    if (nrow(se) != 0){
         ev <- se^2
         var <- names(se)
         len <- length(se)
@@ -263,11 +263,11 @@ tspaSingleGroup <- function(model, data, se = NULL) {
 
 
 tspaMultipleGroupSe <- function(model, data, se = NULL) {
-  if (length(se) != 0){
+  if (nrow(se) != 0){
       ev <- se^2
       var <- names(se)
       len <- length(se)
-      group <- length(se[1])
+      group <- nrow(se)
       col <- colnames(data)
       fs <- paste0("fs_", var)
       tspaModel <- rep(NA, len)
