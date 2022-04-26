@@ -143,6 +143,7 @@
 # }
 
 
+
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
   var <- names(reliability)
   len <- length(reliability)
@@ -164,9 +165,9 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
   latent_variance <- rep(NA, len)
   reliability_constraint <- rep(NA, len)
 
-  if(fs %in% col == FALSE) {
-    stop("data columns does not match with reliability")
-  }
+  # if(fs %in% col == FALSE) {
+  #   stop("data columns does not match with reliability")
+  # }
 
   for (x in 1:len) {
       # latent variables fx =~ c(1, 1, 1, 1) * fs_fx
@@ -189,8 +190,8 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
       }
   }
 
-  # for now we only assume there's fx and fy, fy ~ c(b1, b1, b1, b1) * fx
-  model <- paste0("fy ~ c(", paste0(rep("b1", group), collapse = ", "), ") * fx")
+  # for now we only assume there's fx and fy, fy ~ c(b1, b1, b1, b1) * fx1 + c(b1, b1, b1, b1) * fx2
+  model <- paste0(var[2]," ~ c(", paste0(rep("b1", group), collapse = ", "), ") * ", var[1])
 
   # organize into one tspa model
   latent_var_str <- paste(latent_var, collapse="")
@@ -201,6 +202,10 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
 
   # tspa_fit, fit the model for the data
   tspa_fit <- sem(model = tspaModel,
+  # sem(model = my2spa_lui,
+  #     data  = fs_lui,
+  #     group = "eth",
+  #     group.label = 1:4)
                   data  = data,
                   ...)
 

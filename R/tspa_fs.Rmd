@@ -35,13 +35,13 @@ lavPredict(config_fit, method = "Bartlett") - fs_hand
 
 # To do:
 # - Compute factor scores with inputs of lambda, mu, y (data), Sigma
-compute_fs <- function(lambda, mu, y, Sigma) {
+# compute_fs <- function(lambda, mu, y, Sigma) {
   # ...
-  y_matrix <- y.matrix()
-  y_ginv <- MASS::ginv(y)
-  Sigma_ginv <- MASS::ginv(Sigma)
-  lambda_transpose <- t(lambda)
-  fs_hand <- MASS::ginv(lambda_transpose * Sigma_ginv) * lambda_transpose * Sigma_ginv * (y - mu) + alpha
-  return (fs_hand)
-}
+  # y_matrix <- y.matrix()
+  # y_ginv <- MASS::ginv(y)
+  # Sigma_ginv <- MASS::ginv(Sigma)
+  # lambda_transpose <- t(lambda)
+  # fs_hand <- MASS::ginv(lambda_transpose * Sigma_ginv) * lambda_transpose * Sigma_ginv * (y - mu) + alpha
+  # return (fs_hand)
+# }
 
