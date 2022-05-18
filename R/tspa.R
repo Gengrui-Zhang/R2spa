@@ -129,8 +129,8 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
-  if (is.list(se)) {
-    se <- as.data.frame(se)
+  if (!is.data.frame(se)) {
+    se <- as.data.frame(as.list(se))
   }
     if(nrow(se) == 1){
         tspaModel <- tspaSingleGroup(model, data, se)
