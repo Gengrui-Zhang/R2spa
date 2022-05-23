@@ -145,22 +145,19 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
+
     if(nrow(se) == 1){
         tspaModel <- tspaSingleGroup(model, data, se)
-        tspa_fit <- sem(model = tspaModel,
-                        data  = data,
-                        ...)
-        attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
-        return (tspa_fit)
     }
     else if(nrow(se) > 1){
         tspaModel <- tspaMultipleGroupSe(model, data, se)
-        tspa_fit <- sem(model = tspaModel,
-                        data  = data,
-                        ...)
-        attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
-        return (tspa_fit)
     }
+
+    tspa_fit <- sem(model = tspaModel,
+                    data  = data,
+                    ...)
+    attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
+    return (tspa_fit)
 #
 #   var <- names(reliability)
 #   len <- length(reliability)
@@ -240,11 +237,9 @@ tspaSingleGroup <- function(model, data, se = NULL) {
 
         col <- colnames(data)
         fs <- paste0("fs_", var)
-        tspaModel <- rep(NA, len)
         latent_var <- rep(NA, len)
         error_constraint <- rep(NA, len)
         latent_variance <- rep(NA, len)
-        reliability_constraint <- rep(NA, len)
 
         for(x in 1:len){
           latent_var[x] <- paste0(var[x], " =~ ", fs[x], "\n")
@@ -274,7 +269,6 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
       latent_var <- rep(NA, len)
       error_constraint <- rep(NA, len)
       latent_variance <- rep(NA, len)
-      reliability_constraint <- rep(NA, len)
 
       for(x in 1:len){
         latent_var[x] <- paste0(var[x], "=~ c(", paste0(rep(1, group), collapse = ", "), ") * ", fs[x], "\n")
