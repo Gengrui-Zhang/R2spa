@@ -1,0 +1,204 @@
+---
+title: "Structural After Measurement (SAM) Approach and Two-Stage Path Analysis (2S-PA)"
+author: "Winnie Wing-Yee Tse"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(lavaan)
+devtools::load_all()
+```
+
+```{r helper-fun}
+# creates a comparison table between results from sam and tspa
+tab_compare <- function(sam_fit, tspa_fit) {
+  sam <- parameterestimates(sam_fit, standardized = TRUE) %>%
+    select(lhs, op, rhs, est, se, std.all) %>%
+    rename_at(vars(est:std.all), ~ paste0("sam_", .))
+  tspa <- parameterestimates(tspa_fit, standardized = TRUE) %>%
+    select(lhs, op, rhs, est, se, std.all) %>%
+    rename_at(vars(est:std.all), ~ paste0("tspa_", .))
+  left_join(sam, tspa, by = c("lhs", "op", "rhs")) %>%
+    select(lhs, op, rhs, contains("est"), contains("se"), contains("std.all"))
+}
+```
+
+
+
+## Single group, single predictor
+
+```{r}
+model <- ' 
+  # latent variable definitions
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + a*y2 + b*y3 + c*y4
+
+  # regressions
+    dem60 ~ ind60
+'
+fit.sam <- sam(model, data = PoliticalDemocracy,
+               mm.list = list(ind = "ind60", dem = "dem60"))
+summary(fit.sam)
+```
+
+```{r}
+my_cfa <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit <- cfa(model = my_cfa,
+               data  = PoliticalDemocracy)
+fs_dat <- lavPredict(cfa_fit, se = "standard")
+colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+my2spa <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ ev1 * fs_ind60
+     fs_dem60 ~~ ev2 * fs_dem60
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+   # regressions
+     dem60 ~ ind60
+   # reliability constraints (reliability = v / (v + ev))
+   # v = reliability / (1 - reliability) * ev
+     v1 == 0.9651282 / (1 - 0.9651282) * ev1
+     v2 == 0.9055203 / (1 - 0.9055203) * ev2
+'
+tspa_fit <- sem(model = my2spa,
+                data  = fs_dat)
+summary(tspa_fit)
+```
+
+
+```{r}
+tab_compare(fit.sam, tspa_fit)
+```
+
+SAM and 2S-PA yielded similar results in the single-group single-predictor example. 
+
+
+## Single group, multiple predictors
+
+```{r}
+model <- ' 
+  # latent variable definitions
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + a*y2 + b*y3 + c*y4
+     dem65 =~ y5 + a*y6 + b*y7 + c*y8
+
+  # regressions
+    dem60 ~ ind60
+    dem65 ~ ind60 + dem60
+
+  # residual correlations
+    y1 ~~ y5
+    y2 ~~ y4 + y6
+    y3 ~~ y7
+    y4 ~~ y8
+    y6 ~~ y8
+'
+fit.sam <- sam(model, data = PoliticalDemocracy,
+               mm.list = list(ind = "ind60", dem = c("dem60", "dem65")))
+summary(fit.sam)
+```
+
+```{r}
+fs_dat <- get_fs(data = PoliticalDemocracy, 
+                 model = "ind60 =~ x1 + x2 + x3
+                          dem60 =~ y1 + y2 + y3 + y4
+                          dem65 =~ y5 + y6 + y7 + y8
+                          # residual correlations
+                          y1 ~~ y5
+                          y2 ~~ y4 + y6
+                          y3 ~~ y7
+                          y4 ~~ y8
+                          y6 ~~ y8")
+tspa_fit <- tspa(model = "dem60 ~ ind60
+                          dem65 ~ ind60 + dem60", 
+              data = fs_dat, 
+              se = list(ind60 = 0.1267792, dem60 = 0.6863648, 
+                        dem65 = 0.6074362))
+cat(attributes(tspa_fit)$tspaModel)
+```
+
+
+```{r}
+my2spa_3var <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 1 * fs_ind60
+     dem60 =~ 1 * fs_dem60
+     dem65 =~ 1 * fs_dem65
+   # constrain the errors
+     fs_ind60 ~~ ev1 * fs_ind60
+     fs_dem60 ~~ ev2 * fs_dem60
+     fs_dem65 ~~ ev3 * fs_dem65
+   # latent variances
+     ind60 ~~ v1 * ind60
+     dem60 ~~ v2 * dem60
+     dem65 ~~ v3 * dem65
+   # regressions
+     dem60 ~ b1 * ind60
+     dem65 ~ b2 * ind60 + b3 * dem60
+   # reliability constraints
+     v1 == 0.9641579 / (1 - 0.9641579) * ev1
+     v2 == 0.6863648 / (1 - 0.6863648) * ev2 + b1^2 * v1
+     v3 == 0.9165594 / (1 - 0.9165594) * ev3 + b2^2 * v1 + b3^2 * v2
+'
+tspa_3var_fit <- sem(model = my2spa_3var,
+                     data  = fs_dat)
+```
+
+
+```{r}
+# tab_compare(fit.sam, tspa_fit)
+tab_compare(fit.sam, tspa_3var_fit)
+```
+
+2S-PA yielded negative factor variances in the single-group multiple-predictor example. Constraining the reliability instead also produced negative factor variances. 
+
+
+## Multigroup, single predictor
+
+```{r}
+model <- ' 
+  # latent variable definitions
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+
+  # regressions
+    visual ~ speed
+'
+fit.sam <- sam(model, data = HolzingerSwineford1939, 
+               group = "school", 
+               group.equal = "regressions")
+```
+
+```{r}
+hs_mod <- '
+visual =~ x1 + x2 + x3
+speed =~ x7 + x8 + x9
+'
+# get factor scores
+fs_hs <- get_fs(HolzingerSwineford1939, hs_mod, group = "school")
+
+# tspa model
+tspa_fit <- tspa(model = "visual ~ speed",
+                 data = fs_hs,
+                 se = data.frame(visual = c(0.4284448, 0.4128444),
+                                 speed = c(0.3271431, 0.3037251)),
+                 group = "school",
+                 group.equal = "regressions")
+```
+
+```{r}
+tab_compare(fit.sam, tspa_fit)
+```
+SAM and 2S-PA do not seem to agree in the multigroup, single predictor example. 
+
+
