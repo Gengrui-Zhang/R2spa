@@ -129,13 +129,10 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
-<<<<<<< HEAD
+    if (!is.data.frame(se)) {
+      se <- as.data.frame(as.list(se))
+    }
 
-=======
-  if (!is.data.frame(se)) {
-    se <- as.data.frame(as.list(se))
-  }
->>>>>>> 73c4262ac677f5325a6ad98dfe1f9cecba245193
     if(nrow(se) == 1){
         tspaModel <- tspaSingleGroup(model, data, se)
     }
@@ -240,7 +237,15 @@ tspaSingleGroup <- function(model, data, se = NULL) {
         latent_var_str <- paste(latent_var, collapse="")
         error_constraint_str <- paste(error_constraint, collapse="")
         latent_variance_str <- paste(latent_variance, collapse="")
-        tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, "\n")
+        tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
+                            latent_var_str,
+                            "# constrain the errors\n",
+                            error_constraint_str,
+                            "# latent variances\n",
+                            latent_variance_str,
+                            "# regressions\n",
+                            model,
+                            "\n")
 
         return (tspaModel)
     }
@@ -272,7 +277,15 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
       latent_var_str <- paste(latent_var, collapse="")
       error_constraint_str <- paste(error_constraint, collapse="")
       latent_variance_str <- paste(latent_variance, collapse="")
-      tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, "\n")
+      tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
+                          latent_var_str,
+                          "# constrain the errors\n",
+                          error_constraint_str,
+                          "# latent variances\n",
+                          latent_variance_str,
+                          "# regressions\n",
+                          model,
+                          "\n")
 
       return (tspaModel)
   }
