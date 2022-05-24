@@ -3,9 +3,8 @@
 
 ####################################### Test get_fscore function ######################################
 # Loading packages and functions
-library(testthat)
 library(lavaan)
-source("/Users/jimmy_z/R Projects/R2spa/R/get_fscore.R")
+devtools::load_all()
 
 ########## Single-group example ##########
 
@@ -195,11 +194,8 @@ test_that("Test that reliability scores for each observation are the same within
   # Test the output is the same for fscore and lavaan function
 
   test_that("Test the output is the same for fscore and lavaan funtion", {
-      for (i in 1:length(as.vector(test_object_fscore))) {
-        expect_equal((round(as.vector(test_object_fscore)[i],5) - round(as.vector(fs_lavaan)[i],5)), 0)
-      }
-    }
-  )
+      expect_equal(test_object_fscore, fs_lavaan, ignore_attr = TRUE)
+  })
 
 
 
