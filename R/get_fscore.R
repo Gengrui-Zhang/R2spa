@@ -9,6 +9,8 @@
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (prefaced with "fs_"),
 #'         the standard errors, and the corresponding reliability.
+#' @export
+#'
 #' @examples
 #' library(lavaan)
 #' get_fs(PoliticalDemocracy[c("x1", "x2", "x3")])
@@ -40,13 +42,25 @@ get_fs <- function(data, model = NULL, group = NULL, ...) {
   }
   fit <- cfa(model, data = data, group = group, ...)
   est <- lavInspect(fit, what = "est")
-  fscore <- lavPredict(fit, se = "standard")
-  fscore_se <- attr(fscore, "se")
+  # fscore <- lavPredict(fit, se = "standard")
+  # fscore_se <- attr(fscore, "se")[[1]]
+  y <- lavInspect(fit, what = "data")
+  prepare_fs_dat <- function(y, est) {
+    fscore <- compute_fscore(y,
+                             lambda = est$lambda,
+                             theta = est$theta,
+                             psi = est$psi,
+                             nu = est$nu,
+                             alpha = est$alpha,
+                             acov = TRUE)
+    fscore_se <- sqrt(diag(attr(fscore, "acov")))
+    augment_fs(est, fscore, fscore_se)
+  }
   if (is.null(group)) {
-    augment_fs(est, fscore, fscore_se[[1]])
+    prepare_fs_dat(y, est)
   } else {
     fs_list <- lapply(seq_along(est), function(i) {
-      fs_dat <- augment_fs(est[[i]], fscore[[i]], fscore_se[[i]])
+      fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
       fs_dat[[group]] <- names(est[i])
       fs_dat
     })
@@ -55,6 +69,9 @@ get_fs <- function(data, model = NULL, group = NULL, ...) {
 }
 
 augment_fs <- function(est, fs, fs_se) {
+  if (is.vector(fs_se) || nrow(fs_se) != 1) {
+    fs_se <- t(as.matrix(fs_se))
+  }
   psi <- est$psi
   fs_rho <- 1 - fs_se^2 / diag(psi)
   colnames(fs) <- paste0("fs_", colnames(fs))
@@ -86,17 +103,19 @@ augment_fs <- function(est, fs, fs_se) {
 #'              dem60 =~ y1 + y2 + y3 + y4 ",
 #'            data = PoliticalDemocracy)
 #' fs_lavaan <- lavPredict(fit, method = "regression")
-#' # Using R2spa::fscore()
+#' # Using R2spa::compute_fscore()
 #' est <- lavInspect(fit, what = "est")
-#' fs_hand <- fscore(lavInspect(fit, what = "data"),
-#'                   lambda = est$lambda,
-#'                   theta = est$theta,
-#'                   psi = est$psi)
+#' fs_hand <- compute_fscore(lavInspect(fit, what = "data"),
+#'                           lambda = est$lambda,
+#'                           theta = est$theta,
+#'                           psi = est$psi)
 #' fs_hand - fs_lavaan  # same scores
-fscore <- function(y, lambda, theta, psi,
-                   nu = colMeans(y), alpha = rep(0, nrow(psi)),
-                   method = "regression",
-                   acov = FALSE) {
+compute_fscore <- function(y, lambda, theta, psi,
+                           nu = NULL, alpha = NULL,
+                           method = "regression",
+                           acov = FALSE) {
+  if (is.null(nu)) nu <- colMeans(y)
+  if (is.null(alpha)) alpha <- rep(0, nrow(psi))
   covy <- lambda %*% psi %*% t(lambda) + theta
   ginvcovy <- MASS::ginv(covy)
   tlam_invcov <- crossprod(lambda, ginvcovy)
