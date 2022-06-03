@@ -1,14 +1,14 @@
-#TODO
-#1. Check reliability score range [0,1]
-#2. Check if number of rows is the same as original data
-#3. Try to use tapply() [tapply(test_object_fs_multi$fs_f1_se, test_object_fs_multi$school, sd)]
-#4. Use different examples to test (e.g., more factors/more groups)
-
+# TODO
+# Use different examples to test (e.g., more factors/more groups)
 
 ####################################### Test get_fscore function ######################################
+# Loading packages and functions
+library(lavaan)
+devtools::load_all()
 
-# Prepare test objects
+########## Single-group example ##########
 
+# Prepare for test objects
 myModel <- '
    # latent variables
      ind60 =~ x1 + x2 + x3
@@ -80,16 +80,20 @@ test_that("Test that standard errors for each observation are the same", {
   }
 })
 
-##### Test the multi-group example #####
+########## multi-group examples ##########
 
-hs_model <- 'visual  =~ x1 + x2 + x3'
-multi_fit <- cfa(hs_model,
-                 data = HolzingerSwineford1939,
-                 group = "school")
-get_fs(HolzingerSwineford1939, hs_model, group = "school")
-# Or without the model
-test_object_fs_multi <-  get_fs(HolzingerSwineford1939[c("school", "x4", "x5", "x6")],
-                                group = "school")
+###### One-factor example #####
+
+# Prepare for test objects
+    hs_model <- 'visual  =~ x1 + x2 + x3'
+    # multi_fit <- cfa(hs_model,
+    #                  data = HolzingerSwineford1939,
+    #                  group = "school")
+    get_fs(HolzingerSwineford1939, hs_model, group = "school")
+    test_object_fs_multi <-  get_fs(HolzingerSwineford1939[c("school", "x4", "x5", "x6")],
+                                    group = "school")
+
+########## Testing section ############
 
 # Class of output
 
@@ -102,29 +106,7 @@ test_that("Test that the number of rows is the same as the original data", {
   expect_identical(nrow(test_object_fs_multi), nrow(HolzingerSwineford1939))
 })
 
-# Test standard error
-
-# test_that("Test that standard errors for each observation are the same within groups", {
-#   Names <- colnames(test_object_fs_multi)
-#   subsets <- array()
-#   # if (is.numeric(test_object_fs_multi[length(test_object_fs_multi)]) == "FALSE") {
-#     level_names <- levels(factor(t(test_object_fs_multi[length(test_object_fs_multi)])))
-#   # }
-#
-#   for (n in 1:length(level_names)) {
-#     subsets[n] <- list(test_object_fs_multi[test_object_fs_multi[length(test_object_fs_multi)] == level_names[n], ])
-#   }
-#
-#   for (s in 1:length(subsets)) {
-#       for (j in 1:length(Names[grepl("_se", Names)])) {
-#         for(i in 1:length(as.data.frame(subsets[1])[Names[grepl("_se", Names)][j]])) {
-#           expect_identical(as.data.frame(subsets[1])[Names[grepl("_se", Names)][j]][i],
-#                            as.data.frame(subsets[1])[Names[grepl("_se", Names)][j]][1])
-#         }
-#       }
-#     }
-#   }
-# )
+# Test standard errors
 
 test_that("Test that standard errors for each observation are the same within groups", {
   test_se <- tapply(test_object_fs_multi$fs_f1_se, test_object_fs_multi$school, var)
@@ -134,36 +116,88 @@ test_that("Test that standard errors for each observation are the same within gr
 })
 
 # Test reliability scores
-#
-# test_that("Test that reliability scores for each observation are the same within groups", {
-#   Names <- colnames(test_object_fs_multi)
-#   subsets <- array()
-#
-#   # If there is a group variable (last column), extract the level names
-#   #if (is.numeric(test_object_fs_multi[length(test_object_fs_multi)]) == "FALSE") {
-#     level_names <- levels(factor(t(test_object_fs_multi[length(test_object_fs_multi)])))
-#   #}
-#
-#   # Subset data
-#   for (n in 1:length(level_names)) {
-#     subsets[n] <- list(test_object_fs_multi[test_object_fs_multi[length(test_object_fs_multi)] == level_names[n], ])
-#   }
-#
-#   # Within each group data, test what we want to test
-#   for (s in 1:length(subsets)) {
-#     for (j in 1:length(Names[grepl("_rel", Names)])) {
-#       for(i in 1:length(as.data.frame(subsets[1])[Names[grepl("_rel", Names)][j]])) {
-#         expect_identical(as.data.frame(subsets[1])[Names[grepl("_rel", Names)][j]][i],
-#                          as.data.frame(subsets[1])[Names[grepl("_rel", Names)][j]][1])
-#       }
-#     }
-#   }
-# }
-# )
 
-test_that("Test that standard errors for each observation are the same within groups", {
+test_that("Test that reliability scores for each observation are the same within groups", {
   test_rel <- tapply(test_object_fs_multi$fs_f1_rel, test_object_fs_multi$school, var)
   for (i in length(test_rel)) {
     expect_identical(unname(test_rel[i]), 0)
   }
 })
+
+###### Multiple factors example #####
+
+# Prepare for test objects
+  hs_model_2 <- ' visual =~ x1 + x2 + x3
+                          textual =~ x4 + x5 + x6
+                          speed =~ x7 + x8 + x9 '
+  test_object_fs_multi_2 <- get_fs(HolzingerSwineford1939, hs_model_2, group = "school")
+
+########## Testing section ############
+
+# Class of output
+
+test_that("Test the number of factors is equal", {
+  expect_equal((length(test_object_fs_multi_2) - 1)/3,
+               (sqrt(length(unlist(lavInspect(cfa(model = hs_model_2, data = HolzingerSwineford1939))["psi"])))))
+})
+
+test_that("Test that the number of rows is the same as the original data", {
+  expect_identical(nrow(test_object_fs_multi_2), nrow(HolzingerSwineford1939))
+})
+
+# Test standard errors
+
+test_that("Test that standard errors for each observation are the same within groups", {
+  Names <- colnames(test_object_fs_multi_2)
+  factors <- Names[grepl("fs_", Names) & !grepl("_se", Names) & !grepl("_rel", Names)]
+  for (i in 1:length(factors)) {
+    test_se <- tapply(test_object_fs_multi_2[, paste0(factors[i], "_se")], test_object_fs_multi$school, var)
+    for (j in length(test_se)) {
+      expect_identical(unname(test_se[j]), 0)
+    }
+  }
+})
+
+# Test reliability scores
+
+test_that("Test that reliability scores for each observation are the same within groups", {
+  Names <- colnames(test_object_fs_multi_2)
+  factors <- Names[grepl("fs_", Names) & !grepl("_se", Names) & !grepl("_rel", Names)]
+  for (i in 1:length(factors)) {
+    test_rel <- tapply(test_object_fs_multi_2[, paste0(factors[i], "_rel")], test_object_fs_multi$school, var)
+    for (j in length(test_rel)) {
+      expect_identical(unname(test_rel[j]), 0)
+    }
+  }
+})
+
+
+####################################### Test fscore function ######################################
+
+# Prepare for test objects
+  fscore_model <- " ind60 =~ x1 + x2 + x3
+                    dem60 =~ y1 + y2 + y3 + y4 "
+  fit <- cfa(fscore_model, data = PoliticalDemocracy)
+  fs_lavaan <- lavPredict(fit, method = "regression")
+  est <- lavInspect(fit, what = "est")
+  fscore_data <- lavInspect(fit, what = "data")
+  test_object_fscore <- fscore(fscore_data, lambda = est$lambda, theta = est$theta, psi = est$psi)
+
+########## Testing section ############
+
+  # Test the length of output is the same for fscore and lavaan function
+
+  test_that("Test the length of output is equal", {
+    expect_equal(nrow(test_object_fscore), nrow(fs_lavaan))
+  })
+
+  # Test the output is the same for fscore and lavaan function
+
+  test_that("Test the output is the same for fscore and lavaan funtion", {
+      expect_equal(test_object_fscore, fs_lavaan, ignore_attr = TRUE)
+  })
+
+
+
+
+

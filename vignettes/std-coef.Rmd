@@ -1,0 +1,116 @@
+---
+title: "my-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(lavaan)
+library(numDeriv)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+```{r}
+myModel <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+   # regressions
+     dem60 ~ ind60
+'
+fit <- sem(model = myModel,
+           data  = PoliticalDemocracy)
+summary(fit)
+standardizedSolution(fit)
+```
+
+By hand
+
+$$
+  \begin{aligned}
+    \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv B \bv \eta + \bv \zeta \\
+    (\bv I - \bv B) \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv \zeta \\
+    (\bv I - \bv B) \Var(\bv \eta) (\bv I - \bv B)^\top & = \Var(\bv \Gamma \bv X) + \bv \Psi
+  \end{aligned}
+$$
+
+```{r}
+# Latent variances
+lavInspect(fit, what = "cov.lv")  # lavaan
+veta <- function(beta, psi, gamma = NULL, cov_x = NULL) {
+  inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
+  if (!is.null(gamma) && !is.null(cov_x)) {
+    psi_plus_gammax <- psi + gamma %*% cov_x
+  } else {
+    psi_plus_gammax <- psi
+  }
+  inv_Imb %*% psi_plus_gammax %*% t(inv_Imb)
+}
+# Test:
+veta(fit@Model@GLIST$beta, fit@Model@GLIST$psi)
+# Use vector input
+.fill_matrix <- function(x, free) {
+  out <- free
+  out[out != 0] <- x
+  out
+}
+
+# Standardize
+std_beta_est <- function(beta, psi, gamma = NULL, cov_x = NULL) {
+  v_eta <- veta(beta, psi = psi, gamma = gamma, cov_x = cov_x)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  diag(inv_s_eta) %*% beta %*% diag(s_eta)
+}
+# Test:
+std_beta_est(fit@Model@GLIST$beta, psi = fit@Model@GLIST$psi)
+# TODO: add jacobian
+standardized_beta <- function(beta, psi, se = TRUE, acov_par = NULL,
+                              gamma = NULL,
+                              beta_free = NULL, psi_free = NULL,
+                              gamma_free = NULL, cov_x = NULL) {
+  out <- list(std_beta = std_beta_est(beta, psi = psi))
+  if (se) {
+    stdbeta_func <- function(x, bf = beta_free, pf = psi_free,
+                             gf = gamma_free, cx = cov_x) {
+      beta_idx <- seq_len(sum(beta_free != 0))
+      beta <- .fill_matrix(x[beta_idx], beta_free)
+      psi_idx <- tail(beta_idx, n = 1) + seq_len(sum(psi_free != 0))
+      psi <- .fill_matrix(x[psi_idx], psi_free)
+      if (!is.null(gamma_free)) {
+        gamma_idx <- tail(psi_idx, n = 1) + seq_len(sum(gamma_free != 0))
+        gamma <- .fill_matrix(x[gamma_idx], gamma_free)
+      } else {
+        gamma <- NULL
+      }
+      std_beta_est(beta, psi = psi, gamma = gamma,
+                   cov_x = cov_x)[which(beta_free != 0)]
+    }
+    est <- c(beta[beta_free != 0], psi[psi_free != 0],
+             gamma[gamma_free != 0])
+    jac <- lav_func_jacobian_complex(stdbeta_func, x = est)
+    out$acov_std_beta <- jac %*% acov_par %*% t(jac)
+  }
+  out
+}
+standardized_beta(fit@Model@GLIST$beta, psi = fit@Model@GLIST$psi,
+                  acov_par = vcov(fit)[c(6, 14, 15), c(6, 14, 15)],
+                  beta_free = lavTech(fit)$beta,
+                  psi_free = lavTech(fit)$psi)
+```
+
+
