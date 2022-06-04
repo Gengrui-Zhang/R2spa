@@ -181,7 +181,7 @@ test_that("Test that reliability scores for each observation are the same within
   fs_lavaan <- lavPredict(fit, method = "regression")
   est <- lavInspect(fit, what = "est")
   fscore_data <- lavInspect(fit, what = "data")
-  test_object_fscore <- fscore(fscore_data, lambda = est$lambda, theta = est$theta, psi = est$psi)
+  test_object_fscore <- compute_fscore(fscore_data, lambda = est$lambda, theta = est$theta, psi = est$psi)
 
 ########## Testing section ############
 
