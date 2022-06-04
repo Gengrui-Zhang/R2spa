@@ -91,6 +91,12 @@ augment_fs <- function(est, fs, fs_se) {
 #' @param alpha A vector of length q of latent means.
 #' @param method A character string indicating the method for computing factor
 #'               scores. Currently, only "regression" is supported.
+#' @param fs_matrix Logical indicating whether factor score loading matrix
+#'                  (\eqn{A}; \code{fsA}) and intercept vector
+#'                  (\eqn{b}; \code{fsb}) should be returned.
+#'                  These matrices are the implied loadings and intercepts
+#'                  by the model when using the factor scores as indicators
+#'                  of the latent variables.
 #' @param acov Logical indicating whether the asymptotic covariance matrix
 #'             of factor scores should be returned as an attribute.
 #'
@@ -113,6 +119,7 @@ augment_fs <- function(est, fs, fs_se) {
 compute_fscore <- function(y, lambda, theta, psi,
                            nu = NULL, alpha = NULL,
                            method = "regression",
+                           fs_matrix = FALSE,
                            acov = FALSE) {
   if (is.null(nu)) nu <- colMeans(y)
   if (is.null(alpha)) alpha <- rep(0, nrow(psi))
@@ -124,10 +131,16 @@ compute_fscore <- function(y, lambda, theta, psi,
   # Bartlett score
   # t(MASS::ginv(tlam_invcov %*% lambda) %*% tlam_invcov %*% y1c + alpha)
   # Regression score
-  fs <- t(psi %*% tlam_invcov %*% y1c + as.vector(alpha))
+  a_mat <- psi %*% tlam_invcov
+  fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
     attr(fs, "acov") <-
       unclass(psi - psi %*% tlam_invcov %*% tcrossprod(lambda, psi))
+  }
+  if (fs_matrix) {
+    fsA <- unclass(a_mat %*% lambda)
+    attr(fs, "fsA") <- fsA
+    attr(fs, "fsb") <- alpha - fsA %*% alpha
   }
   fs
 }
