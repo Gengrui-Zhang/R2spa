@@ -1,12 +1,13 @@
 ---
-title: "my-vignette"
+title: "Standardized Coefficients"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{my-vignette}
+  %\VignetteIndexEntry{std-lv-coef}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 header-includes:
   - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
   - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
 ---
 
@@ -44,7 +45,8 @@ $$
   \begin{aligned}
     \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv B \bv \eta + \bv \zeta \\
     (\bv I - \bv B) \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv \zeta \\
-    (\bv I - \bv B) \Var(\bv \eta) (\bv I - \bv B)^\top & = \Var(\bv \Gamma \bv X) + \bv \Psi
+    (\bv I - \bv B) \Var(\bv \eta) (\bv I - \bv B)^\top & = \Var(\bv \Gamma \bv X) + \bv \Psi \\
+    \Var(\bv \eta) & = (\bv I - \bv B)^{-1} [\Var(\bv \Gamma \bv X) + \bv \Psi] {(\bv I - \bv B)^\top}^{-1}
   \end{aligned}
 $$
 
@@ -54,63 +56,79 @@ lavInspect(fit, what = "cov.lv")  # lavaan
 veta <- function(beta, psi, gamma = NULL, cov_x = NULL) {
   inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
   if (!is.null(gamma) && !is.null(cov_x)) {
-    psi_plus_gammax <- psi + gamma %*% cov_x
+    psi_plus_vgammax <- psi + gamma %*% cov_x %*% t(gamma)
   } else {
-    psi_plus_gammax <- psi
+    psi_plus_vgammax <- psi
   }
-  inv_Imb %*% psi_plus_gammax %*% t(inv_Imb)
+  inv_Imb %*% psi_plus_vgammax %*% t(inv_Imb)
 }
 # Test:
 veta(fit@Model@GLIST$beta, fit@Model@GLIST$psi)
 # Use vector input
-.fill_matrix <- function(x, free) {
-  out <- free
-  out[out != 0] <- x
-  out
+# .fill_matrix <- function(x, free) {
+#   out <- free
+#   out[out != 0] <- x
+#   out
+# }
+.fill_matrix_list <- function(mod, free, est) {
+  start_idx <- 0
+  for (m in seq_along(mod)) {
+    m_idx <- start_idx + seq_len(sum(free[[m]] != 0))
+    mod[[m]][free[[m]] != 0] <- est[m_idx]
+    start_idx <- tail(m_idx, n = 1)
+  }
+  mod
 }
 
-# Standardize
-std_beta_est <- function(beta, psi, gamma = NULL, cov_x = NULL) {
-  v_eta <- veta(beta, psi = psi, gamma = gamma, cov_x = cov_x)
+# Standardize (ignoring gamma for now)
+std_beta_est <- function(model_list, free_list = NULL, est = NULL) {
+  # The `est` argument is used to evaluate how changes in parameters
+  # affect the standardized estimates, and is used to obtain the 
+  # derivatives for the delta method.
+  if (!is.null(est) && !is.null(free_list)) {
+    model_list <- .fill_matrix_list(model_list[c("beta", "psi")],
+                                    free = free_list[c("beta", "psi")],
+                                    est = est)
+  }
+  beta <- model_list$beta
+  psi <- model_list$psi
+  v_eta <- veta(beta, psi = psi)
   s_eta <- sqrt(diag(v_eta))
   inv_s_eta <- 1 / s_eta
   diag(inv_s_eta) %*% beta %*% diag(s_eta)
 }
 # Test:
-std_beta_est(fit@Model@GLIST$beta, psi = fit@Model@GLIST$psi)
-# TODO: add jacobian
-standardized_beta <- function(beta, psi, se = TRUE, acov_par = NULL,
-                              gamma = NULL,
-                              beta_free = NULL, psi_free = NULL,
-                              gamma_free = NULL, cov_x = NULL) {
-  out <- list(std_beta = std_beta_est(beta, psi = psi))
+std_beta_est(lavInspect(fit, what = "est"),
+             free_list = lavInspect(fit, what = "free"),
+             est = c(1.5, 0.449, 3.453))
+
+# Standard errors
+# Function for combining free estimates into a vector
+.combine_est <- function(mod, free) {
+  out <- vector("list", length(free))
+  for (m in seq_along(free)) {
+    out[[m]] <- mod[[m]][free[[m]] != 0]
+  }
+  unlist(out)
+}
+standardized_beta <- function(model_list, se = TRUE, acov_par = NULL,
+                              free_list = NULL) {
+  out <- list(std_beta = std_beta_est(model_list))
   if (se) {
-    stdbeta_func <- function(x, bf = beta_free, pf = psi_free,
-                             gf = gamma_free, cx = cov_x) {
-      beta_idx <- seq_len(sum(beta_free != 0))
-      beta <- .fill_matrix(x[beta_idx], beta_free)
-      psi_idx <- tail(beta_idx, n = 1) + seq_len(sum(psi_free != 0))
-      psi <- .fill_matrix(x[psi_idx], psi_free)
-      if (!is.null(gamma_free)) {
-        gamma_idx <- tail(psi_idx, n = 1) + seq_len(sum(gamma_free != 0))
-        gamma <- .fill_matrix(x[gamma_idx], gamma_free)
-      } else {
-        gamma <- NULL
-      }
-      std_beta_est(beta, psi = psi, gamma = gamma,
-                   cov_x = cov_x)[which(beta_free != 0)]
-    }
-    est <- c(beta[beta_free != 0], psi[psi_free != 0],
-             gamma[gamma_free != 0])
-    jac <- lav_func_jacobian_complex(stdbeta_func, x = est)
-    out$acov_std_beta <- jac %*% acov_par %*% t(jac)
+    free_beta_psi <- free_list[c("beta", "psi")]
+    est <- .combine_est(model_list[c("beta", "psi")],
+                        free = free_beta_psi)
+    jac <- lav_func_jacobian_complex(function(x)
+      std_beta_est(model_list, free_list = free_list, est = x),
+      x = est)
+    pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
+    acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
+    out$acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
   }
   out
 }
-standardized_beta(fit@Model@GLIST$beta, psi = fit@Model@GLIST$psi,
-                  acov_par = vcov(fit)[c(6, 14, 15), c(6, 14, 15)],
-                  beta_free = lavTech(fit)$beta,
-                  psi_free = lavTech(fit)$psi)
+standardized_beta(lavInspect(fit, what = "est"), se = TRUE,
+                  acov_par = vcov(fit), 
+                  free_list = lavInspect(fit, what = "free"))
 ```
-
 
