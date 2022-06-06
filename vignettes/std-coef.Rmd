@@ -73,7 +73,9 @@ veta(fit@Model@GLIST$beta, fit@Model@GLIST$psi)
 .fill_matrix_list <- function(mod, free, est) {
   start_idx <- 0
   for (m in seq_along(mod)) {
-    m_idx <- start_idx + seq_len(sum(free[[m]] != 0))
+    len_m <- sum(free[[m]] != 0)
+    if (len_m == 0) next
+    m_idx <- start_idx + seq_len(len_m)
     mod[[m]][free[[m]] != 0] <- est[m_idx]
     start_idx <- tail(m_idx, n = 1)
   }
@@ -132,3 +134,134 @@ standardized_beta(lavInspect(fit, what = "est"), se = TRUE,
                   free_list = lavInspect(fit, what = "free"))
 ```
 
+## Multiple Groups
+
+```{r}
+reg <- ' 
+  # latent variable definitions
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+
+  # regressions
+    visual ~ c(b1, b1) * speed
+'
+reg_fit <- sem(reg, data = HolzingerSwineford1939,
+               group = "school",
+               group.equal = c("loadings", "intercepts"))
+```
+
+### Separate standardization by group
+
+```{r}
+standardizedSolution(reg_fit, type = "std.lv") |>
+  subset(subset = label == "b1")
+# Compare to own function
+# Group 1:
+standardized_beta(
+  lavInspect(reg_fit, what = "est")[[1]],
+  acov_par = vcov(reg_fit),
+  free_list = lavInspect(reg_fit, what = "free")[[1]]
+)
+# Group 2:
+standardized_beta(
+  lavInspect(reg_fit, what = "est")[[2]],
+  acov_par = vcov(reg_fit),
+  free_list = lavInspect(reg_fit, what = "free")[[2]]
+)
+```
+
+### Grand standardization
+
+For each group we have the group-specific covariance matrix $\Var(\bv \eta_g)$. The group-specific latent means are
+
+$$\E(\bv \eta_g) = (\bv I - \bv B)^{-1}[\bv \alpha + \Gamma \E(\bv X)]$$
+
+The grand mean is $\E(\bv \eta) = \sum_{g = 1}^G n_g \E(\bv \eta_g) / N$
+
+The grand covariance matrix is:
+
+$$\Var(\bv \eta) = \frac{1}{N} \sum_{g = 1}^G n_g \left\{\Var(\bv \eta_g) + [\E(\bv \eta_g) - \E(\bv \eta)][\E(\bv \eta_g) - \E(\bv \eta)]^\top \right\}$$
+
+So we need to involve the mean as well
+
+```{r}
+# Latent means
+lavInspect(reg_fit, what = "mean.lv")  # lavaan
+eeta <- function(beta, alpha, gamma = NULL, mean_x = NULL) {
+  inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
+  if (!is.null(gamma) && !is.null(mean_x)) {
+    alpha_plus_gammax <- alpha + gamma %*% mean_x
+  } else {
+    alpha_plus_gammax <- alpha
+  }
+  inv_Imb %*% alpha_plus_gammax
+}
+# Test:
+reg_pos <- lavTech(reg_fit)
+reg_est <- lavTech(reg_fit, what = "est")
+eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
+     alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
+eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
+     alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
+# Latent variances
+lavInspect(reg_fit, what = "cov.lv")  # lavaan
+veta_grand <- function(ns, beta_list, psi_list, alpha_list,
+                       gamma_list = vector("list", length(beta_list)),
+                       cov_x_list = vector("list", length(beta_list)),
+                       mean_x_list = vector("list", length(beta_list))) {
+  # Within-group variance-covariances
+  vetas <- mapply(veta, beta = beta_list, psi = psi_list,
+                  gamma = gamma_list, cov_x = cov_x_list,
+                  SIMPLIFY = FALSE)
+  # Group means
+  eetas <- mapply(eeta, beta = beta_list, alpha = alpha_list,
+                  gamma = gamma_list, mean_x = mean_x_list,
+                  SIMPLIFY = FALSE)
+  # Grand mean
+  eeta_grand <- do.call(cbind, eetas) %*% ns / sum(ns)
+  Reduce(
+    `+`,
+    mapply(function(v, m, n) n * (v + tcrossprod(m - eeta_grand)),
+         v = vetas, m = eetas, n = ns, SIMPLIFY = FALSE)
+  ) / sum(ns)
+}
+# Test:
+veta_grand(lavInspect(reg_fit, what = "nobs"),
+           beta_list = reg_est[which(names(reg_est) == "beta")],
+           psi_list = reg_est[which(names(reg_est) == "psi")],
+           alpha_list = reg_est[which(names(reg_est) == "alpha")])
+# # Use vector input
+# .fill_matrix <- function(x, free) {
+#   out <- free
+#   out[out != 0] <- x
+#   out
+# }
+# 
+# Standardize (ignore gamma for now)
+grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
+  if (!is.null(est) && !is.null(free_list)) {
+    mat_idx <- which(names(model_list) %in% c("beta", "psi", "alpha"))
+    model_list <- .fill_matrix_list(model_list[mat_idx],
+                                    free = free_list[mat_idx],
+                                    est = est)
+  }
+  beta_list <- model_list[which(names(model_list) == "beta")]
+  psi_list <- model_list[which(names(model_list) == "psi")]
+  alpha_list <- model_list[which(names(model_list) == "alpha")]
+  v_eta <- veta_grand(ns,
+                      beta_list,
+                      psi_list = psi_list,
+                      alpha_list = alpha_list)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  lapply(beta_list, function(x) {
+    diag(inv_s_eta) %*% x %*% diag(s_eta)
+  })
+}
+# Test:
+grand_std_beta_est(reg_est, ns = lavInspect(reg_fit, what = "nobs"),
+                   free_list = reg_pos,
+                   est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
+# With standard errors
+grand_standardized_beta <- function() {}
+```
