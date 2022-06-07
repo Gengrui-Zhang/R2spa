@@ -5,7 +5,7 @@
 # Loading packages and functions
 library(testthat)
 library(lavaan)
-source("/Users/jimmy_z/R Projects/R2spa/R/get_fscore.R")
+devtools::load_all()
 
 ########## Single-group example ##########
 
