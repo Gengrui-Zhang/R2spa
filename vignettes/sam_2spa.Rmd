@@ -54,34 +54,14 @@ summary(global_sam_fit)
 
 
 ```{r}
-my_cfa <- '
-   # latent variables
-     ind60 =~ x1 + x2 + x3
-     dem60 =~ y1 + y2 + y3 + y4
-'
-cfa_fit <- cfa(model = my_cfa,
-               data  = PoliticalDemocracy)
-fs_dat <- lavPredict(cfa_fit, se = "standard")
-colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
-my2spa <- '
-   # latent variables (indicated by factor scores)
-     ind60 =~ 1 * fs_ind60
-     dem60 =~ 1 * fs_dem60
-   # constrain the errors
-     fs_ind60 ~~ ev1 * fs_ind60
-     fs_dem60 ~~ ev2 * fs_dem60
-   # latent variances
-     ind60 ~~ v1 * ind60
-     dem60 ~~ v2 * dem60
-   # regressions
-     dem60 ~ ind60
-   # reliability constraints (reliability = v / (v + ev))
-   # v = reliability / (1 - reliability) * ev
-     v1 == 0.9651282 / (1 - 0.9651282) * ev1
-     v2 == 0.9055203 / (1 - 0.9055203) * ev2
-'
-tspa_fit <- sem(model = my2spa,
-                data  = fs_dat)
+fs_dat_ind60 <- get_fs(data = PoliticalDemocracy, 
+                       model = "ind60 =~ x1 + x2 + x3")
+fs_dat_dem60 <- get_fs(data = PoliticalDemocracy, 
+                       model = "dem60 =~ y1 + y2 + y3 + y4")
+fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
+tspa_fit <- tspa(model = "dem60 ~ ind60", 
+              data = fs_dat, 
+              se = list(ind60 = 0.1234937, dem60 = 0.7174736))
 summary(tspa_fit)
 ```
 
@@ -100,19 +80,19 @@ SAM and 2S-PA yielded similar results in the single-group single-predictor examp
 model <- ' 
   # latent variable definitions
      ind60 =~ x1 + x2 + x3
-     dem60 =~ y1 + a*y2 + b*y3 + c*y4
-     dem65 =~ y5 + a*y6 + b*y7 + c*y8
+     dem60 =~ y1 + y2 + y3 + y4
+     dem65 =~ y5 + y6 + y7 + y8
 
   # regressions
     dem60 ~ ind60
     dem65 ~ ind60 + dem60
 
-  # residual correlations
-    y1 ~~ y5
-    y2 ~~ y4 + y6
-    y3 ~~ y7
-    y4 ~~ y8
-    y6 ~~ y8
+  # # residual correlations
+  #   y1 ~~ y5
+  #   y2 ~~ y4 + y6
+  #   y3 ~~ y7
+  #   y4 ~~ y8
+  #   y6 ~~ y8
 '
 ```
 
@@ -128,59 +108,26 @@ summary(global_sam_fit)
 ```
 
 ```{r}
-fs_dat <- get_fs(data = PoliticalDemocracy, 
-                 model = "ind60 =~ x1 + x2 + x3
-                          dem60 =~ y1 + y2 + y3 + y4
-                          dem65 =~ y5 + y6 + y7 + y8
-                          # residual correlations
-                          y1 ~~ y5
-                          y2 ~~ y4 + y6
-                          y3 ~~ y7
-                          y4 ~~ y8
-                          y6 ~~ y8")
-tspa_fit <- tspa(model = "dem60 ~ ind60
+fs_dat_ind60 <- get_fs(data = PoliticalDemocracy, 
+                       model = "ind60 =~ x1 + x2 + x3")
+fs_dat_dem60 <- get_fs(data = PoliticalDemocracy, 
+                       model = "dem60 =~ y1 + y2 + y3 + y4")
+fs_dat_dem65 <- get_fs(data = PoliticalDemocracy, 
+                       model = "dem65 =~ y5 + y6 + y7 + y8")
+fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
+tspa_3var_fit <- tspa(model = "dem60 ~ ind60
                           dem65 ~ ind60 + dem60", 
-              data = fs_dat, 
-              se = list(ind60 = 0.1267792, dem60 = 0.6863648, 
-                        dem65 = 0.6074362))
+                      data = fs_dat, 
+                      se = list(ind60 = 0.1234937, dem60 = 0.7174736, 
+                                dem65 = 0.6034639))
 cat(attributes(tspa_fit)$tspaModel)
 ```
-
-
-```{r}
-my2spa_3var <- '
-   # latent variables (indicated by factor scores)
-     ind60 =~ 1 * fs_ind60
-     dem60 =~ 1 * fs_dem60
-     dem65 =~ 1 * fs_dem65
-   # constrain the errors
-     fs_ind60 ~~ ev1 * fs_ind60
-     fs_dem60 ~~ ev2 * fs_dem60
-     fs_dem65 ~~ ev3 * fs_dem65
-   # latent variances
-     ind60 ~~ v1 * ind60
-     dem60 ~~ v2 * dem60
-     dem65 ~~ v3 * dem65
-   # regressions
-     dem60 ~ b1 * ind60
-     dem65 ~ b2 * ind60 + b3 * dem60
-   # reliability constraints
-     v1 == 0.9641579 / (1 - 0.9641579) * ev1
-     v2 == 0.6863648 / (1 - 0.6863648) * ev2 + b1^2 * v1
-     v3 == 0.9165594 / (1 - 0.9165594) * ev3 + b2^2 * v1 + b3^2 * v2
-'
-tspa_3var_fit <- sem(model = my2spa_3var,
-                     data  = fs_dat)
-```
-
 
 ```{r}
 # tab_compare(fit.sam, tspa_fit)
 tab_compare(local_sam_fit, tspa_3var_fit)
 tab_compare(global_sam_fit, tspa_3var_fit)
 ```
-
-2S-PA yielded negative factor variances in the single-group multiple-predictor example. Constraining the reliability instead also produced negative factor variances. 
 
 
 ## Multigroup, single predictor
@@ -209,30 +156,43 @@ global_sam_fit <- sam(model, data = HolzingerSwineford1939,
 summary(global_sam_fit)
 ```
 
+`sam()` does not follow the equality constrain on the regression coefficients and freely estimates them in each group. 
 
 ```{r}
 hs_mod <- '
 visual =~ x1 + x2 + x3
 speed =~ x7 + x8 + x9
 '
+
 # get factor scores
-fs_hs <- get_fs(HolzingerSwineford1939, hs_mod, group = "school")
+fs_dat_visual <- get_fs(data = HolzingerSwineford1939, 
+                        model = "visual =~ x1 + x2 + x3", 
+                        group = "school")
+fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
+                       model = "speed =~ x7 + x8 + x9", 
+                        group = "school")
+fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
 
 # tspa model
 tspa_fit <- tspa(model = "visual ~ speed",
                  data = fs_hs,
-                 se = data.frame(visual = c(0.4284448, 0.4128444),
-                                 speed = c(0.3271431, 0.3037251)),
-                 group = "school",
-                 group.equal = "regressions")
+                 se = data.frame(visual = c(0.4132437, 0.3729586),
+                                 speed = c(0.3424402, 0.3039834)),
+                 group = "school"
+                 # group.equal = "regressions"
+                 )
+standardizedsolution(tspa_fit)  %>% filter(op == "~")
 ```
+
+```{r}
+standardizedsolution(local_sam_fit) %>% filter(op == "~")
+```
+
 
 ```{r}
 tab_compare(local_sam_fit, tspa_fit)
 tab_compare(global_sam_fit, tspa_fit)
 ```
 
-
-SAM and 2S-PA do not seem to agree in the multigroup, single predictor example. 
 
 
