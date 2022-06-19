@@ -74,6 +74,8 @@ augment_fs <- function(est, fs, fs_se) {
 #' @param alpha A vector of length q of latent means.
 #' @param method A character string indicating the method for computing factor
 #'               scores. Currently, only "regression" is supported.
+#' @param acov Logical indicating whether the asymptotic covariance matrix
+#'             of factor scores should be returned as an attribute.
 #'
 #' @return An N' x p matrix of factor scores.
 #' @export
@@ -93,7 +95,8 @@ augment_fs <- function(est, fs, fs_se) {
 #' fs_hand - fs_lavaan  # same scores
 fscore <- function(y, lambda, theta, psi,
                    nu = colMeans(y), alpha = rep(0, nrow(psi)),
-                   method = "regression") {
+                   method = "regression",
+                   acov = FALSE) {
   covy <- lambda %*% psi %*% t(lambda) + theta
   ginvcovy <- MASS::ginv(covy)
   tlam_invcov <- crossprod(lambda, ginvcovy)
@@ -102,5 +105,10 @@ fscore <- function(y, lambda, theta, psi,
   # Bartlett score
   # t(MASS::ginv(tlam_invcov %*% lambda) %*% tlam_invcov %*% y1c + alpha)
   # Regression score
-  t(psi %*% tlam_invcov %*% y1c + as.vector(alpha))
+  fs <- t(psi %*% tlam_invcov %*% y1c + as.vector(alpha))
+  if (acov) {
+    attr(fs, "acov") <-
+      unclass(psi - psi %*% tlam_invcov %*% tcrossprod(lambda, psi))
+  }
+  fs
 }
