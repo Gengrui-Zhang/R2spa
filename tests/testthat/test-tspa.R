@@ -1,25 +1,94 @@
 ########################################## Test 2S-PA function ##########################################
+# Loading packages and functions
+library(lavaan)
+devtools::load_all()
+
+########## Single-group example ##########
 
 # Prepare test objects
 
-my_cfa <- '
-   # latent variables
-     ind60 =~ x1 + x2 + x3
-     dem60 =~ y1 + y2 + y3 + y4
+# Example 1: Single-group with two variables
+    cfa_ex1 <- '# latent variables
+                ind60 =~ x1 + x2 + x3
+                dem60 =~ y1 + y2 + y3 + y4
+                '
+    cfa_fit_ex1 <- cfa(model = my_cfa,
+                   data  = PoliticalDemocracy)
+
+    # get factor scores
+    fs_dat_ex1 <- get_fs(PoliticalDemocracy, my_cfa)
+
+    # tspa model
+    tspa_ex1 <- tspa(model = "dem60 ~ ind60", data = fs_dat_ex1,
+              se = data.frame(ind60 = 0.1273703, dem60 = 0.6761707))
+    summary(tspa_ex1)
+
+########## Testing section ############
+
+# Class of input
+    var_len <- 2
+
+    # The tspa data should be composed of three parts: variable, se, reliability
+    test_that("test the number of columns in tspa data are multiples of the variable length", {
+      expect_equal(var_len*3, ncol(fs_dat_ex1))
+    })
+
+    test_that("test if the length of se is the same as the length of variable", {
+      expect_equal(var_len, length(se))
+    })
+
+# Class of output
+
+
+
+
+
+# Example 2:
+
+# cfa model
+cfa_3var <- '
+# latent variables
+ind60 =~ x1 + x2 + x3
+dem60 =~ y1 + y2 + y3 + y4
+dem65 =~ y5 + y6 + y7 + y8
+
+# residual correlations
+y1 ~~ y5
+y2 ~~ y4 + y6
+y3 ~~ y7
+y4 ~~ y8
+y6 ~~ y8
 '
 
-cfa_fit <- cfa(model = my_cfa,
-               data  = PoliticalDemocracy)
+# get factor scores
+fs_3var_dat <- get_fs(PoliticalDemocracy, cfa_3var)
 
-fs_dat <- lavPredict(cfa_fit, se = "standard")
-colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
-data <- fs_dat
+# tspa model
+tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+     data = fs_3var_dat,
+     se = data.frame(ind60 = 0.1267792, dem60 = 0.6863648, dem65 = 0.6074362))
 
-reliability = c(ind60 = 0.9651282,
-                dem60 = 0.9055203)
 
-tspa(my_cfa, fs_dat, reliability = c(ind60 = 0.9651282,
-                                     dem60 = 0.9055203))
+
+# my_cfa <- '
+#    # latent variables
+#      ind60 =~ x1 + x2 + x3
+#      dem60 =~ y1 + y2 + y3 + y4
+# '
+#
+# cfa_fit <- cfa(model = my_cfa,
+#                data  = PoliticalDemocracy)
+#
+# fs_dat <- lavPredict(cfa_fit, se = "standard")
+# colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+# data <- fs_dat
+#
+# reliability = c(ind60 = 0.9651282,
+#                 dem60 = 0.9055203)
+#
+# tspa(my_cfa, fs_dat, reliability = c(ind60 = 0.9651282,
+#                                      dem60 = 0.9055203))
 
 ########## Testing section #############
 
