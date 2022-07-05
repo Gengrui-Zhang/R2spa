@@ -1,79 +1,80 @@
 #' Two-Stage Path Analysis
-#' @param model A string variable describing the structural path model.
-#' @param data A dataframe containing factor scores.
+#'
+#' Fit a 2S-PA model.
+#'
+#' @param model A string variable describing the structural path model,
+#'              in \code{lavaan} syntax.
+#' @param data A data frame containing factor scores.
 #' @param reliability A numeric vector representing the reliability indexes
-#'   of each latent factor.
+#'                    of each latent factor. Currently \code{tspa()} does not
+#'                    support the reliability argument. Please use \code{se}.
+#' @param se A numeric vector representing the standard errors of each latent
+#'           factor for single-group 2S-PA. A list or data frame storing
+#'           the standard errors of each group in each latent factor for
+#'           multigroup 2S-PA.
+#' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
+#'            \code{\link[lavaan]{lavOptions}} for a complete list.
+#' @return An object of class \code{lavaan}, with an attribute \code{tspaModel}
+#'         that contains the model syntax.
+#' @export
 #' @examples
 #' library(lavaan)
 #' ### single-group example
 #'
-#' # cfa model
-#' my_cfa <- '
-#' # latent variables
-#' ind60 =~ x1 + x2 + x3
-#' dem60 =~ y1 + y2 + y3 + y4
-#' '
-#' cfa_fit <- cfa(model = my_cfa,
-#'                data  = PoliticalDemocracy)
-#'
 #' # get factor scores
-#' fs_dat <- get_fs(PoliticalDemocracy, my_cfa)
+#' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "ind60 =~ x1 + x2 + x3")
+#' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "dem60 =~ y1 + y2 + y3 + y4")
+#' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 #'
 #' # tspa model
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      se = data.frame(ind60 = 0.1273703, dem60 = 0.6761707))
+#'      se = c(ind60 = 0.1234937, dem60 = 0.7174736))
 #'
 #'
 #' ### three-variable single-group example
 #'
-#' # cfa model
-#' cfa_3var <- '
-#' # latent variables
-#' ind60 =~ x1 + x2 + x3
-#' dem60 =~ y1 + y2 + y3 + y4
-#' dem65 =~ y5 + y6 + y7 + y8
-#'
-#' # residual correlations
-#' y1 ~~ y5
-#' y2 ~~ y4 + y6
-#' y3 ~~ y7
-#' y4 ~~ y8
-#' y6 ~~ y8
-#' '
-#'
 #' # get factor scores
-#' fs_3var_dat <- get_fs(PoliticalDemocracy, cfa_3var)
+#' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "ind60 =~ x1 + x2 + x3")
+#' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "dem60 =~ y1 + y2 + y3 + y4")
+#' fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "dem65 =~ y5 + y6 + y7 + y8")
+#' fs_3var_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 #'
 #' # tspa model
 #' tspa(model = "dem60 ~ ind60
 #'               dem65 ~ ind60 + dem60",
 #'      data = fs_3var_dat,
-#'      se = data.frame(ind60 = 0.1267792, dem60 = 0.6863648, dem65 = 0.6074362))
+#'      se = c(ind60 = 0.1234937, dem60 = 0.7174736, dem65 = 0.6034639))
 #'
 #'
 #' ### multigroup example
 #'
-#' hs_mod <- '
-#' visual =~ x1 + x2 + x3
-#' speed =~ x7 + x8 + x9
-#' '
-#'
 #' # get factor scores
-#' fs_hs <- get_fs(HolzingerSwineford1939, hs_mod, group = "school")
+#' fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
+#'                         model = "visual =~ x1 + x2 + x3",
+#'                         group = "school")
+#' fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
+#'                        model = "speed =~ x7 + x8 + x9",
+#'                        group = "school")
+#' fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
 #'
 #' # tspa model
 #' tspa(model = "visual ~ speed",
 #'      data = fs_hs,
-#'      se = data.frame(visual = c(0.4284448, 0.4128444),
-#'                      speed = c(0.3271431, 0.3037251)),
+#'      se = data.frame(visual = c(0.4132437, 0.3729586),
+#'                      speed = c(0.3424402, 0.3039834)),
 #'      group = "school",
 #'      group.equal = "regressions")
 #'
 #' # manually adding equality constraints on the regression coefficients
 #' tspa(model = "visual ~ c(b1, b1) * speed",
 #'      data = fs_hs,
-#'      se = list(visual = c(0.4284448, 0.4128444),
-#'                speed = c(0.3271431, 0.3037251)),
+#'      se = list(visual = c(0.4132437, 0.3729586),
+#'                speed = c(0.3424402, 0.3039834)),
 #'      group = "school")
 
 
