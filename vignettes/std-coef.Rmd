@@ -166,11 +166,11 @@ standardized_psi <- function(model_list, se = TRUE, acov_par = NULL,
                         free = free_beta_psi)
     # not sure about how to change the following
     jac <- lav_func_jacobian_complex(function(x)
-      std_beta_est(model_list, free_list = free_list, est = x),
+      std_psi_est(model_list, free_list = free_list, est = x),
       x = est)
     pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
     acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
-    out$acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
+    out$acov_std_psi <- jac %*% acov_beta_psi %*% t(jac)
   }
   out
 }
@@ -318,21 +318,18 @@ grand_standardized_beta <- function(model_list, ns, se = TRUE,
     est <- .combine_est(model_list[which(names(model_list) %in% 
                                            c("beta", "psi", "alpha"))], 
                         free = free_beta_psi_alpha)
-    # cannot solve the error for lav_func_jacobian_complex(): 
-    # Error in func(x + h * (seq.int(nvar) == p), ...) - func(x, ...) : 
-    # non-numeric argument to binary operator
     jac <- lav_func_jacobian_complex(function(x)
-      grand_std_beta_est(model_list, ns = ns, free_list = free_list, est = x), 
+      unlist(grand_std_beta_est(model_list, ns = ns, free_list = free_list, est = x)), 
       x = est)
-    pos_beta_psi <- .combine_est(free_beta_psi_alpha, 
-                                 free = free_beta_psi_alpha)
-    acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
-    out$acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
+    pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha, 
+                                       free = free_beta_psi_alpha)
+    acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
+    out$acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
   }
   out
 }
 grand_standardized_beta(lavTech(reg_fit, what = "est"), 
                         ns = lavInspect(reg_fit, what = "nobs"), 
                         se = TRUE, acov_par = vcov(reg_fit), 
-                        free_list = lavInspect(reg_fit, what = "free"))
+                        free_list = lavTech(reg_fit, what = "free"))
 ```
