@@ -11,9 +11,7 @@ library(tidyverse)
 devtools::load_all()
 ```
 
-[need to add reference link]
-
-
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
 
 ## Single group, single predictor
 
