@@ -11,9 +11,7 @@ library(tidyverse)
 devtools::load_all()
 ```
 
-[need to add reference link]
-
-
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
 
 ## Single group, single predictor
 
@@ -98,3 +96,58 @@ cat(attributes(tspa_fit)$tspaModel)
 ```
 
 note: texts inside [] should be replaced with actual variable and model name.
+
+
+## Multigroup, single predictor
+
+```{r}
+model <- ' 
+  # latent variable definitions
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+
+  # regressions
+    visual ~ speed
+'
+```
+
+To call `tspa()`, a data frame of factor scores is needed for all multigroup variables. To get this data frame, apply `get_fs()` to all multigroup variables and specify model parameter as their respective definitions. Combine factor scores for all multigroup variable using `cbind()` so that it can be fed in `tspa()` for model building.
+
+```{r}
+hs_mod <- '
+visual =~ x1 + x2 + x3
+speed =~ x7 + x8 + x9
+'
+
+# get factor scores
+fs_dat_visual <- get_fs(data = HolzingerSwineford1939, 
+                        model = "visual =~ x1 + x2 + x3", 
+                        group = "school")
+fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
+                       model = "speed =~ x7 + x8 + x9", 
+                        group = "school")
+fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+fs_hs
+```
+
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regression relation. Specify standard error as either a list or a data frame of standard error. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of the multigroup variable visual can be found at column `fs_visual_se` in the `fs_hs` data frame.
+
+Function `standardizedsolution()` enables user to view a table of standard error, z score, p-value, and lower bound of confidence interval for each multigroup regression relation.
+
+```{r}
+# tspa model
+tspa_fit <- tspa(model = "visual ~ speed",
+                 data = fs_hs,
+                 se = data.frame(visual = c(0.4132437, 0.3729586),
+                                 speed = c(0.3424402, 0.3039834)),
+                 group = "school"
+                 # group.equal = "regressions"
+                 )
+standardizedsolution(tspa_fit)  %>% filter(op == "~")
+```
+
+To view the Two-Stage Path Analysis model for multigroup, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output.
+
+```{r}
+cat(attributes(tspa_fit)$tspaModel)
+```
