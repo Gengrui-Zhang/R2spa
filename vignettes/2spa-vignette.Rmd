@@ -2,7 +2,9 @@
 title: "Two-Stage Path Analysis (2S-PA) Model Examples"
 author: "Yixiao Li"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -26,6 +28,8 @@ model <- '
 '
 ```
 
+Note: In the model, a, b, and c are coefficients where variable y1, y2, y3, and y4 are correlated with latent variable dem60.
+
 To call `tspa()`, a data frame of factor scores is needed for all latent variables. To get this data frame, apply `get_fs()` to all latent variables and specify model parameter as their respective definitions. Combine factor scores for all latent variable using `cbind()` so that it can be used in `tspa()` for model building.
 
 ```{r}
@@ -36,7 +40,7 @@ fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 ```
 
-To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions, data = the factor score data frame created by combining results from `get_fs()`, and specify standard error as either a list or a data frame of all standard errors. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame.
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions, data = The combined factor score data frame using `get_fs()`, and specify standard error as either a list or a data frame. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame.
 
 ```{r}
 tspa_fit <- tspa(model = "dem60 ~ ind60", 
@@ -44,7 +48,7 @@ tspa_fit <- tspa(model = "dem60 ~ ind60",
               se = list(ind60 = 0.1234937, dem60 = 0.7174736))
 ```
 
-To view the Two-Stage Path Analysis model, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output.
+To view the Two-Stage Path Analysis model, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output. In the output, the values of error constraints are computed by squaring standard errors from the previous section.
 
 ```{r}
 cat(attributes(tspa_fit)$tspaModel)
@@ -72,7 +76,7 @@ model <- '
 '
 ```
 
-To call `tspa()`, a data frame of factor scores is needed for all latent variables. To get this data frame, apply `get_fs()` to all latent variables and specify model parameter as their respective definitions. Combine factor scores for all latent variable using `cbind()` so that it can be used in `tspa()` for model building.
+To call `tspa()`, a data frame of factor scores is needed for all latent variables. To get this data frame, apply `get_fs()` to all latent variables and specify model parameters as their respective definitions. Combine factor scores for all latent variables using `cbind()` to call `tspa()` for model building.
 
 ```{r}
 fs_dat_ind60 <- get_fs(data = PoliticalDemocracy, 
@@ -84,7 +88,7 @@ fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 ```
 
-To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard error as either a list or a data frame of standard error. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame.
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard errors as either a list or a data frame. Values for standard errors can be found at column named `fs_[variable name]_se`. For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame. In the output model, the values of error constraints are computed by squaring standard errors.
 
 ```{r}
 tspa_3var_fit <- tspa(model = "dem60 ~ ind60
@@ -92,7 +96,7 @@ tspa_3var_fit <- tspa(model = "dem60 ~ ind60
                       data = fs_dat, 
                       se = list(ind60 = 0.1234937, dem60 = 0.7174736, 
                                 dem65 = 0.6034639))
-cat(attributes(tspa_fit)$tspaModel)
+cat(attributes(tspa_3var_fit)$tspaModel)
 ```
 
 note: texts inside [] should be replaced with actual variable and model name.
@@ -111,7 +115,7 @@ model <- '
 '
 ```
 
-To call `tspa()`, a data frame of factor scores is needed for all multigroup variables. To get this data frame, apply `get_fs()` to all multigroup variables and specify model parameter as their respective definitions. Combine factor scores for all multigroup variable using `cbind()` so that it can be fed in `tspa()` for model building.
+To call `tspa()`, a data frame of factor scores is needed for all multigroup variables. To get this data frame, apply `get_fs()` to all multigroup variables and specify model parameter as their respective definitions. Combine factor scores for all multigroup variables using `cbind()` so that it can be fed in `tspa()` for model building.
 
 ```{r}
 hs_mod <- '
@@ -127,10 +131,9 @@ fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
                        model = "speed =~ x7 + x8 + x9", 
                         group = "school")
 fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
-fs_hs
 ```
 
-To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regression relation. Specify standard error as either a list or a data frame of standard error. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of the multigroup variable visual can be found at column `fs_visual_se` in the `fs_hs` data frame.
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regression relation. Specify standard error as either a list or a data frame. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of the multigroup variable visual can be found at column `fs_visual_se` in the `fs_hs` data frame. To get the standard errors for each group faster, `unique()` can be called upon the standard error column. For example, in this case, `unique(fs_hs$fs_visual_se)` can be called to get the standard errors for multigroup variable visual.
 
 Function `standardizedsolution()` enables user to view a table of standard error, z score, p-value, and lower bound of confidence interval for each multigroup regression relation.
 
@@ -146,7 +149,7 @@ tspa_fit <- tspa(model = "visual ~ speed",
 standardizedsolution(tspa_fit)  %>% filter(op == "~")
 ```
 
-To view the Two-Stage Path Analysis model for multigroup, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output.
+To view the Two-Stage Path Analysis model for multigroup, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output. In the output, the values of error constraints are computed by squaring standard errors from the previous section.
 
 ```{r}
 cat(attributes(tspa_fit)$tspaModel)
