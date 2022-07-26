@@ -8,7 +8,7 @@ devtools::load_all()
 
 ########## Single-group example ##########
 
-# Prepare for test objects
+# Prepare test objects
 myModel <- '
    # latent variables
      ind60 =~ x1 + x2 + x3
