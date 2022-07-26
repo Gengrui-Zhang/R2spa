@@ -52,8 +52,8 @@ get_fs <- function(data, model = NULL, group = NULL, ...) {
                              psi = est$psi,
                              nu = est$nu,
                              alpha = est$alpha,
-                             acov = TRUE)
-    fscore_se <- sqrt(diag(attr(fscore, "acov")))
+                             fs_matrices = TRUE)
+    fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
     augment_fs(est, fscore, fscore_se)
   }
   if (is.null(group)) {
@@ -73,11 +73,11 @@ augment_fs <- function(est, fs, fs_se) {
     fs_se <- t(as.matrix(fs_se))
   }
   psi <- est$psi
-  fs_rho <- 1 - fs_se^2 / diag(psi)
+  # fs_rho <- 1 - fs_se^2 / diag(psi)
   colnames(fs) <- paste0("fs_", colnames(fs))
   colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
-  colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
-  cbind(as.data.frame(fs), fs_se, fs_rho)
+  # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
+  cbind(as.data.frame(fs), fs_se)
 }
 
 #' Compute factor scores
@@ -91,12 +91,15 @@ augment_fs <- function(est, fs, fs_se) {
 #' @param alpha A vector of length q of latent means.
 #' @param method A character string indicating the method for computing factor
 #'               scores. Currently, only "regression" is supported.
-#' @param fs_matrix Logical indicating whether factor score loading matrix
-#'                  (\eqn{A}; \code{fsA}) and intercept vector
-#'                  (\eqn{b}; \code{fsb}) should be returned.
-#'                  These matrices are the implied loadings and intercepts
-#'                  by the model when using the factor scores as indicators
-#'                  of the latent variables.
+#' @param fs_matrices Logical indicating whether covariances of the error
+#'                    portion of factor scores (\code{av_efs}), factor score
+#'                    loading matrix (\eqn{A}; \code{fsA}) and intercept vector
+#'                    (\eqn{b}; \code{fsb}) should be returned.
+#'                    The loading and intercept matrices are the implied
+#'                    loadings and intercepts by the model when using the
+#'                    factor scores as indicators of the latent variables.
+#'                    If \code{TRUE}, these matrices will be added as
+#'                    attributes.
 #' @param acov Logical indicating whether the asymptotic covariance matrix
 #'             of factor scores should be returned as an attribute.
 #'
@@ -108,19 +111,21 @@ augment_fs <- function(est, fs, fs_se) {
 #' fit <- cfa(" ind60 =~ x1 + x2 + x3
 #'              dem60 =~ y1 + y2 + y3 + y4 ",
 #'            data = PoliticalDemocracy)
-#' fs_lavaan <- lavPredict(fit, method = "regression")
+#' fs_lavaan <- lavPredict(fit, method = "Bartlett")
 #' # Using R2spa::compute_fscore()
 #' est <- lavInspect(fit, what = "est")
 #' fs_hand <- compute_fscore(lavInspect(fit, what = "data"),
 #'                           lambda = est$lambda,
 #'                           theta = est$theta,
-#'                           psi = est$psi)
+#'                           psi = est$psi,
+#'                           method = "Bartlett")
 #' fs_hand - fs_lavaan  # same scores
 compute_fscore <- function(y, lambda, theta, psi,
                            nu = NULL, alpha = NULL,
-                           method = "regression",
-                           fs_matrix = FALSE,
-                           acov = FALSE) {
+                           method = c("regression", "Bartlett"),
+                           acov = FALSE,
+                           fs_matrices = FALSE) {
+  method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
   if (is.null(alpha)) alpha <- rep(0, nrow(psi))
   covy <- lambda %*% psi %*% t(lambda) + theta
@@ -128,19 +133,25 @@ compute_fscore <- function(y, lambda, theta, psi,
   tlam_invcov <- crossprod(lambda, ginvcovy)
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
-  # Bartlett score
-  # t(MASS::ginv(tlam_invcov %*% lambda) %*% tlam_invcov %*% y1c + alpha)
-  # Regression score
-  a_mat <- psi %*% tlam_invcov
+  if (method == "regression") {
+    # Regression score
+    a_mat <- psi %*% tlam_invcov
+  } else if (method == "Bartlett") {
+    # Bartlett score
+    a_mat <- MASS::ginv(tlam_invcov %*% lambda) %*% tlam_invcov
+  }
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
     attr(fs, "acov") <-
       unclass(psi - psi %*% tlam_invcov %*% tcrossprod(lambda, psi))
   }
-  if (fs_matrix) {
+  if (fs_matrices) {
     fsA <- unclass(a_mat %*% lambda)
     attr(fs, "fsA") <- fsA
     attr(fs, "fsb") <- alpha - fsA %*% alpha
+    tv <- fsA %*% psi %*% t(fsA)
+    fsv <- a_mat %*% covy %*% t(a_mat)
+    attr(fs, "av_efs") <- fsv - tv
   }
   fs
 }
