@@ -142,13 +142,16 @@ colnames(fs_dat2) <- c("fs_ind60", "fs_dem60")
 ### Fixing errors
 
 ```{r}
+# Error:
+# var(fs1) * 0.03423273
+# var(fs2) * 0.1131951
 my2spasep <- '
    # latent variables (indicated by factor scores)
      ind60 =~ 1 * fs_ind60
      dem60 =~ 1 * fs_dem60
    # constrain the errors
-     fs_ind60 ~~ 0.03423273 * fs_ind60
-     fs_dem60 ~~ 0.1131951 * fs_dem60
+     fs_ind60 ~~ 0.03350762 * fs_ind60
+     fs_dem60 ~~ 0.1017384 * fs_dem60
    # latent variances
      ind60 ~~ v1 * ind60
      dem60 ~~ v2 * dem60
