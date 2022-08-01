@@ -4,7 +4,13 @@
 \alias{get_fs}
 \title{Get Factor Scores and the Corresponding Reliability}
 \usage{
-get_fs(data, model = NULL, group = NULL, ...)
+get_fs(
+  data,
+  model = NULL,
+  group = NULL,
+  method = c("regression", "Bartlett"),
+  ...
+)
 }
 \arguments{
 \item{data}{A data frame containing indicators.}
@@ -15,6 +21,12 @@ See \code{\link[lavaan]{model.syntax}} for more information.}
 
 \item{group}{Character. Name of the grouping variable for multiple group
 analysis, which is passed to \code{\link[lavaan]{cfa}}.}
+
+\item{method}{Character. Method for computing factor scores (options are
+"regression" or "Bartlett"). Currently, the default is
+"regression" to be consistent with
+\code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
+more desirable properties and may be preferred for 2S-PA.}
 
 \item{...}{additional arguments passed to \code{\link[lavaan]{cfa}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}

@@ -5,6 +5,11 @@
 #'              See \code{\link[lavaan]{model.syntax}} for more information.
 #' @param group Character. Name of the grouping variable for multiple group
 #'              analysis, which is passed to \code{\link[lavaan]{cfa}}.
+#' @param method Character. Method for computing factor scores (options are
+#'               "regression" or "Bartlett"). Currently, the default is
+#'               "regression" to be consistent with
+#'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
+#'               more desirable properties and may be preferred for 2S-PA.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (prefaced with "fs_"),
@@ -30,7 +35,9 @@
 #' get_fs(HolzingerSwineford1939[c("school", "x4", "x5", "x6")],
 #'        group = "school")
 
-get_fs <- function(data, model = NULL, group = NULL, ...) {
+get_fs <- function(data, model = NULL, group = NULL,
+                   method = c("regression", "Bartlett"),
+                   ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
     ind_names <- colnames(data)
@@ -52,6 +59,7 @@ get_fs <- function(data, model = NULL, group = NULL, ...) {
                              psi = est$psi,
                              nu = est$nu,
                              alpha = est$alpha,
+                             method = method,
                              fs_matrices = TRUE)
     fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
     augment_fs(est, fscore, fscore_se)
@@ -129,21 +137,24 @@ compute_fscore <- function(y, lambda, theta, psi,
   if (is.null(nu)) nu <- colMeans(y)
   if (is.null(alpha)) alpha <- rep(0, nrow(psi))
   covy <- lambda %*% psi %*% t(lambda) + theta
-  ginvcovy <- MASS::ginv(covy)
-  tlam_invcov <- crossprod(lambda, ginvcovy)
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
   if (method == "regression") {
     # Regression score
+    ginvcovy <- MASS::ginv(covy)
+    tlam_invcov <- crossprod(lambda, ginvcovy)
     a_mat <- psi %*% tlam_invcov
   } else if (method == "Bartlett") {
     # Bartlett score
-    a_mat <- MASS::ginv(tlam_invcov %*% lambda) %*% tlam_invcov
+    ginvth <- MASS::ginv(theta)
+    tlam_invth <- crossprod(lambda, ginvth)
+    a_mat <- solve(tlam_invth %*% lambda, tlam_invth)
   }
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
+    dir_minus <- switch(method, regression = 1, Bartlett = -1)
     attr(fs, "acov") <-
-      unclass(psi - psi %*% tlam_invcov %*% tcrossprod(lambda, psi))
+      unclass(dir_minus * (psi - a_mat %*% covy %*% t(a_mat)))
   }
   if (fs_matrices) {
     fsA <- unclass(a_mat %*% lambda)
