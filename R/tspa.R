@@ -131,7 +131,7 @@
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
     if (is.null(reliability) == FALSE){
-        stop("warning: tspa package currently does not support reliability model")
+        stop("tspa() currently does not support reliability model")
     }
     if (!is.data.frame(se)) {
         se <- as.data.frame(as.list(se))

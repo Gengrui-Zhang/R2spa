@@ -12,8 +12,8 @@
 #'               more desirable properties and may be preferred for 2S-PA.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
-#' @return A data frame containing the factor scores (prefaced with "fs_"),
-#'         the standard errors, and the corresponding reliability.
+#' @return A data frame containing the factor scores (with prefix "fs_") and
+#'         the standard errors (with suffix "_se").
 #' @export
 #'
 #' @examples
@@ -90,7 +90,7 @@ augment_fs <- function(est, fs, fs_se) {
 
 #' Compute factor scores
 #'
-#' @param y An N' x p matrix where each row is a response vector. If there
+#' @param y An N x p matrix where each row is a response vector. If there
 #'          is only one observation, it should be a matrix of one row.
 #' @param lambda A p x q matrix of factor loadings.
 #' @param theta A p x p matrix of unique variance-covariances.
@@ -111,7 +111,7 @@ augment_fs <- function(est, fs, fs_se) {
 #' @param acov Logical indicating whether the asymptotic covariance matrix
 #'             of factor scores should be returned as an attribute.
 #'
-#' @return An N' x p matrix of factor scores.
+#' @return An N x p matrix of factor scores.
 #' @export
 #'
 #' @examples

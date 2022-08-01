@@ -32,8 +32,8 @@ more desirable properties and may be preferred for 2S-PA.}
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
 \value{
-A data frame containing the factor scores (prefaced with "fs_"),
-the standard errors, and the corresponding reliability.
+A data frame containing the factor scores (with prefix "fs_") and
+the standard errors (with suffix "_se").
 }
 \description{
 Get Factor Scores and the Corresponding Reliability
