@@ -3,13 +3,20 @@ library(lavaan)
 test_that("compute_fscore() gives same scores as lavaan::lavPredict()", {
   fit <- cfa(" ind60 =~ x1 + x2 + x3 ",
              data = PoliticalDemocracy, std.lv = TRUE)
-  fs_lavaan <- lavPredict(fit, method = "regression")
+  fs_lavaan1 <- lavPredict(fit, method = "regression")
+  fs_lavaan2 <- lavPredict(fit, method = "Bartlett")
   est <- lavInspect(fit, what = "est")
-  fs_hand <- compute_fscore(lavInspect(fit, what = "data"),
-                            lambda = est$lambda,
-                            theta = est$theta,
-                            psi = est$psi)
-  expect_equal(unclass(fs_lavaan), unclass(fs_hand))
+  fs_hand1 <- compute_fscore(lavInspect(fit, what = "data"),
+                             lambda = est$lambda,
+                             theta = est$theta,
+                             psi = est$psi)
+  fs_hand2 <- compute_fscore(lavInspect(fit, what = "data"),
+                             lambda = est$lambda,
+                             theta = est$theta,
+                             psi = est$psi,
+                             method = "Bartlett")
+  expect_equal(unclass(fs_lavaan1), unclass(fs_hand1))
+  expect_equal(unclass(fs_lavaan2), unclass(fs_hand2))
 })
 
 test_that("compute_fscore() works for multiple factors", {
@@ -17,17 +24,40 @@ test_that("compute_fscore() works for multiple factors", {
     " ind60 =~ x1 + x2 + x3
       dem60 =~ y1 + y2 + y3 + y4 ",
     data = PoliticalDemocracy)
-  fs_lavaan <- lavPredict(fit, method = "regression",
-                          acov = "standard")
+  fs_lavaan1 <- lavPredict(fit, method = "regression",
+                           acov = "standard")
   est <- lavInspect(fit, what = "est")
-  fs_hand <- compute_fscore(lavInspect(fit, what = "data"),
-                            lambda = est$lambda,
-                            theta = est$theta,
-                            psi = est$psi,
-                            acov = TRUE)
-  expect_equal(fs_lavaan, fs_hand, ignore_attr = TRUE)
-  expect_equal(attr(fs_lavaan, "acov")[[1]],
-               attr(fs_hand, "acov"))
+  fs_hand1 <- compute_fscore(lavInspect(fit, what = "data"),
+                             lambda = est$lambda,
+                             theta = est$theta,
+                             psi = est$psi,
+                             acov = TRUE)
+  expect_equal(fs_lavaan1, fs_hand1, ignore_attr = TRUE)
+  expect_equal(attr(fs_lavaan1, "acov")[[1]],
+               attr(fs_hand1, "acov"))
+})
+
+test_that("ACOV = Var(e.fs) for Bartlett scores", {
+  fit <- cfa(
+    " ind60 =~ x1 + x2 + x3
+      dem60 =~ y1 + y2 + y3 + y4
+      dem65 =~ y5 + y6 + y7 + y8 ",
+    data = PoliticalDemocracy)
+  fs_lavaan2 <- lavPredict(fit, method = "Bartlett",
+                           acov = "standard")
+  est <- lavInspect(fit, what = "est")
+  fs_hand2 <- compute_fscore(lavInspect(fit, what = "data"),
+                             lambda = est$lambda,
+                             theta = est$theta,
+                             psi = est$psi,
+                             acov = TRUE,
+                             method = "Bartlett",
+                             fs_matrices = TRUE)
+  expect_equal(fs_lavaan2, fs_hand2, ignore_attr = TRUE)
+  expect_equal(attr(fs_lavaan2, "acov")[[1]],
+               attr(fs_hand2, "acov"))
+  expect_equal(attr(fs_lavaan2, "acov")[[1]],
+               attr(fs_hand2, "av_efs"))
 })
 
 test_that("Same factor scores with same priors", {
