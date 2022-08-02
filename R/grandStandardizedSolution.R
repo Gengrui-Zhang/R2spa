@@ -1,12 +1,17 @@
 #' Grand Standardized Solution
 #'
+#' Grand standardized solution of a two-stage path analysis model.
+#'
 #' @param model_list A list of string variable describing the structural path
 #'                   model, in \code{lavaan} syntax
-#' @param se A Boolean variable indicating .
-#' @param acov_par
-#' @param free_list
-#'
-#' @return
+#' @param se A Boolean variable. If TRUE, standard errors for the grand
+#'                   standardized parameters will be computed.
+#' @param acov_par An asymptotic variance-covariance matrix for a fitted
+#'                 model object.
+#' @param free_list A list of model matrices that indicate the position of
+#'                  the free parameters in the parameter vector.
+#' @return A matrix of the standardized model parameters and standard errors.
+#' @export
 #'
 #' @example
 #' library(lavaan)
