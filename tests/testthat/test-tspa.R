@@ -1,8 +1,3 @@
-###Comments-0705###
-# 1. Expected results of separate CFA models and tspa models should be identical
-# 2. Multi-group examples (joint models and separate models)
-
-
 ########################################## Test 2S-PA function ##########################################
 # Loading packages and functions
 library(lavaan)
@@ -64,7 +59,7 @@ devtools::load_all()
     # The tspa data should be composed of three parts: variable, se, reliability
     test_that("test the number of columns in tspa data are multiples of the variable length",
               {
-                expect_equal(var_len * 3, ncol(fs_dat_single))
+                expect_equal(var_len * 2, ncol(fs_dat_single))
               })
 
     test_that("test if the length of se is the same as the length of variable", {
@@ -84,15 +79,15 @@ devtools::load_all()
 
     # Parameter estimates
 
-    cfa_output_single <- as.data.frame(cfa_output_single$PE)
-    tspa_output_single <- as.data.frame(tspa_output_single$PE)
+    cfa_output_single <- as.data.frame(cfa_output_single$pe)
+    tspa_output_single <- as.data.frame(tspa_output_single$pe)
 
-    test_that("test if the regression coefficient of factors is the same for two methods",
+    test_that("test if the regression coefficients of factors are the same for two methods",
               {
                 expect_equal(cfa_output_single[cfa_output_single$op == "~",]$est, tspa_output_single[tspa_output_single$op == "~",]$est)
               })
 
-    test_that("test if the se of regression coefficient is the same for two methods",
+    test_that("test if the se of regression coefficients are the same for two methods",
               {
                 expect_equal(cfa_output_single[cfa_output_single$op == "~",]$se, tspa_output_single[tspa_output_single$op == "~",]$se)
               })
@@ -148,6 +143,7 @@ devtools::load_all()
         cfa_output_single[, "est"] - tspa_output_single[, "est"]
       )), 0.5)
     })
+    # Failed test 1
 
     test_that("test if there is any se differnece less than 0.1", {
       expect_lte(max(abs(
@@ -160,6 +156,7 @@ devtools::load_all()
         cfa_output_single[, "se"] - tspa_output_single[, "se"]
       )), 0.5)
     })
+    # Failed test 2
 
     # Fit measures
 
@@ -188,6 +185,7 @@ devtools::load_all()
         na.omit(cfa_fitmeasures_single) - na.omit(tspa_fitmeasures_single)
       )), 0.5)
     })
+    # Failed test 3
 
     test_that("test if all fit measures differences are less than 0.1", {
       expect_lte(max(abs(
@@ -259,68 +257,85 @@ devtools::load_all()
 ########## Testing section #############
 
     # Parameter estimates
-    cfa_output_3var <- as.data.frame(cfa_output_3var$PE)
-    tspa_output_3var <- as.data.frame(tspa_output_3var$PE)
+    cfa_output_3var <- as.data.frame(cfa_output_3var$pe)
+    tspa_output_3var <- as.data.frame(tspa_output_3var$pe)
 
-    test_that("test if the regression coefficient of factors is the same for two methods",
+    test_that("test if the regression coefficients of factors are the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem60" &
-                                               cfa_output_3var$rhs == "ind60" & cfa_output_3var$op == "~",]$est,
+                                               cfa_output_3var$rhs == "ind60" &
+                                               cfa_output_3var$op == "~",]$est,
                              tspa_output_3var[tspa_output_3var$lhs == "dem60" &
                                                 tspa_output_3var$rhs == "ind60" &
                                                 tspa_output_3var$op == "~",]$est)
               })
+    # Failed test 4
 
-    test_that("test if the se of regression coefficient is the same for two methods",
+    test_that("test if the se of regression coefficients are the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem60" &
-                                               cfa_output_3var$rhs == "ind60" & cfa_output_3var$op == "~",]$se,
+                                               cfa_output_3var$rhs == "ind60" &
+                                               cfa_output_3var$op == "~",]$se,
                              tspa_output_3var[tspa_output_3var$lhs == "dem60" &
-                                                tspa_output_3var$rhs == "ind60" & tspa_output_3var$op == "~",]$se)
+                                                tspa_output_3var$rhs == "ind60" &
+                                                tspa_output_3var$op == "~",]$se)
               })
+    # Failed test 5
 
-    test_that("test if the regression coefficient of factors is the same for two methods",
+    test_that("test if the regression coefficients of factors are the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
-                                               cfa_output_3var$rhs == "ind60" & cfa_output_3var$op == "~",]$est,
+                                               cfa_output_3var$rhs == "ind60" &
+                                               cfa_output_3var$op == "~",]$est,
                              tspa_output_3var[tspa_output_3var$lhs == "dem65" &
                                                 tspa_output_3var$rhs == "ind60" &
                                                 tspa_output_3var$op == "~",]$est)
               })
+    # Failed test 6
 
     test_that("test if the se of regression coefficient is the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
-                                               cfa_output_3var$rhs == "ind60" & cfa_output_3var$op == "~",]$se,
+                                               cfa_output_3var$rhs == "ind60" &
+                                               cfa_output_3var$op == "~",]$se,
                              tspa_output_3var[tspa_output_3var$lhs == "dem65" &
-                                                tspa_output_3var$rhs == "ind60" & tspa_output_3var$op == "~",]$se)
+                                                tspa_output_3var$rhs == "ind60" &
+                                                tspa_output_3var$op == "~",]$se)
               })
+    # Failed test 7
 
     test_that("test if the regression coefficient of factors is the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
-                                               cfa_output_3var$rhs == "dem60" & cfa_output_3var$op == "~",]$est,
+                                               cfa_output_3var$rhs == "dem60" &
+                                               cfa_output_3var$op == "~",]$est,
                              tspa_output_3var[tspa_output_3var$lhs == "dem65" &
                                                 tspa_output_3var$rhs == "dem60" &
                                                 tspa_output_3var$op == "~",]$est)
               })
+    # Failed test 8
 
     test_that("test if the se of regression coefficient is the same for two methods",
               {
                 expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
-                                               cfa_output_3var$rhs == "dem60" & cfa_output_3var$op == "~",]$se,
+                                               cfa_output_3var$rhs == "dem60" &
+                                               cfa_output_3var$op == "~",]$se,
                              tspa_output_3var[tspa_output_3var$lhs == "dem65" &
-                                                tspa_output_3var$rhs == "dem60" & tspa_output_3var$op == "~",]$se)
+                                                tspa_output_3var$rhs == "dem60" &
+                                                tspa_output_3var$op == "~",]$se)
               })
+    # Failed test 9
 
     # Combined testing
     test_that("test if there is any parameter difference less than 0.1", {
       expect_lte(max(abs(cfa_output_3var[1:12, "est"] - tspa_output_3var[, "est"])), 0.1)
     })
+    # Failed test 10
 
     test_that("test if all parameter differences are larger than 0.5", {
       expect_gte(max(abs(cfa_output_3var[1:12, "est"] - tspa_output_3var[, "est"])), 0.5)
     })
+    # Failed test 11
 
     test_that("test if there is any se difference less than 0.1", {
       expect_lte(max(abs(cfa_output_3var[1:12, "se"] - tspa_output_3var[, "se"])), 0.1)
@@ -329,6 +344,7 @@ devtools::load_all()
     test_that("test if all se differences are larger than 0.5", {
       expect_gte(max(abs(cfa_output_3var[1:12, "se"] - tspa_output_3var[, "se"])), 0.5)
     })
+    # Failed test 12
 
     # Variance of factors
 
@@ -339,6 +355,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "ind60" &
                                       tspa_output_3var$op == "~~",]$est)
     })
+    # Failed test 13
 
     test_that("test if the se of variance is the same for two methods", {
       expect_equal(cfa_output_3var[cfa_output_3var$lhs == "ind60" &
@@ -347,6 +364,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "ind60" &
                                       tspa_output_3var$op == "~~",]$se)
     })
+    # Failed test 14
 
     test_that("test if the variance of factor is the same for two methods", {
       expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem60" &
@@ -355,6 +373,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "dem60" &
                                       tspa_output_3var$op == "~~",]$est)
     })
+    # Failed test 15
 
     test_that("test if the se of variance is the same for two methods", {
       expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem60" &
@@ -363,6 +382,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "dem60" &
                                       tspa_output_3var$op == "~~",]$se)
     })
+    # Failed test 16
 
     test_that("test if the variance of factor is the same for two methods", {
       expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
@@ -371,6 +391,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "dem65" &
                                       tspa_output_3var$op == "~~",]$est)
     })
+    # Failed test 17
 
     test_that("test if the se of variance is the same for two methods", {
       expect_equal(cfa_output_3var[cfa_output_3var$lhs == "dem65" &
@@ -379,6 +400,7 @@ devtools::load_all()
                                       tspa_output_3var$rhs == "dem65" &
                                       tspa_output_3var$op == "~~",]$se)
     })
+    # Failed test 18
 
     # Fit measures
 
@@ -396,6 +418,7 @@ devtools::load_all()
         na.omit(cfa_fitmeasures_3var) - na.omit(tspa_fitmeasures_3var)
       )), 0.5)
     })
+    # Failed test 19
 
     test_that("test if all fit measures differences are less than 0.1", {
       expect_lte(max(abs(
@@ -454,8 +477,8 @@ devtools::load_all()
 
     # Parameter estimates
 
-    cfa_output_multi <- as.data.frame(cfa_output_multi$PE)
-    tspa_output_multi <- as.data.frame(tspa_output_multi$PE)
+    cfa_output_multi <- as.data.frame(cfa_output_multi$pe)
+    tspa_output_multi <- as.data.frame(tspa_output_multi$pe)
 
     # Combined tests
 
@@ -466,14 +489,17 @@ devtools::load_all()
     test_that("test if all parameter differences are larger than 0.5", {
       expect_gte(max(abs(cfa_output_multi[, "est"] - tspa_output_multi[, "est"])), 0.5)
     })
+    # Failed test 20
 
     test_that("test if there is any se difference less than 0.1", {
       expect_lte(max(abs(cfa_output_multi[, "se"] - tspa_output_multi[, "se"])), 0.1)
     })
+    # Failed test 21
 
     test_that("test if all se differences are larger than 0.5", {
       expect_gte(max(abs(cfa_output_multi[, "se"] - tspa_output_multi[, "se"])), 0.5)
     })
+    # Failed test 22
 
     # Variance of factors
 
@@ -485,6 +511,7 @@ devtools::load_all()
                                        tspa_output_multi$rhs == "visual" &
                                        tspa_output_multi$op == "~~",]$est)
     })
+    # Failed test 23
 
     test_that("test if the se of variance is the same for two methods", {
       expect_equal(cfa_output_multi[cfa_output_multi$lhs == "visual" &
@@ -494,6 +521,7 @@ devtools::load_all()
                                        tspa_output_multi$rhs == "visual" &
                                        tspa_output_multi$op == "~~",]$se)
     })
+    # Failed test 24
 
     test_that("test if the variance of factor is the same for two methods", {
       expect_equal(cfa_output_multi[cfa_output_multi$lhs == "speed" &
@@ -503,6 +531,7 @@ devtools::load_all()
                                        tspa_output_multi$rhs == "speed" &
                                        tspa_output_multi$op == "~~",]$est)
     })
+    # Failed test 25
 
     test_that("test if the se of variance is the same for two methods", {
       expect_equal(cfa_output_multi[cfa_output_multi$lhs == "speed" &
@@ -512,6 +541,7 @@ devtools::load_all()
                                        tspa_output_multi$rhs == "speed" &
                                        tspa_output_multi$op == "~~",]$se)
     })
+    # Failed test 26
 
     # Fit measures
     cfa_fitmeasures_multi <- as.data.frame(fitmeasures(cfa_multi))
@@ -521,6 +551,7 @@ devtools::load_all()
       expect_equal(cfa_fitmeasures_multi["chisq",], tspa_fitmeasures_multi["chisq",])
       # We can add more comparisons of fitting measures by changing the name
     })
+    # Failed test 27
 
     # Combined tests
     test_that("test if all fit measures differences are larger than 0.5", {
@@ -534,3 +565,4 @@ devtools::load_all()
         na.omit(cfa_fitmeasures_multi - tspa_fitmeasures_multi)
       )), 0.1)
     })
+    # Failed test 28
