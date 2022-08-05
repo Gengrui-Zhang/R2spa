@@ -135,11 +135,14 @@ compute_fscore <- function(y, lambda, theta, psi,
                            fs_matrices = FALSE) {
   method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
-  if (is.null(alpha)) alpha <- rep(0, nrow(psi))
+  if (is.null(alpha)) alpha <- rep(0, ncol(as.matrix(lambda)))
   covy <- lambda %*% psi %*% t(lambda) + theta
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
   if (method == "regression") {
+    if (is.null(psi)) {
+      stop("input of psi (latent covariance) is needed for regression scores")
+    }
     # Regression score
     ginvcovy <- MASS::ginv(covy)
     tlam_invcov <- crossprod(lambda, ginvcovy)
@@ -152,6 +155,9 @@ compute_fscore <- function(y, lambda, theta, psi,
   }
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
+    if (is.null(psi)) {
+      stop("input of psi (latent covariance) is needed for acov")
+    }
     dir_minus <- switch(method, regression = 1, Bartlett = -1)
     attr(fs, "acov") <-
       unclass(dir_minus * (psi - a_mat %*% covy %*% t(a_mat)))
@@ -160,9 +166,10 @@ compute_fscore <- function(y, lambda, theta, psi,
     fsA <- unclass(a_mat %*% lambda)
     attr(fs, "fsA") <- fsA
     attr(fs, "fsb") <- alpha - fsA %*% alpha
-    tv <- fsA %*% psi %*% t(fsA)
-    fsv <- a_mat %*% covy %*% t(a_mat)
-    attr(fs, "av_efs") <- fsv - tv
+    # tv <- fsA %*% psi %*% t(fsA)
+    # fsv <- a_mat %*% covy %*% t(a_mat)
+    # attr(fs, "av_efs") <- fsv - tv
+    attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
   }
   fs
 }
