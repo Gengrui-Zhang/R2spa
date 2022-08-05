@@ -1,4 +1,4 @@
-#' Get Factor Scores and the Corresponding Reliability
+#' Get Factor Scores and the Corresponding Standard Error of Measurement
 #' @param data A data frame containing indicators.
 #' @param model An optional string specifying the measurement model
 #'              in \code{lavaan} syntax.
