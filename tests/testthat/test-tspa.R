@@ -1,3 +1,8 @@
+# TODO:
+# Avoid failed tests
+# E.g., expect_lt
+# Use reasonable values for threshold values: e.g., percentage, 0.1, ratio, etc.
+
 ########################################## Test 2S-PA function ##########################################
 # Loading packages and functions
 library(lavaan)

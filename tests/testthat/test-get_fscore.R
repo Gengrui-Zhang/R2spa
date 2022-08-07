@@ -1,3 +1,8 @@
+# TODO List:
+# 1. Logical tests: e.g., lower bound of SE
+# 2. Regression score and Bartlett scores
+
+
 ####################################### Test get_fscore function ######################################
 # Loading packages and functions
 library(lavaan)
