@@ -213,14 +213,14 @@ library(lavaan)
                            group = "school")
     fs_dat_multi <- cbind(fs_dat_visual, fs_dat_speed)
 
-    # CFA model
-    cfa_model_multi <- '
+    # SEM model
+    sem_model_multi <- '
                             # latent variables (indicated by factor scores)
-                              visual=~ c(1, 1) * fs_visual
-                              speed=~ c(1, 1) * fs_speed
+                              visual =~ c(1, 1) * fs_visual
+                              speed =~ c(1, 1) * fs_speed
                             # constrain the errors
-                              fs_visual~~ c(c(0.17077035558969, 0.13909811731396)) * fs_visual
-                              fs_speed~~ c(c(0.11726529057604, 0.09240590747556)) * fs_speed
+                              fs_visual ~~ c(0.11501092038276, 0.097236701584) * fs_visual
+                              fs_speed ~~ c(0.07766672265625, 0.07510378617049) * fs_speed
                             # latent variances
                               visual ~~ c(v11, v12) * visual
                               speed ~~ c(v21, v22) * speed
@@ -229,7 +229,7 @@ library(lavaan)
                            '
 
     sem_multi <-
-      sem(model = cfa_model_multi,
+      sem(model = sem_model_multi,
           data  = fs_dat_multi,
           group = "school")
 
@@ -238,11 +238,11 @@ library(lavaan)
       model = "visual ~ speed",
       data = fs_dat_multi,
       se = data.frame(
-        visual = c(0.4132437, 0.3729586),
-        speed = c(0.3424402, 0.3039834)
+        visual = c(0.3391326, 0.3118280),
+        speed = c(0.2786875, 0.2740507)
       ),
-      group = "school",
-      group.equal = "regressions"
+      group = "school"
+      # group.equal = "regressions"
     )
 
 ########## Testing section #############
@@ -261,15 +261,13 @@ library(lavaan)
                 )
               })
 
-    # A set of .01 results in a failed test. I set it to .08 here
     test_that("test if the se of regression coefficients are similar for two methods",
               {
                 expect_lt(
                   max(abs(sem_path_multi$se - tspa_path_multi$se)),
-                  expected = .08
+                  expected = .01
                 )
               })
-
 
     # Variance of factors
 
