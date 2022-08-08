@@ -1,4 +1,4 @@
-#' Get Factor Scores and the Corresponding Reliability
+#' Get Factor Scores and the Corresponding Standard Error of Measurement
 #' @param data A data frame containing indicators.
 #' @param model An optional string specifying the measurement model
 #'              in \code{lavaan} syntax.
@@ -12,8 +12,8 @@
 #'               more desirable properties and may be preferred for 2S-PA.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
-#' @return A data frame containing the factor scores (prefaced with "fs_"),
-#'         the standard errors, and the corresponding reliability.
+#' @return A data frame containing the factor scores (with prefix "fs_") and
+#'         the standard errors (with suffix "_se").
 #' @export
 #'
 #' @examples
@@ -90,7 +90,7 @@ augment_fs <- function(est, fs, fs_se) {
 
 #' Compute factor scores
 #'
-#' @param y An N' x p matrix where each row is a response vector. If there
+#' @param y An N x p matrix where each row is a response vector. If there
 #'          is only one observation, it should be a matrix of one row.
 #' @param lambda A p x q matrix of factor loadings.
 #' @param theta A p x p matrix of unique variance-covariances.
@@ -111,7 +111,7 @@ augment_fs <- function(est, fs, fs_se) {
 #' @param acov Logical indicating whether the asymptotic covariance matrix
 #'             of factor scores should be returned as an attribute.
 #'
-#' @return An N' x p matrix of factor scores.
+#' @return An N x p matrix of factor scores.
 #' @export
 #'
 #' @examples
@@ -135,11 +135,14 @@ compute_fscore <- function(y, lambda, theta, psi,
                            fs_matrices = FALSE) {
   method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
-  if (is.null(alpha)) alpha <- rep(0, nrow(psi))
+  if (is.null(alpha)) alpha <- rep(0, ncol(as.matrix(lambda)))
   covy <- lambda %*% psi %*% t(lambda) + theta
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
   if (method == "regression") {
+    if (is.null(psi)) {
+      stop("input of psi (latent covariance) is needed for regression scores")
+    }
     # Regression score
     ginvcovy <- MASS::ginv(covy)
     tlam_invcov <- crossprod(lambda, ginvcovy)
@@ -152,6 +155,9 @@ compute_fscore <- function(y, lambda, theta, psi,
   }
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
+    if (is.null(psi)) {
+      stop("input of psi (latent covariance) is needed for acov")
+    }
     dir_minus <- switch(method, regression = 1, Bartlett = -1)
     attr(fs, "acov") <-
       unclass(dir_minus * (psi - a_mat %*% covy %*% t(a_mat)))
@@ -160,9 +166,10 @@ compute_fscore <- function(y, lambda, theta, psi,
     fsA <- unclass(a_mat %*% lambda)
     attr(fs, "fsA") <- fsA
     attr(fs, "fsb") <- alpha - fsA %*% alpha
-    tv <- fsA %*% psi %*% t(fsA)
-    fsv <- a_mat %*% covy %*% t(a_mat)
-    attr(fs, "av_efs") <- fsv - tv
+    # tv <- fsA %*% psi %*% t(fsA)
+    # fsv <- a_mat %*% covy %*% t(a_mat)
+    # attr(fs, "av_efs") <- fsv - tv
+    attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
   }
   fs
 }

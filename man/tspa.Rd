@@ -29,7 +29,7 @@ An object of class \code{lavaan}, with an attribute \code{tspaModel}
 that contains the model syntax.
 }
 \description{
-Fit a 2S-PA model.
+Fit a two-stage path analysis (2S-PA) model.
 }
 \examples{
 library(lavaan)

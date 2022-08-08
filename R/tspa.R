@@ -1,6 +1,6 @@
 #' Two-Stage Path Analysis
 #'
-#' Fit a 2S-PA model.
+#' Fit a two-stage path analysis (2S-PA) model.
 #'
 #' @param model A string variable describing the structural path model,
 #'              in \code{lavaan} syntax.
@@ -131,7 +131,7 @@
 
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
     if (is.null(reliability) == FALSE){
-        stop("warning: tspa package currently does not support reliability model")
+        stop("tspa() currently does not support reliability model")
     }
     if (!is.data.frame(se)) {
         se <- as.data.frame(as.list(se))

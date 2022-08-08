@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_fscore.R
 \name{get_fs}
 \alias{get_fs}
-\title{Get Factor Scores and the Corresponding Reliability}
+\title{Get Factor Scores and the Corresponding Standard Error of Measurement}
 \usage{
 get_fs(
   data,
@@ -32,11 +32,11 @@ more desirable properties and may be preferred for 2S-PA.}
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
 \value{
-A data frame containing the factor scores (prefaced with "fs_"),
-the standard errors, and the corresponding reliability.
+A data frame containing the factor scores (with prefix "fs_") and
+the standard errors (with suffix "_se").
 }
 \description{
-Get Factor Scores and the Corresponding Reliability
+Get Factor Scores and the Corresponding Standard Error of Measurement
 }
 \examples{
 library(lavaan)

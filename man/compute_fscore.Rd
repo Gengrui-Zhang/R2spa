@@ -17,7 +17,7 @@ compute_fscore(
 )
 }
 \arguments{
-\item{y}{An N' x p matrix where each row is a response vector. If there
+\item{y}{An N x p matrix where each row is a response vector. If there
 is only one observation, it should be a matrix of one row.}
 
 \item{lambda}{A p x q matrix of factor loadings.}
@@ -47,7 +47,7 @@ If \code{TRUE}, these matrices will be added as
 attributes.}
 }
 \value{
-An N' x p matrix of factor scores.
+An N x p matrix of factor scores.
 }
 \description{
 Compute factor scores
