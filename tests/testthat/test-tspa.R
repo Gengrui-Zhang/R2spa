@@ -255,39 +255,41 @@ library(lavaan)
 
     test_that("test if the regression coefficients of factors are similar for two methods",
               {
-                expect_lt(
-                  max(abs(sem_path_multi$est.std - tspa_path_multi$est.std)),
-                  expected = .05
+                # HL: The two models are the same; use expect_equal()
+                expect_equal(
+                  sem_path_multi$est.std,
+                  tspa_path_multi$est.std
                 )
               })
 
     test_that("test if the se of regression coefficients are similar for two methods",
               {
-                expect_lt(
-                  max(abs(sem_path_multi$se - tspa_path_multi$se)),
-                  expected = .01
+                expect_equal(
+                  sem_path_multi$se,
+                  tspa_path_multi$se
                 )
               })
 
     # Variance of factors
 
-    sem_var_multi <- subset(standardizedSolution(sem_3var),
+    # HL: Shouldn't they be `sem_multi` and `tspa_multi`?
+    sem_var_multi <- subset(standardizedSolution(sem_multi),
                              subset = op == "~~" &
                              lhs %in% c("ind60", "dem60", "dem65"))
-    tspa_var_multi <- subset(standardizedSolution(tspa_3var),
+    tspa_var_multi <- subset(standardizedSolution(tspa_multi),
                               subset = op == "~~" &
                               lhs %in% c("ind60", "dem60", "dem65"))
 
     test_that("test if the variance of factor is similar for two methods", {
-      expect_lt(
-        max(abs(sem_var_multi$est.std - tspa_var_multi$est.std)),
-        expected = .05
+      expect_equal(
+        sem_var_multi$est.std,
+        tspa_var_multi$est.std
       )
     })
 
     test_that("test if the se of variance is similar for two methods", {
-      expect_lt(
-        max(abs(sem_var_multi$se - tspa_var_multi$se)),
-        expected = .01
+      expect_equal(
+        sem_var_multi$se,
+        tspa_var_multi$se
       )
     })
