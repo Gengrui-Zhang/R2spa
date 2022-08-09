@@ -3,7 +3,7 @@
 # 2. Regression score and Bartlett scores
 
 
-####################################### Test get_fscore function ######################################
+####################################### Test get_fs() function ######################################
 # Loading packages and functions
 library(lavaan)
 
@@ -12,6 +12,7 @@ library(lavaan)
 # Prepare test objects
 # HL: The model should be a CFA model; may give a warning for non-CFA results
 #     in future versions
+# JZ: Thanks for correcting the model!
 myModel <- '
    # latent variables
      ind60 =~ x1 + x2 + x3
