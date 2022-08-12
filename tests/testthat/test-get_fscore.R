@@ -69,8 +69,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-    expect_gt(test_object_fs[[j]][1], 0) &
-      expect_lt(test_object_fs[[j]][1], 1)
+    expect_gt(min(test_object_fs[[j]]), 0) &
+      expect_lt(max(test_object_fs[[j]]), 1)
   }
 })
 
@@ -89,8 +89,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-    expect_gt(test_object_fs_bar[[j]][1], 0) &
-      expect_lt(test_object_fs_bar[[j]][1], 1)
+    expect_gt(min(test_object_fs_bar[[j]]), 0) &
+      expect_lt(max(test_object_fs_bar[[j]]), 1)
   }
 })
 
@@ -137,10 +137,8 @@ test_that("Test that standard errors for each observation are the same within gr
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  for (i in seq(length(test_object_fs_multi$fs_visual_se))) {
-    expect_gt(test_object_fs_multi$fs_visual_se[i], 0) &
-      expect_lt(test_object_fs_multi$fs_visual_se[i], 1)
-  }
+    expect_gt(min(test_object_fs_multi$fs_visual_se), 0) &
+      expect_lt(max(test_object_fs_multi$fs_visual_se), 1)
 })
 
 # Bartlett scores
@@ -158,10 +156,8 @@ test_that("Test that standard errors for each observation are the same within gr
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  for (i in seq(length(test_object_fs_multi_bar$fs_visual_se))) {
-    expect_gt(test_object_fs_multi_bar$fs_visual_se[i], 0) &
-      expect_lt(test_object_fs_multi_bar$fs_visual_se[i], 1)
-  }
+    expect_gt(min(test_object_fs_multi_bar$fs_visual_se), 0) &
+      expect_lt(max(test_object_fs_multi_bar$fs_visual_se), 1)
 })
 
 ###### Multiple factors example #####
@@ -207,10 +203,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs_multi_2)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-    for (j in seq(length(test_object_fs_multi_2[,i]))) {
-      expect_gt(test_object_fs_multi_2[,i][j], 0) &
-        expect_lt(test_object_fs_multi_2[,i][j], 1)
-    }
+      expect_gt(min(test_object_fs_multi_2[,i]), 0) &
+        expect_lt(max(test_object_fs_multi_2[,i]), 1)
   }
 })
 
@@ -234,10 +228,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs_multi_2_bar)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-    for (j in seq(length(test_object_fs_multi_2_bar[,i]))) {
-      expect_gt(test_object_fs_multi_2_bar[,i][j], 0) &
-        expect_lt(test_object_fs_multi_2_bar[,i][j], 1)
-    }
+      expect_gt(min(test_object_fs_multi_2_bar[,i]), 0) &
+        expect_lt(max(test_object_fs_multi_2_bar[,i]), 1)
   }
 })
 
