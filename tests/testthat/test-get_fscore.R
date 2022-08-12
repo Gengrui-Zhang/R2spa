@@ -69,8 +69,9 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-    expect_gt(min(test_object_fs[[j]]), 0) &
-      expect_lt(max(test_object_fs[[j]]), 1)
+    # HL: `expect_` functions do not return logical values
+    expect_gt(min(test_object_fs[[j]]), 0)
+    expect_lt(max(test_object_fs[[j]]), 1)
   }
 })
 
@@ -89,8 +90,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-    expect_gt(min(test_object_fs_bar[[j]]), 0) &
-      expect_lt(max(test_object_fs_bar[[j]]), 1)
+    expect_gt(min(test_object_fs_bar[[j]]), 0)
+    expect_lt(max(test_object_fs_bar[[j]]), 1)
   }
 })
 
@@ -137,8 +138,10 @@ test_that("Test that standard errors for each observation are the same within gr
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-    expect_gt(min(test_object_fs_multi$fs_visual_se), 0) &
-      expect_lt(max(test_object_fs_multi$fs_visual_se), 1)
+  # HL: Changed to not use & as I don't think the `expect_` functions return
+  #     logical values
+  expect_gt(min(test_object_fs_multi$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi$fs_visual_se), 1)
 })
 
 # Bartlett scores
@@ -156,8 +159,8 @@ test_that("Test that standard errors for each observation are the same within gr
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-    expect_gt(min(test_object_fs_multi_bar$fs_visual_se), 0) &
-      expect_lt(max(test_object_fs_multi_bar$fs_visual_se), 1)
+  expect_gt(min(test_object_fs_multi_bar$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi_bar$fs_visual_se), 1)
 })
 
 ###### Multiple factors example #####
@@ -203,8 +206,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs_multi_2)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(test_object_fs_multi_2[,i]), 0) &
-        expect_lt(max(test_object_fs_multi_2[,i]), 1)
+      expect_gt(min(test_object_fs_multi_2[,i]), 0)
+      expect_lt(max(test_object_fs_multi_2[,i]), 1)
   }
 })
 
@@ -228,34 +231,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs_multi_2_bar)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(test_object_fs_multi_2_bar[,i]), 0) &
-        expect_lt(max(test_object_fs_multi_2_bar[,i]), 1)
+      expect_gt(min(test_object_fs_multi_2_bar[, i]), 0)
+      expect_lt(max(test_object_fs_multi_2_bar[, i]), 1)
   }
 })
-
-########################## Test fscore function ##############################
-
-# Prepare for test objects
-  fscore_model <- " ind60 =~ x1 + x2 + x3
-                    dem60 =~ y1 + y2 + y3 + y4 "
-  fit <- cfa(fscore_model, data = PoliticalDemocracy)
-  fs_lavaan <- lavPredict(fit, method = "regression")
-  est <- lavInspect(fit, what = "est")
-  fscore_data <- lavInspect(fit, what = "data")
-  test_object_fscore <- compute_fscore(fscore_data, lambda = est$lambda,
-                                       theta = est$theta, psi = est$psi)
-
-########## Testing section ############
-
-  test_that("Test the length of output is equal", {
-    expect_equal(nrow(test_object_fscore), nrow(fs_lavaan))
-  })
-
-  test_that("Test the output is the same for fscore and lavaan funtion", {
-      expect_equal(test_object_fscore, fs_lavaan, ignore_attr = TRUE)
-  })
-
-
-
-
 

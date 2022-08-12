@@ -96,3 +96,24 @@ test_that("Same factor scores with same priors", {
                              acov = TRUE)
   expect_equal(fs1_hand[two_cases[1], ], fs2_hand[two_cases[2], ])
 })
+
+# Moved from `test-get_fscore.R`
+# Prepare for test objects
+fscore_model <- " ind60 =~ x1 + x2 + x3
+                    dem60 =~ y1 + y2 + y3 + y4 "
+fit <- cfa(fscore_model, data = PoliticalDemocracy)
+fs_lavaan <- lavPredict(fit, method = "regression")
+est <- lavInspect(fit, what = "est")
+fscore_data <- lavInspect(fit, what = "data")
+test_object_fscore <- compute_fscore(fscore_data, lambda = est$lambda,
+                                     theta = est$theta, psi = est$psi)
+
+########## Testing section ############
+
+test_that("Test the length of output is equal", {
+  expect_equal(nrow(test_object_fscore), nrow(fs_lavaan))
+})
+
+test_that("Test the output is the same for fscore and lavaan funtion", {
+  expect_equal(test_object_fscore, fs_lavaan, ignore_attr = TRUE)
+})
