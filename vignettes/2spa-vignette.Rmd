@@ -6,7 +6,7 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Two-Stage Path Analysis (2S-PA) Model Examples}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -53,8 +53,8 @@ To build a Two-Stage Path Analysis model, simply call the `tspa()` function with
 
 ```{r}
 tspa_fit <- tspa(model = "dem60 ~ ind60", 
-              data = fs_dat, 
-              se = list(ind60 = 0.1213615, dem60 = 0.6756472))
+                 data = fs_dat, 
+                 se = list(ind60 = 0.1213615, dem60 = 0.6756472))
 ```
 
 To view the Two-Stage Path Analysis model, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output. In the output, the values of error constraints are computed by squaring standard errors from the previous section.
