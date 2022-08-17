@@ -30,26 +30,7 @@
 #'
 #' # tspa model
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      se = c(ind60 = 0.1234937, dem60 = 0.7174736))
-#'
-#'
-#' ### three-variable single-group example
-#'
-#' # get factor scores
-#' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-#'                        model = "ind60 =~ x1 + x2 + x3")
-#' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
-#'                        model = "dem60 =~ y1 + y2 + y3 + y4")
-#' fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
-#'                        model = "dem65 =~ y5 + y6 + y7 + y8")
-#' fs_3var_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
-#'
-#' # tspa model
-#' tspa(model = "dem60 ~ ind60
-#'               dem65 ~ ind60 + dem60",
-#'      data = fs_3var_dat,
-#'      se = c(ind60 = 0.1234937, dem60 = 0.7174736, dem65 = 0.6034639))
-#'
+#'      se = c(ind60 = 0.1213615, dem60 = 0.6756472))
 #'
 #' ### multigroup example
 #'
@@ -62,20 +43,22 @@
 #'                        group = "school")
 #' fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
 #'
+#' \dontrun{
 #' # tspa model
 #' tspa(model = "visual ~ speed",
 #'      data = fs_hs,
-#'      se = data.frame(visual = c(0.4132437, 0.3729586),
-#'                      speed = c(0.3424402, 0.3039834)),
+#'      se = data.frame(visual = c(0.3391326, 0.311828),
+#'                      speed = c(0.2786875, 0.2740507)),
 #'      group = "school",
 #'      group.equal = "regressions")
 #'
 #' # manually adding equality constraints on the regression coefficients
 #' tspa(model = "visual ~ c(b1, b1) * speed",
 #'      data = fs_hs,
-#'      se = list(visual = c(0.4132437, 0.3729586),
-#'                speed = c(0.3424402, 0.3039834)),
+#'      se = list(visual = c(0.3391326, 0.311828),
+#'                speed = c(0.2786875, 0.2740507)),
 #'      group = "school")
+#' }
 
 
 
