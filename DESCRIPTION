@@ -12,7 +12,7 @@ Authors@R:
            family = "Li",
            role = c("aut"),
            email = "likather@usc.edu",
-           comment = c()),
+           comment = c(ORCID = "0000-0002-8039-338X")),
     person(given = "Winnie Wing-Yee",
            family = "Tse",
            role = c("aut"),
