@@ -6,7 +6,7 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Two-Stage Path Analysis (2S-PA) Model Examples}
+  %\VignetteIndexEntry{2spa_vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -21,7 +21,6 @@ Load packages
 
 ```{r load-pkg, message = FALSE}
 library(lavaan)
-library(tidyverse)
 library(R2spa)
 ```
 
@@ -152,7 +151,8 @@ tspa_fit <- tspa(model = "visual ~ speed",
                  group = "school"
                  # group.equal = "regressions"
                  )
-standardizedsolution(tspa_fit)  %>% filter(op == "~")
+stdsol <- standardizedsolution(tspa_fit)
+subset(stdsol, subset = op == "~")
 ```
 
 To view the Two-Stage Path Analysis model for multigroup, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output. In the output, the values of error constraints are computed by squaring standard errors from the previous section.
