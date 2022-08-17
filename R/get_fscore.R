@@ -14,6 +14,9 @@
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix "fs_") and
 #'         the standard errors (with suffix "_se").
+#'
+#' @importFrom lavaan cfa lavInspect sem
+#'
 #' @export
 #'
 #' @examples
