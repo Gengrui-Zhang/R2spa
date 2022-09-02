@@ -21,8 +21,8 @@ This package is still in developmental stage and can be installed on
 GitHub with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("Gengrui-Zhang/R2spa")
+# install.packages("remotes")
+remotes::install_github("Gengrui-Zhang/R2spa")
 ```
 
 ## Example
@@ -69,7 +69,15 @@ tspa_fit <- tspa(
   data = fs_dat,
   se = list(ind60 = 0.1213615, dem60 = 0.6756472)
 )
-summary(tspa_fit)
+parameterestimates(tspa_fit)
+#>        lhs op      rhs label   est    se     z pvalue ci.lower ci.upper
+#> 1    ind60 =~ fs_ind60       1.000 0.000    NA     NA    1.000    1.000
+#> 2    dem60 =~ fs_dem60       1.000 0.000    NA     NA    1.000    1.000
+#> 3 fs_ind60 ~~ fs_ind60       0.015 0.000    NA     NA    0.015    0.015
+#> 4 fs_dem60 ~~ fs_dem60       0.456 0.000    NA     NA    0.456    0.456
+#> 5    ind60 ~~    ind60    v1 0.416 0.070 5.914      0    0.278    0.553
+#> 6    dem60 ~~    dem60    v2 2.842 0.543 5.235      0    1.778    3.906
+#> 7    dem60  ~    ind60       1.329 0.332 4.000      0    0.678    1.981
 ```
 
 <!-- `devtools::build_readme()` -->
