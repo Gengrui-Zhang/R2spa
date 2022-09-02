@@ -22,7 +22,7 @@ Authors@R:
            family = "Zhang",
            role = c("aut"),
            email = "gengruiz@usc.edu",
-           comment = c())
+           comment = c(0000-0002-2062-6620))
            )
 Description: `R2spa` is a free and open source R package that performs two-stage path analysis (2S-PA).
     With 2S-PA, researchers can perform path analysis by first obtaining factor scores and then adjusting for measurement errors 
