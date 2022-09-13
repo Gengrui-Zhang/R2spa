@@ -64,8 +64,8 @@ get_fs <- function(data, model = NULL, group = NULL,
                              alpha = est$alpha,
                              method = method,
                              fs_matrices = TRUE)
-    fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
-    augment_fs(est, fscore, fscore_se)
+    # fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
+    augment_fs(est, fscore, attr(fscore, "av_efs"))
   }
   if (is.null(group)) {
     prepare_fs_dat(y, est)
@@ -79,16 +79,40 @@ get_fs <- function(data, model = NULL, group = NULL,
   }
 }
 
-augment_fs <- function(est, fs, fs_se) {
-  if (is.vector(fs_se) || nrow(fs_se) != 1) {
-    fs_se <- t(as.matrix(fs_se))
-  }
+augment_fs <- function(est, fs, fs_ev) {
+  # if (is.vector(fs_se) || nrow(fs_se) != 1) {
+  #   fs_se <- t(as.matrix(fs_se))
+  # }
   psi <- est$psi
   # fs_rho <- 1 - fs_se^2 / diag(psi)
-  colnames(fs) <- paste0("fs_", colnames(fs))
-  colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
+  # colnames(fs) <- paste0("fs_", colnames(fs))
+  # colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
   # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
-  cbind(as.data.frame(fs), fs_se)
+  fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
+  num_lvs <- ncol(fs_ev)
+  fs_evs <- rep(NA, num_lvs * (num_lvs + 1) / 2)
+  count <- 1
+  for (i in seq_len(num_lvs)) {
+    for (j in seq_len(i)) {
+      fs_evs[count] <- fs_ev[i, j]
+      names(fs_evs)[count] <- paste0("evfs_",
+                                     rownames(fs_ev)[i], "_",
+                                     colnames(fs_ev)[j])
+      count <- count + 1
+    }
+  }
+  fsA <- attr(fs, "fsA")
+  fs_lds <- lapply(seq_len(ncol(fsA)), function(i) {
+    setNames(fsA[, i],
+             paste(
+               colnames(fsA)[i],
+               paste0("fs_", names(attr(fs, "fsA")[, i])),
+               sep = "_by_"
+             ))
+  })
+  fs_lds <- unlist(fs_lds)
+  cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
+        t(as.matrix(fs_evs)))
 }
 
 #' Compute factor scores
