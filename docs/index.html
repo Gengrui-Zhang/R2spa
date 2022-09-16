@@ -36,7 +36,7 @@
     
     <a class="navbar-brand me-2" href="index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,8 +75,8 @@
 </h2>
 <p>This package is still in developmental stage and can be installed on GitHub with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Gengrui-Zhang/R2spa"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Gengrui-Zhang/R2spa"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
@@ -119,7 +119,15 @@
 <span>  data <span class="op">=</span> <span class="va">fs_dat</span>,</span>
 <span>  se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ind60 <span class="op">=</span> <span class="fl">0.1213615</span>, dem60 <span class="op">=</span> <span class="fl">0.6756472</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/parameterEstimates.html" class="external-link">parameterestimates</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span>
+<span><span class="co">#&gt;        lhs op      rhs label   est    se     z pvalue ci.lower ci.upper</span></span>
+<span><span class="co">#&gt; 1    ind60 =~ fs_ind60       1.000 0.000    NA     NA    1.000    1.000</span></span>
+<span><span class="co">#&gt; 2    dem60 =~ fs_dem60       1.000 0.000    NA     NA    1.000    1.000</span></span>
+<span><span class="co">#&gt; 3 fs_ind60 ~~ fs_ind60       0.015 0.000    NA     NA    0.015    0.015</span></span>
+<span><span class="co">#&gt; 4 fs_dem60 ~~ fs_dem60       0.456 0.000    NA     NA    0.456    0.456</span></span>
+<span><span class="co">#&gt; 5    ind60 ~~    ind60    v1 0.416 0.070 5.914      0    0.278    0.553</span></span>
+<span><span class="co">#&gt; 6    dem60 ~~    dem60    v2 2.842 0.543 5.235      0    1.778    3.906</span></span>
+<span><span class="co">#&gt; 7    dem60  ~    ind60       1.329 0.332 4.000      0    0.678    1.981</span></span></code></pre></div>
 <!-- `devtools::build_readme()` -->
 </div>
 </div>
@@ -145,8 +153,7 @@
 <li>Mark Hok Chio Lai <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0002-9196-7406" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 <li>Yixiao Li <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0002-8039-338X" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 <li>Winnie Wing-Yee Tse <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0001-5175-6754" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
-<li>Gengrui Zhang Zhang <br><small class="roles"> Author </small>  </li>
-<li><a href="authors.html">More about authors...</a></li>
+<li>Gengrui Zhang Zhang <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0002-2062-6620" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 </ul>
 </div>
 
