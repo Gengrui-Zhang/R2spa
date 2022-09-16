@@ -23,8 +23,8 @@ knitr::opts_chunk$set(
 This package is still in developmental stage and can be installed on GitHub with:
 
 ```{r eval=FALSE}
-# install.packages("devtools")
-devtools::install_github("Gengrui-Zhang/R2spa")
+# install.packages("remotes")
+remotes::install_github("Gengrui-Zhang/R2spa")
 ```
 
 ## Example
@@ -57,14 +57,14 @@ fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 head(fs_dat)
 ```
 
-```{r results='hide'}
+```{r}
 # Stage 2: Perform 2S-PA
 tspa_fit <- tspa(
   model = "dem60 ~ ind60",
   data = fs_dat,
   se = list(ind60 = 0.1213615, dem60 = 0.6756472)
 )
-summary(tspa_fit)
+parameterestimates(tspa_fit)
 ```
 
 
