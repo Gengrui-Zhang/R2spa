@@ -1,0 +1,160 @@
+---
+title: "2S-PA with Interaction"
+author: "Hok Chio (Mark) Lai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tspa-interaction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+From https://www.mdpi.com/2624-8611/3/3/24
+
+```{r}
+library(lavaan)
+library(semTools)
+library(R2spa)
+dat <- read.csv("https://osf.io/download/grwn2/")
+```
+
+```{r}
+modME <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+
+
+tip ~ tvalue + sources 
+
+'
+
+fitME <- sem(modME, data = dat, std.lv = TRUE, estimator = "mlr")
+summary(fitME, fit.measure = TRUE)
+
+
+## Compute product indicators (double mean centering)
+
+#create names
+#not required, but makes syntax easier to write
+tvalue <- paste0("t", 1:4)
+sources <- paste0("s", 1:5)
+
+intNames <- paste0(rep(tvalue, each = length(sources)), sources)
+
+dat3 <- indProd(dat, var1 = c("t1", "t2", "t3", "t4"),
+                var2 = c("s1", "s2", "s3", "s4", "s5"),
+                match = FALSE, doubleMC = TRUE,
+                namesProd = intNames)
+
+## Mean Centering interaction model
+
+modintMC <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+int =~ t1s1 + t1s2 + t1s3 + t1s4 + t1s5 +        
+       t2s1 + t2s2 + t2s3 + t2s4 + t2s5 + 
+       t3s1 + t3s2 + t3s3 + t3s4 + t3s5 + 
+       t4s1 + t4s2 + t4s3 + t4s4 + t4s5 
+
+
+tip ~ tvalue + sources + int
+
+#Residual covariances between terms from the same indicator 
+#covariances between the same indicator are constrained to equality
+t1s1 ~~ th1*t1s2 + th1*t1s3 + th1*t1s4 + th1*t1s5
+t1s2 ~~ th1*t1s3 + th1*t1s4 + th1*t1s5
+t1s3 ~~ th1*t1s4 + th1*t1s5
+t1s4 ~~ th1*t1s5
+
+t2s1 ~~ th2*t2s2 + th2*t2s3 + th2*t2s4 + th2*t2s5
+t2s2 ~~ th2*t2s3 + th2*t2s4 + th2*t2s5
+t2s3 ~~ th2*t2s4 + th2*t2s5
+t2s4 ~~ th2*t2s5
+
+t3s1 ~~ th3*t3s2 + th3*t3s3 + th3*t3s4 + th3*t3s5
+t3s2 ~~ th3*t3s3 + th3*t3s4 + th3*t3s5
+t3s3 ~~ th3*t3s4 + th3*t3s5
+t3s4 ~~ th3*t3s5
+
+t4s1 ~~ th4*t4s2 + th4*t4s3 + th4*t4s4 + th4*t4s5
+t4s2 ~~ th4*t4s3 + th4*t4s4 + th4*t4s5
+t4s3 ~~ th4*t4s4 + th4*t4s5
+t4s4 ~~ th4*t4s5
+
+t1s1 ~~ th5*t2s1 + th5*t3s1 + th5*t4s1 
+t2s1 ~~ th5*t3s1 + th5*t4s1 
+t3s1 ~~ th5*t4s1 
+
+t1s2 ~~ th6*t2s2 + th6*t3s2 + th6*t4s2 
+t2s2 ~~ th6*t3s2 + th6*t4s2 
+t3s2 ~~ th6*t4s2 
+
+t1s3 ~~ th7*t2s3 + th7*t3s3 + th7*t4s3 
+t2s3 ~~ th7*t3s3 + th7*t4s3 
+t3s3 ~~ th7*t4s3 
+
+t1s4 ~~ th8*t2s4 + th8*t3s4 + th8*t4s4 
+t2s4 ~~ th8*t3s4 + th8*t4s4 
+t3s4 ~~ th8*t4s4 
+
+t1s5 ~~ th9*t2s5 + th9*t3s5 + th9*t4s5 
+t2s5 ~~ th9*t3s5 + th9*t4s5 
+t3s5 ~~ th9*t4s5 
+'
+
+fitintMC <- sem(modintMC, data = dat3, std.lv = TRUE, meanstructure = TRUE)
+summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
+```
+
+2S-PA
+
+```{r}
+mod_cfa <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+'
+# Obtain factor scores
+fs_dat <- get_fs(dat, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
+```
+
+```{r}
+fs_dat$fs_int <- fs_dat$fs_tvalue * fs_dat$fs_sources
+fs_dat$fs_int <- fs_dat$fs_int - mean(fs_dat$fs_int)
+```
+
+From equation (7) of Hsiao et al. (2018, doi: 10.1177/0013164416679877)
+
+```{r}
+fs_dat$fs_int_se <- sqrt(1 * 0.1219141^2 + 1 * 0.2024207 + 0.1219141 * 0.2024207)
+```
+
+```{r}
+modinttspa <- '
+# latent variables (indicated by factor scores)
+tvalue =~ fs_tvalue
+sources =~ fs_sources
+tip =~ fs_tip
+int =~ fs_int
+# constrain the errors
+fs_tvalue ~~ 0.1219141 * fs_tvalue
+fs_sources ~~ 0.2024207 * fs_sources
+fs_int ~~ 0.2419617 * fs_int
+fs_tip ~~ 0.694483 * fs_tip
+# regressions
+tip ~ tvalue + sources + int
+'
+fitinttspa <- sem(modinttspa, data = fs_dat)
+summary(fitinttspa, standardized = TRUE)
+```
+
+The model seems working pretty well!
