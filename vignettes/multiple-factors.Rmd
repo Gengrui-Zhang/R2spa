@@ -1,0 +1,97 @@
+---
+title: "Issue of Multi-Factor Measurement Model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{multiple-factors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message = FALSE}
+library(lavaan)
+library(R2spa)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+# Factor score
+
+For a CFA model with multiple latent factors, even when each indicator only loads on one factor, the resulting factor scores generally are weighted composites of **ALL** indicators. Consider the regression score, which has the form
+
+$$\tilde{\boldsymbol \eta} = \mathbf{A}(\mathbf{y} - \hat{\boldsymbol \mu}) + \boldsymbol{\alpha}$$
+
+where $\mathbf{A} = \boldsymbol{\Psi}\boldsymbol{\Lambda}^\top \hat{\boldsymbol{\Sigma}}^{-1}$ is a $q$ $\times$ $p$ matrix, $\hat{\boldsymbol \mu} = \boldsymbol{\nu} + \boldsymbol{\Lambda} \boldsymbol{\alpha}$ and $\boldsymbol{\Sigma}$ are the model-implied means and covariances of the indicators $\mathbf{y}$, and $\boldsymbol{\alpha}$ are the latent means. 
+
+Therefore, assuming that the model is correctly specified such that $\mathbf{y} = \boldsymbol{\nu} + \boldsymbol{\Lambda} \boldsymbol{\eta} + \boldsymbol{\varepsilon}$,
+
+$$
+  \begin{aligned}
+  \tilde{\boldsymbol \eta} & = \mathbf{A}(\boldsymbol{\Lambda} \boldsymbol{\eta} + \boldsymbol{\varepsilon} - \boldsymbol{\Lambda} \boldsymbol{\alpha}) + \boldsymbol{\alpha} \\
+  & = (\mathbf{I} - \mathbf{A}\boldsymbol{\Lambda}) \boldsymbol{\alpha} +
+  \mathbf{A}\boldsymbol{\Lambda} \boldsymbol{\eta} + \mathbf{A}\boldsymbol{\varepsilon}.
+  \end{aligned}
+$$
+
+If we consider $\tilde{\boldsymbol \eta}$ as indicators of $\boldsymbol \eta$, we can see that $\boldsymbol{\nu}_\tilde{\boldsymbol{\eta}} = (\mathbf{I} - \mathbf{A}\boldsymbol{\Lambda}) \boldsymbol{\alpha}$ is the intercept, $\boldsymbol{\Lambda}_\tilde{\boldsymbol{\eta}} = \mathbf{A}\boldsymbol{\Lambda}$ is the $q$ $\times$ $q$ loading matrix, and $\boldsymbol{\Theta}_\tilde{\boldsymbol{\eta}} = \mathbf{A}\boldsymbol{\varepsilon}$ is the error covariance matrix.
+
+We can see that $\boldsymbol{\Lambda}_\tilde{\boldsymbol{\eta}}$ is generally not diagonal, as the following shows:
+
+```{r}
+# CFA
+my_cfa <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+'
+cfa_fit <- cfa(model = my_cfa,
+               data  = PoliticalDemocracy,
+               std.lv = TRUE)
+# A matrix
+pars <- lavInspect(cfa_fit, what = "est")
+lambda_mat <- pars$lambda
+psi_mat <- pars$psi
+sigma_mat <- cfa_fit@implied$cov[[1]]
+ginvsigma <- MASS::ginv(sigma_mat)
+alambda <- psi_mat %*% crossprod(lambda_mat, ginvsigma %*% lambda_mat)
+alambda
+```
+
+We can also use `R2spa::get_fs()`:
+
+```{r}
+get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE) |> head()
+```
+
+Therefore, we need to specify cross-loadings when using 2S-PA.
+
+```{r}
+# Compute factor scores using lavPredict
+fs_dat <- lavPredict(cfa_fit, acov = "standard")
+colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
+# alambda %*% attr(fs_dat, "acov")[[1]] %*% t(alambda)
+my2spa <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 0.95538579 * fs_ind60 + 0.05816994 * fs_dem60
+     dem60 =~ 0.01834111 * fs_ind60 + 0.86888887 * fs_dem60
+   # constrain the errors
+     fs_ind60 ~~ 0.034595518 * fs_ind60
+     fs_dem60 ~~ 0.090775708 * fs_dem60
+     fs_ind60 ~~ 0.004017388 * fs_dem60
+   # latent variances
+     ind60 ~~ ind60
+     dem60 ~~ dem60
+   # regressions
+     dem60 ~ ind60
+'
+tspa_fit <- sem(model = my2spa, data  = fs_dat)
+standardizedSolution(tspa_fit)
+```
+
+which is more consistent with the SEM results.
