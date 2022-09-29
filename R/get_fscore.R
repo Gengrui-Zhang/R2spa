@@ -85,10 +85,10 @@ augment_fs <- function(est, fs, fs_ev) {
   # }
   psi <- est$psi
   # fs_rho <- 1 - fs_se^2 / diag(psi)
-  # colnames(fs) <- paste0("fs_", colnames(fs))
-  # colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
   # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
+  colnames(fs) <- paste0("fs_", colnames(fs))
+  colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
   num_lvs <- ncol(fs_ev)
   fs_evs <- rep(NA, num_lvs * (num_lvs + 1) / 2)
   count <- 1
