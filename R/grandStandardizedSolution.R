@@ -75,7 +75,7 @@ grandStardardizedSolution <- function(model_list,
     pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
     acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
     tmp_acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
-    out$se <- tmp_acov_std_beta[which(tmp_acov_std_beta != 0)]
+    out$se <- sqrt(tmp_acov_std_beta[which(tmp_acov_std_beta != 0)])
     out$z <- out$est.std / out$se
     out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
     ci <- out$est.std + out$se * qnorm(c((1 - .95)/2, 1 - (1 - .95)/2))
