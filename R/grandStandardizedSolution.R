@@ -16,6 +16,7 @@
 #' @example
 #' library(lavaan)
 #'
+#' ## single group example
 #' myModel <- '
 #'    # latent variables
 #'      ind60 =~ x1 + x2 + x3
@@ -37,11 +38,33 @@
 #' grandStardardizedSolution(lavInspect(fit, what = "est"), se = TRUE,
 #'                           acov_par = vcov(fit),
 #'                           free_list = lavInspect(fit, what = "free"))
+#'
+#' ## multiple group example
+#' reg <- '
+#'   # latent variable definitions
+#'     visual =~ x1 + x2 + x3
+#'     speed =~ x7 + x8 + x9
+#'   # regressions
+#'     visual ~ c(b1, b1) * speed
+#' '
+#' reg_fit <- sem(reg, data = HolzingerSwineford1939,
+#'                group = "school",
+#'                group.equal = c("loadings", "intercepts"))
+#'
+#' grandStardardizedSolution(lavInspect(reg_fit, what = "est"),
+#'                           ns = lavInspect(reg_fit, what = "nobs"),
+#'                           se = TRUE, acov_par = vcov(reg_fit),
+#'                           free_list = lavTech(reg_fit, what = "free"))
 
-grandStardardizedSolution <- function(model_list, se = TRUE, acov_par = NULL,
+
+grandStardardizedSolution <- function(model_list,
+                                      se = TRUE, acov_par = NULL,
                                       free_list = NULL) {
   tmp_std_beta <- std_beta_est(model_list)
-  out <- list(std_beta = tmp_std_beta[which(tmp_std_beta != 0)])
+  partable <- subset(inspect(fit, "list"), op == "~")
+  out <- partable[, c("lhs", "op", "rhs", "exo", "group",
+                       "block", "label")]
+  out$est.std <- tmp_std_beta[which(tmp_std_beta != 0)]
   if (se) {
     free_beta_psi <- free_list[c("beta", "psi")]
     est <- .combine_est(model_list[c("beta", "psi")],
@@ -52,15 +75,15 @@ grandStardardizedSolution <- function(model_list, se = TRUE, acov_par = NULL,
     pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
     acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
     tmp_acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
-    out$acov_std_beta <- tmp_acov_std_beta[which(tmp_acov_std_beta != 0)]
-    out$z <- out$std_beta / out$acov_std_beta
+    out$se <- tmp_acov_std_beta[which(tmp_acov_std_beta != 0)]
+    out$z <- out$est.std / out$se
     out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
-    ci <- out$std_beta + out$acov_std_beta *
-      qnorm(c((1 - .95)/2, 1 - (1 - .95)/2))
+    ci <- out$est.std + out$se * qnorm(c((1 - .95)/2, 1 - (1 - .95)/2))
     out$ci.lower <- ci[1]
     out$ci.upper <- ci[2]
   }
-  as.data.frame(out)
+  class(out) <- c("lavaan.data.frame", "data.frame")
+  out
 }
 
 # Latent variances
