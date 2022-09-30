@@ -271,7 +271,8 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
 
   # latent variables
   loadings <- paste0(t(cross_loadings), " * ", fs)
-  loadings_list <- split(loadings, factor(rep(var, each = 2), levels = var))
+  loadings_list <- split(loadings, factor(rep(var, each = len),
+                                          levels = var))
   loadings_c <- lapply(loadings_list, function(x) {
     paste0(x, collapse = " + ")
   })
