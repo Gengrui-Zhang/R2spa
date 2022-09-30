@@ -1,0 +1,335 @@
+---
+title: "Standardized Coefficients"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{std-lv-coef}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(lavaan)
+library(numDeriv)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+```{r}
+myModel <- '
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+   # regressions
+     dem60 ~ ind60
+'
+fit <- sem(model = myModel,
+           data  = PoliticalDemocracy)
+summary(fit)
+standardizedSolution(fit)
+```
+
+By hand
+
+$$
+  \begin{aligned}
+    \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv B \bv \eta + \bv \zeta \\
+    (\bv I - \bv B) \bv \eta & = \bv \alpha + \bv \Gamma \bv X + \bv \zeta \\
+    (\bv I - \bv B) \Var(\bv \eta) (\bv I - \bv B)^\top & = \Var(\bv \Gamma \bv X) + \bv \Psi \\
+    \Var(\bv \eta) & = (\bv I - \bv B)^{-1} [\Var(\bv \Gamma \bv X) + \bv \Psi] {(\bv I - \bv B)^\top}^{-1}
+  \end{aligned}
+$$
+
+```{r}
+# Latent variances
+lavInspect(fit, what = "cov.lv")  # lavaan
+veta <- function(beta, psi, gamma = NULL, cov_x = NULL) {
+  inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
+  if (!is.null(gamma) && !is.null(cov_x)) {
+    psi_plus_vgammax <- psi + gamma %*% cov_x %*% t(gamma)
+  } else {
+    psi_plus_vgammax <- psi
+  }
+  inv_Imb %*% psi_plus_vgammax %*% t(inv_Imb)
+}
+# Test:
+veta(fit@Model@GLIST$beta, fit@Model@GLIST$psi)
+# Use vector input
+# .fill_matrix <- function(x, free) {
+#   out <- free
+#   out[out != 0] <- x
+#   out
+# }
+.fill_matrix_list <- function(mod, free, est) {
+  start_idx <- 0
+  for (m in seq_along(mod)) {
+    len_m <- sum(free[[m]] != 0)
+    if (len_m == 0) next
+    m_idx <- start_idx + seq_len(len_m)
+    mod[[m]][free[[m]] != 0] <- est[m_idx]
+    start_idx <- tail(m_idx, n = 1)
+  }
+  mod
+}
+
+# Standardize (ignoring gamma for now)
+std_beta_est <- function(model_list, free_list = NULL, est = NULL) {
+  # The `est` argument is used to evaluate how changes in parameters
+  # affect the standardized estimates, and is used to obtain the 
+  # derivatives for the delta method.
+  if (!is.null(est) && !is.null(free_list)) {
+    model_list <- .fill_matrix_list(model_list[c("beta", "psi")],
+                                    free = free_list[c("beta", "psi")],
+                                    est = est)
+  }
+  beta <- model_list$beta
+  psi <- model_list$psi
+  v_eta <- veta(beta, psi = psi)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  diag(inv_s_eta) %*% beta %*% diag(s_eta)
+}
+# Test:
+std_beta_est(lavInspect(fit, what = "est"),
+             free_list = lavInspect(fit, what = "free"),
+             est = c(1.5, 0.449, 3.453))
+
+# Standard errors
+# Function for combining free estimates into a vector
+.combine_est <- function(mod, free) {
+  out <- vector("list", length(free))
+  for (m in seq_along(free)) {
+    out[[m]] <- mod[[m]][free[[m]] != 0]
+  }
+  unlist(out)
+}
+standardized_beta <- function(model_list, se = TRUE, acov_par = NULL,
+                              free_list = NULL) {
+  out <- list(std_beta = std_beta_est(model_list))
+  if (se) {
+    free_beta_psi <- free_list[c("beta", "psi")]
+    est <- .combine_est(model_list[c("beta", "psi")],
+                        free = free_beta_psi)
+    jac <- lav_func_jacobian_complex(function(x)
+      std_beta_est(model_list, free_list = free_list, est = x),
+      x = est)
+    pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
+    acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
+    out$acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
+  }
+  out
+}
+standardized_beta(lavInspect(fit, what = "est"), se = TRUE,
+                  acov_par = vcov(fit), 
+                  free_list = lavInspect(fit, what = "free"))
+```
+
+```{r}
+# Standardize (ignoring gamma for now)
+std_psi_est <- function(model_list, free_list = NULL, est = NULL) {
+  # The `est` argument is used to evaluate how changes in parameters
+  # affect the standardized estimates, and is used to obtain the 
+  # derivatives for the delta method.
+  if (!is.null(est) && !is.null(free_list)) {
+    model_list <- .fill_matrix_list(model_list[c("beta", "psi")],
+                                    free = free_list[c("beta", "psi")],
+                                    est = est)
+  }
+  beta <- model_list$beta
+  psi <- model_list$psi
+  v_eta <- veta(beta, psi = psi)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  diag(inv_s_eta) %*% psi %*% diag(s_eta)
+}
+# Test:
+std_psi_est(lavInspect(fit, what = "est"),
+            free_list = lavInspect(fit, what = "free"),
+            est = c(1.5, 0.449, 3.453))
+# Standard errors
+standardized_psi <- function(model_list, se = TRUE, acov_par = NULL,
+                             free_list = NULL) {
+  out <- list(std_psi = std_psi_est(model_list))
+  if (se) {
+    free_beta_psi <- free_list[c("beta", "psi")]
+    est <- .combine_est(model_list[c("beta", "psi")],
+                        free = free_beta_psi)
+    # not sure about how to change the following
+    jac <- lav_func_jacobian_complex(function(x)
+      std_psi_est(model_list, free_list = free_list, est = x),
+      x = est)
+    pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
+    acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
+    out$acov_std_psi <- jac %*% acov_beta_psi %*% t(jac)
+  }
+  out
+}
+standardized_psi(lavInspect(fit, what = "est"), se = TRUE,
+                  acov_par = vcov(fit), 
+                  free_list = lavInspect(fit, what = "free"))
+```
+
+
+## Multiple Groups
+
+```{r}
+reg <- ' 
+  # latent variable definitions
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+
+  # regressions
+    visual ~ c(b1, b1) * speed
+'
+reg_fit <- sem(reg, data = HolzingerSwineford1939,
+               group = "school",
+               group.equal = c("loadings", "intercepts"))
+```
+
+### Separate standardization by group
+
+```{r}
+standardizedSolution(reg_fit, type = "std.lv") |>
+  subset(subset = label == "b1")
+# Compare to own function
+# Group 1:
+standardized_beta(
+  lavInspect(reg_fit, what = "est")[[1]],
+  acov_par = vcov(reg_fit),
+  free_list = lavInspect(reg_fit, what = "free")[[1]]
+)
+# Group 2:
+standardized_beta(
+  lavInspect(reg_fit, what = "est")[[2]],
+  acov_par = vcov(reg_fit),
+  free_list = lavInspect(reg_fit, what = "free")[[2]]
+)
+```
+
+### Grand standardization
+
+For each group we have the group-specific covariance matrix $\Var(\bv \eta_g)$. The group-specific latent means are
+
+$$\E(\bv \eta_g) = (\bv I - \bv B)^{-1}[\bv \alpha + \Gamma \E(\bv X)]$$
+
+The grand mean is $\E(\bv \eta) = \sum_{g = 1}^G n_g \E(\bv \eta_g) / N$
+
+The grand covariance matrix is:
+
+$$\Var(\bv \eta) = \frac{1}{N} \sum_{g = 1}^G n_g \left\{\Var(\bv \eta_g) + [\E(\bv \eta_g) - \E(\bv \eta)][\E(\bv \eta_g) - \E(\bv \eta)]^\top \right\}$$
+
+So we need to involve the mean as well
+
+```{r}
+# Latent means
+lavInspect(reg_fit, what = "mean.lv")  # lavaan
+eeta <- function(beta, alpha, gamma = NULL, mean_x = NULL) {
+  inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
+  if (!is.null(gamma) && !is.null(mean_x)) {
+    alpha_plus_gammax <- alpha + gamma %*% mean_x
+  } else {
+    alpha_plus_gammax <- alpha
+  }
+  inv_Imb %*% alpha_plus_gammax
+}
+# Test:
+reg_pos <- lavTech(reg_fit)
+reg_est <- lavTech(reg_fit, what = "est")
+eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
+     alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
+eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
+     alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
+# Latent variances
+lavInspect(reg_fit, what = "cov.lv")  # lavaan
+veta_grand <- function(ns, beta_list, psi_list, alpha_list,
+                       gamma_list = vector("list", length(beta_list)),
+                       cov_x_list = vector("list", length(beta_list)),
+                       mean_x_list = vector("list", length(beta_list))) {
+  # Within-group variance-covariances
+  vetas <- mapply(veta, beta = beta_list, psi = psi_list,
+                  gamma = gamma_list, cov_x = cov_x_list,
+                  SIMPLIFY = FALSE)
+  # Group means
+  eetas <- mapply(eeta, beta = beta_list, alpha = alpha_list,
+                  gamma = gamma_list, mean_x = mean_x_list,
+                  SIMPLIFY = FALSE)
+  # Grand mean
+  eeta_grand <- do.call(cbind, eetas) %*% ns / sum(ns)
+  Reduce(
+    `+`,
+    mapply(function(v, m, n) n * (v + tcrossprod(m - eeta_grand)),
+         v = vetas, m = eetas, n = ns, SIMPLIFY = FALSE)
+  ) / sum(ns)
+}
+# Test:
+veta_grand(lavInspect(reg_fit, what = "nobs"),
+           beta_list = reg_est[which(names(reg_est) == "beta")],
+           psi_list = reg_est[which(names(reg_est) == "psi")],
+           alpha_list = reg_est[which(names(reg_est) == "alpha")])
+# # Use vector input
+# .fill_matrix <- function(x, free) {
+#   out <- free
+#   out[out != 0] <- x
+#   out
+# }
+# 
+# Standardize (ignore gamma for now)
+grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
+  if (!is.null(est) && !is.null(free_list)) {
+    mat_idx <- which(names(model_list) %in% c("beta", "psi", "alpha"))
+    model_list <- .fill_matrix_list(model_list[mat_idx],
+                                    free = free_list[mat_idx],
+                                    est = est)
+  }
+  beta_list <- model_list[which(names(model_list) == "beta")]
+  psi_list <- model_list[which(names(model_list) == "psi")]
+  alpha_list <- model_list[which(names(model_list) == "alpha")]
+  v_eta <- veta_grand(ns,
+                      beta_list,
+                      psi_list = psi_list,
+                      alpha_list = alpha_list)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  lapply(beta_list, function(x) {
+    diag(inv_s_eta) %*% x %*% diag(s_eta)
+  })
+}
+# Test:
+grand_std_beta_est(reg_est, ns = lavInspect(reg_fit, what = "nobs"),
+                   free_list = reg_pos,
+                   est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
+# With standard errors
+grand_standardized_beta <- function(model_list, ns, se = TRUE, 
+                                    acov_par = NULL, free_list = NULL) {
+  out <- list(std_beta = grand_std_beta_est(model_list, ns))
+  if (se) {
+    free_beta_psi_alpha <- free_list[which(names(model_list) %in% 
+                                             c("beta", "psi", "alpha"))]
+    est <- .combine_est(model_list[which(names(model_list) %in% 
+                                           c("beta", "psi", "alpha"))], 
+                        free = free_beta_psi_alpha)
+    jac <- lav_func_jacobian_complex(function(x)
+      unlist(grand_std_beta_est(model_list, ns = ns, free_list = free_list, est = x)), 
+      x = est)
+    pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha, 
+                                       free = free_beta_psi_alpha)
+    acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
+    out$acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
+  }
+  out
+}
+grand_standardized_beta(lavTech(reg_fit, what = "est"), 
+                        ns = lavInspect(reg_fit, what = "nobs"), 
+                        se = TRUE, acov_par = vcov(reg_fit), 
+                        free_list = lavTech(reg_fit, what = "free"))
+```
