@@ -40,6 +40,14 @@
 #'                           free_list = lavInspect(fit, what = "free"))
 #'
 #' ## multiple group example
+#'
+#' reg_pos <- lavTech(reg_fit)
+#' reg_est <- lavTech(reg_fit, what = "est")
+#' eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
+#'      alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
+#'      eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
+#'      alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
+#'
 #' reg <- '
 #'   # latent variable definitions
 #'     visual =~ x1 + x2 + x3
@@ -51,11 +59,24 @@
 #'                group = "school",
 #'                group.equal = c("loadings", "intercepts"))
 #'
+#' veta_grand(lavInspect(reg_fit, what = "nobs"),
+#' beta_list = reg_est[which(names(reg_est) == "beta")],
+#' psi_list = reg_est[which(names(reg_est) == "psi")],
+#' alpha_list = reg_est[which(names(reg_est) == "alpha")])
+#'
+#' grand_std_beta_est(reg_est, ns = lavInspect(reg_fit, what = "nobs"),
+#'                    free_list = reg_pos,
+#'                    est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
+#'
 #' grandStardardizedSolution(lavInspect(reg_fit, what = "est"),
 #'                           ns = lavInspect(reg_fit, what = "nobs"),
 #'                           se = TRUE, acov_par = vcov(reg_fit),
 #'                           free_list = lavTech(reg_fit, what = "free"))
 #'
+#' grand_standardized_beta(lavInspect(reg_fit, what = "est"),
+#'                         ns = lavInspect(reg_fit, what = "nobs"),
+#'                         se = TRUE, acov_par = vcov(reg_fit),
+#'                         free_list = lavTech(reg_fit, what = "free"))
 
 
 grandStardardizedSolution <- function(model_list,
