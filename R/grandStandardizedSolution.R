@@ -55,6 +55,7 @@
 #'                           ns = lavInspect(reg_fit, what = "nobs"),
 #'                           se = TRUE, acov_par = vcov(reg_fit),
 #'                           free_list = lavTech(reg_fit, what = "free"))
+#'
 
 
 grandStardardizedSolution <- function(model_list,
@@ -133,4 +134,76 @@ std_beta_est <- function(model_list, free_list = NULL, est = NULL) {
     out[[m]] <- mod[[m]][free[[m]] != 0]
   }
   unlist(out)
+}
+
+eeta <- function(beta, alpha, gamma = NULL, mean_x = NULL) {
+  inv_Imb <- solve(diag(nrow = nrow(beta)) - beta)
+  if (!is.null(gamma) && !is.null(mean_x)) {
+    alpha_plus_gammax <- alpha + gamma %*% mean_x
+  } else {
+    alpha_plus_gammax <- alpha
+  }
+  inv_Imb %*% alpha_plus_gammax
+}
+
+veta_grand <- function(ns, beta_list, psi_list, alpha_list,
+                       gamma_list = vector("list", length(beta_list)),
+                       cov_x_list = vector("list", length(beta_list)),
+                       mean_x_list = vector("list", length(beta_list))) {
+  # Within-group variance-covariances
+  vetas <- mapply(veta, beta = beta_list, psi = psi_list,
+                  gamma = gamma_list, cov_x = cov_x_list,
+                  SIMPLIFY = FALSE)
+  # Group means
+  eetas <- mapply(eeta, beta = beta_list, alpha = alpha_list,
+                  gamma = gamma_list, mean_x = mean_x_list,
+                  SIMPLIFY = FALSE)
+  # Grand mean
+  eeta_grand <- do.call(cbind, eetas) %*% ns / sum(ns)
+  Reduce(
+    `+`,
+    mapply(function(v, m, n) n * (v + tcrossprod(m - eeta_grand)),
+           v = vetas, m = eetas, n = ns, SIMPLIFY = FALSE)
+  ) / sum(ns)
+}
+
+grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
+  if (!is.null(est) && !is.null(free_list)) {
+    mat_idx <- which(names(model_list) %in% c("beta", "psi", "alpha"))
+    model_list <- .fill_matrix_list(model_list[mat_idx],
+                                    free = free_list[mat_idx],
+                                    est = est)
+  }
+  beta_list <- model_list[which(names(model_list) == "beta")]
+  psi_list <- model_list[which(names(model_list) == "psi")]
+  alpha_list <- model_list[which(names(model_list) == "alpha")]
+  v_eta <- veta_grand(ns,
+                      beta_list,
+                      psi_list = psi_list,
+                      alpha_list = alpha_list)
+  s_eta <- sqrt(diag(v_eta))
+  inv_s_eta <- 1 / s_eta
+  lapply(beta_list, function(x) {
+    diag(inv_s_eta) %*% x %*% diag(s_eta)
+  })
+}
+
+grand_standardized_beta <- function(model_list, ns, se = TRUE,
+                                    acov_par = NULL, free_list = NULL) {
+  out <- list(std_beta = grand_std_beta_est(model_list, ns))
+  if (se) {
+    free_beta_psi_alpha <- free_list[which(names(model_list) %in%
+                                             c("beta", "psi", "alpha"))]
+    est <- .combine_est(model_list[which(names(model_list) %in%
+                                           c("beta", "psi", "alpha"))],
+                        free = free_beta_psi_alpha)
+    jac <- lav_func_jacobian_complex(function(x)
+      unlist(grand_std_beta_est(model_list, ns = ns, free_list = free_list, est = x)),
+      x = est)
+    pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
+                                       free = free_beta_psi_alpha)
+    acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
+    out$acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
+  }
+  out
 }
