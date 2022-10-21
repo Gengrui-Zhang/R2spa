@@ -84,7 +84,7 @@ augment_fs <- function(est, fs, fs_ev) {
   # if (is.vector(fs_se) || nrow(fs_se) != 1) {
   #   fs_se <- t(as.matrix(fs_se))
   # }
-  psi <- est$psi
+  # psi <- est$psi
   # fs_rho <- 1 - fs_se^2 / diag(psi)
   # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
@@ -116,6 +116,7 @@ augment_fs <- function(est, fs, fs_ev) {
                   t(as.matrix(fs_evs)))
   attr(fs_dat, "av_efs") <- fs_ev
   attr(fs_dat, "fsA") <- fsA
+  fs_dat
 }
 
 #' Compute factor scores
