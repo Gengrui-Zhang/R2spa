@@ -33,15 +33,29 @@
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
 #'      se = c(ind60 = 0.1213615, dem60 = 0.6756472))
 #'
-#' # multiple-factor
-#' my_cfa <- '
+#' # two-factor model
+#' cfa_2fac <- '
 #'    # latent variables
 #'      ind60 =~ x1 + x2 + x3
 #'      dem60 =~ y1 + y2 + y3 + y4
 #' '
-#' fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE)
+#' fs_dat <- get_fs(PoliticalDemocracy, model = cfa_2fac, std.lv = TRUE)
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
 #'      vc = attr(fs_dat, "av_efs"), cross_loadings = attr(fs_dat, "fsA"))
+#'
+#' # three-factor model
+#' cfa_3fac <-  '
+#'   # latent variables
+#'   ind60 =~ x1 + x2 + x3
+#'   dem60 =~ y1 + y2 + y3 + y4
+#'   dem65 =~ y5 + y6 + y7 + y8
+#'
+#' fs_dat <- get_fs(PoliticalDemocracy, mode = cfa_3fac, std.lv = TRUE)
+#' tspa(model = "dem60 ~ ind60
+#'               dem65 ~ ind60 + dem60",
+#'      data = fs_dat,
+#'      vc = attr(fs_dat, "av_efs"),
+#'      cross_loadings = attr(fs_dat, "fsA"))
 #'
 #' ### multigroup example
 #'
