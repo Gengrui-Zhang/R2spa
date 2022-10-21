@@ -66,6 +66,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                              fs_matrices = TRUE)
     # fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
     augment_fs(est, fscore, attr(fscore, "av_efs"))
+    # attr(fs_dat, "av_efs") <- attr(fscore, "av_efs")
   }
   if (is.null(group)) {
     prepare_fs_dat(y, est)
@@ -111,8 +112,10 @@ augment_fs <- function(est, fs, fs_ev) {
              ))
   })
   fs_lds <- unlist(fs_lds)
-  cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
-        t(as.matrix(fs_evs)))
+  fs_dat <- cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
+                  t(as.matrix(fs_evs)))
+  attr(fs_dat, "av_efs") <- fs_ev
+  attr(fs_dat, "fsA") <- fsA
 }
 
 #' Compute factor scores
@@ -198,5 +201,6 @@ compute_fscore <- function(y, lambda, theta, psi,
     # attr(fs, "av_efs") <- fsv - tv
     attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
   }
-  fs
+  attr(fs, "vc") <-
+    fs
 }

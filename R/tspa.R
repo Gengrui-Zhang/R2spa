@@ -40,16 +40,8 @@
 #'      dem60 =~ y1 + y2 + y3 + y4
 #' '
 #' fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE)
-#' cross_loadings <- matrix(c(0.95538579, 0.05816994,
-#'                            0.01834111, 0.86888887),
-#'                          byrow = TRUE, nrow = 2)
-#' colnames(cross_loadings) <- rownames(cross_loadings) <- c("ind60", "dem60")
-#' vc <- matrix(c(0.034595518, 0.004017388,
-#'                0.004017388, 0.090775708),
-#'              byrow = TRUE, nrow = 2)
-#' colnames(vc) <- rownames(vc) <- c("ind60", "dem60")
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      vc = vc, cross_loadings = cross_loadings)
+#'      vc = attr(fs_dat, "av_efs"), cross_loadings = attr(fs_dat, "fsA"))
 #'
 #' ### multigroup example
 #'
@@ -140,12 +132,11 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
     se <- as.data.frame(as.list(se))
   }
 
-  if(nrow(se) == 1){
+  if (nrow(se) == 1){ # single-group (SE)
     tspaModel <- tspaSingleGroup(model, data, se)
-  }
-  else if(nrow(se) > 1){
+  } else if(nrow(se) > 1){ # multiple group (SE)
     tspaModel <- tspaMultipleGroupSe(model, data, se)
-  } else if (!is.null(vc)) {
+  } else if (!is.null(vc)) { # single group (covariance)
     tspaModel <- tspaSingleGroupMF(model, data, vc, cross_loadings)
   }
 
