@@ -1,3 +1,5 @@
+# Interaction-branch
+
 #' Two-Stage Path Analysis
 #'
 #' Fit a two-stage path analysis (2S-PA) model.
