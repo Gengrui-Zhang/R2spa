@@ -49,7 +49,7 @@
 #'   ind60 =~ x1 + x2 + x3
 #'   dem60 =~ y1 + y2 + y3 + y4
 #'   dem65 =~ y5 + y6 + y7 + y8
-#'
+#' '
 #' fs_dat <- get_fs(PoliticalDemocracy, mode = cfa_3fac, std.lv = TRUE)
 #' tspa(model = "dem60 ~ ind60
 #'               dem65 ~ ind60 + dem60",
@@ -275,7 +275,7 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   colnames(vc) <- rownames(vc) <- fs
 
   # latent variables
-  loadings <- paste0(t(cross_loadings), " * ", fs)
+  loadings <- paste0(cross_loadings, " * ", fs)
   loadings_list <- split(loadings, factor(rep(var, each = len),
                                           levels = var))
   loadings_c <- lapply(loadings_list, function(x) {

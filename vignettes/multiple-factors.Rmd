@@ -95,3 +95,64 @@ standardizedSolution(tspa_fit)
 ```
 
 which is more consistent with the SEM results.
+
+## Three-factor model example
+
+```{r}
+# CFA
+cfa_3fac <-  '
+  # latent variables
+  ind60 =~ x1 + x2 + x3
+  dem60 =~ y1 + y2 + y3 + y4
+  dem65 =~ y5 + y6 + y7 + y8
+'
+cfa_3fac_fit <- cfa(model = cfa_3fac,
+                    data  = PoliticalDemocracy,
+                    std.lv = TRUE)
+# A matrix
+pars <- lavInspect(cfa_3fac_fit, what = "est")
+lambda_mat <- pars$lambda
+psi_mat <- pars$psi
+sigma_mat <- cfa_3fac_fit@implied$cov[[1]]
+ginvsigma <- MASS::ginv(sigma_mat)
+alambda <- psi_mat %*% crossprod(lambda_mat, ginvsigma %*% lambda_mat)
+alambda
+```
+
+We can also use `R2spa::get_fs()`:
+
+```{r}
+get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE) |> head()
+```
+
+Therefore, we need to specify cross-loadings when using 2S-PA.
+
+```{r}
+# Compute factor scores using lavPredict
+fs_3fac_dat <- lavPredict(cfa_3fac_fit, acov = "standard")
+colnames(fs_3fac_dat) <- c("fs_ind60", "fs_dem60", "fs_dem65")
+# alambda %*% attr(fs_dat, "acov")[[1]] %*% t(alambda)
+mod_2spa_3fac <- '
+   # latent variables (indicated by factor scores)
+     ind60 =~ 0.95064774 * fs_ind60 + (-0.02069724) * fs_dem60 + 
+              0.09868528 * fs_dem65
+     dem60 =~ (-0.005967124) * fs_ind60 + 0.533020047 * fs_dem60 +
+              0.401095944 * fs_dem65
+     dem65 =~ 0.02951139 * fs_ind60 + 0.41603787 * fs_dem60 +
+              0.49133377 * fs_dem65
+   # constrain the errors
+     fs_ind60 ~~ 0.0340104952 * fs_ind60 + 0.0003881641 * fs_dem60 + 
+                 0.005026024 * fs_dem65
+     fs_dem60 ~~ 0.0586870314 * fs_dem60 + 0.0533752458 * fs_dem65
+     fs_dem65 ~~ 0.051573299 * fs_dem65
+   # latent variances
+     ind60 ~~ ind60
+     dem60 ~~ dem60
+     dem65 ~~ dem65
+   # regressions
+     dem60 ~ ind60
+     dem65 ~ ind60 + dem60
+'
+tspa_fit_3fac <- sem(model = mod_2spa_3fac, data = fs_3fac_dat)
+standardizedSolution(tspa_fit_3fac)
+```
