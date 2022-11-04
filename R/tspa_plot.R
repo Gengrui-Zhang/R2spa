@@ -1,8 +1,5 @@
 #' Diagnostic plots of fitted 2S-PA model
 #'
-#' Fit a two-stage path analysis (2S-PA) model.
-#'
-#'
 #' @param tppa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
 #'

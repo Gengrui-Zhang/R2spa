@@ -121,7 +121,12 @@ cat(attributes(tspa_3var_fit)$tspaModel)
 Diagnotisc plot:
 
 ```{r}
-tspa_plot(tspa_3var_fit)
+par(mar = c(2,2,3,2))
+tspa_plot(tspa_3var_fit,
+          ps = 10,
+          col = "darkgray",
+          cex.lab = 1.2,
+          cex.axis = 1)
 ```
 
 ## Multigroup, single predictor
@@ -181,5 +186,10 @@ cat(attributes(tspa_fit)$tspaModel)
 Diagnotisc plot:
 
 ```{r}
-tspa_plot(tspa_fit)
+par(mar = c(2,2,3,2))
+tspa_plot(tspa_fit,
+          ps = 10,
+          col = "darkgray",
+          cex.lab = 1.2,
+          cex.axis = 1)
 ```
