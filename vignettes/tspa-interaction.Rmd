@@ -198,8 +198,8 @@ fs_dat <- get_fs(dat, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
 
 fit <- tspa(model = "tip ~ tvalue + sources + tvalue:sources",
              data = fs_dat,
-             se = list(tvalue = 0.1219141, sources =  0.2024207,
-                       tip = 0.694483))
+             se = list(tvalue = 0.349162, sources =  0.4499119,
+                       tip = 0.8333564))
 
 summary(fit, standardized = TRUE)
 cat(attributes(fit)$tspaModel)

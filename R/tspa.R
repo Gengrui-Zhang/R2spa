@@ -178,10 +178,10 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
       data <- get_fsint_data(model, data)
       gsub("fs_|_se", "", colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
                                            grepl("se", colnames(data),
-                                                 fixed = TRUE) == TRUE])
+                                                 fixed = TRUE) == TRUE]^2)
       as.data.frame(data[,colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
                                            grepl("se", colnames(data),
-                                                 fixed = TRUE) == TRUE]])[1, ]^2
+                                                 fixed = TRUE) == TRUE]^2])[1, ]^2
       names_se <- names(se)
       se <- cbind(se, as.data.frame(data[,colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
                                                             grepl("se", colnames(data),
