@@ -1,6 +1,6 @@
 ---
 title: "Two-Stage Path Analysis (2S-PA) Model Examples"
-author: "Yixiao Li"
+author: "Yixiao Li, Jimmy Zhang"
 date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_vignette:
@@ -62,6 +62,17 @@ To view the Two-Stage Path Analysis model, use `attributes([model name])$tspaMod
 cat(attributes(tspa_fit)$tspaModel)
 ```
 
+We recommend researchers to examine the diagnostic plot of factor scores in the model. They can use the function `tspa_plot()` to obtain two plots: (a) a scatter plot between factors, (b) a residual plot between factors.
+
+```{r}
+par(mar = c(2,2,3,2))
+tspa_plot(tspa_fit,
+          ps = 10,
+          col = "darkgray",
+          cex.lab = 1.2,
+          cex.axis = 1)
+```
+
 ## Single group, multiple predictors
 
 ```{r}
@@ -105,6 +116,12 @@ tspa_3var_fit <- tspa(model = "dem60 ~ ind60
                       se = list(ind60 = 0.1213615, dem60 = 0.6756472, 
                                 dem65 = 0.5724405))
 cat(attributes(tspa_3var_fit)$tspaModel)
+```
+
+Diagnotisc plot:
+
+```{r}
+tspa_plot(tspa_3var_fit)
 ```
 
 ## Multigroup, single predictor
@@ -159,4 +176,10 @@ To view the Two-Stage Path Analysis model for multigroup, use `attributes([model
 
 ```{r}
 cat(attributes(tspa_fit)$tspaModel)
+```
+
+Diagnotisc plot:
+
+```{r}
+tspa_plot(tspa_fit)
 ```
