@@ -22,8 +22,11 @@ From https://www.mdpi.com/2624-8611/3/3/24
 library(lavaan)
 library(semTools)
 library(R2spa)
+library(dplyr)
 dat <- read.csv("https://osf.io/download/grwn2/")
 ```
+
+# Unconstrained Product Indicator
 
 ```{r}
 modME <- '
@@ -124,12 +127,14 @@ sources =~ s1 + s2 + s3 + s4 + s5
 tip =~ tip1 + tip2 + tip3
 tip ~ tvalue + sources + tvalue:sources
 '
-summary(indprod_analysis(data = df,
-                         model = model))
+summary(upi(data = df,
+            model = model),
+        fit.measure = TRUE,
+        standardized = TRUE)
 ```
 
 
-2S-PA
+# 2S-PA
 
 ```{r}
 mod_cfa <- '
@@ -161,18 +166,13 @@ tvalue =~ fs_tvalue
 sources =~ fs_sources
 tip =~ fs_tip
 int =~ fs_int
+
 # constrain the errors
-<<<<<<< HEAD
-fs_tvalue ~~ 0.1219141^2 * fs_tvalue
-fs_sources ~~ 0.2024207^2 * fs_sources
-fs_int ~~ 0.2419617^2 * fs_int
-fs_tip ~~ 0.694483^2 * fs_tip
-=======
 fs_tvalue ~~ 0.1219141 * fs_tvalue
 fs_sources ~~ 0.2024207 * fs_sources
 fs_int ~~ 0.3490127 * fs_int
 fs_tip ~~ 0.694483 * fs_tip
->>>>>>> c79fcefe8675551587d32bf4ff869df4902d6ce5
+
 # regressions
 tip ~ tvalue + sources + int
 '
@@ -186,4 +186,53 @@ The model seems working pretty well!
 fitMC_pars <- parameterEstimates(fitintMC)
 fitinttspa_pars <- parameterEstimates(fitinttspa)
 ``` 
+
+```{r tspa function with interaction}
+mod_cfa <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+'
+# Obtain factor scores
+fs_dat <- get_fs(dat, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
+
+fit <- tspa(model = "tip ~ tvalue + sources + tvalue:sources",
+             data = fs_dat,
+             se = list(tvalue = 0.1219141, sources =  0.2024207,
+                       tip = 0.694483))
+
+summary(fit, standardized = TRUE)
+cat(attributes(fit)$tspaModel)
+```
+
+# Using factor scores without contraining measurement errors
+
+```{r}
+mod_cfa <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+'
+# Obtain factor scores
+fs_dat <- get_fs(dat, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
+
+# Obtain factor product
+fs_dat$fs_int <- fs_dat$fs_tvalue * fs_dat$fs_sources
+# Centering the product variable
+fs_dat$fs_int <- fs_dat$fs_int - mean(fs_dat$fs_int)
+
+modinttspa <- '
+# latent variables (indicated by factor scores)
+tvalue =~ fs_tvalue
+sources =~ fs_sources
+tip =~ fs_tip
+int =~ fs_int
+
+# regressions
+tip ~ tvalue + sources + int
+'
+fitinttspa <- sem(modinttspa, data = fs_dat)
+summary(fitinttspa, standardized = TRUE)
+```
+
 
