@@ -202,6 +202,5 @@ compute_fscore <- function(y, lambda, theta, psi,
     # attr(fs, "av_efs") <- fsv - tv
     attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
   }
-  attr(fs, "vc") <-
-    fs
+  fs
 }
