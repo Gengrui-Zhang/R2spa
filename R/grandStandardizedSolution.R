@@ -67,19 +67,18 @@
 #'                    free_list = reg_pos,
 #'                    est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
 #'
-#' grandStardardizedSolution(lavInspect(reg_fit, what = "est"),
+#' grandStardardizedSolution(lavTech(reg_fit, what = "est"),
 #'                           ns = lavInspect(reg_fit, what = "nobs"),
 #'                           se = TRUE, acov_par = vcov(reg_fit),
 #'                           free_list = lavTech(reg_fit, what = "free"))
 #'
 
 grandStardardizedSolution <- function(model_list,
-                                      ns,
+                                      ns = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL) {
   if (!is.null(ns)) {
     grand_standardized_beta(model_list, ns, se, acov_par, free_list)
-    return
   }
   else {
     grandStardardized_nullNS(model_list, se, acov_par, free_list)
