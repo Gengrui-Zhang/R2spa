@@ -41,13 +41,6 @@
 #'
 #' ## multiple group example
 #'
-#' reg_pos <- lavTech(reg_fit)
-#' reg_est <- lavTech(reg_fit, what = "est")
-#' eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
-#'      alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
-#'      eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
-#'      alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
-#'
 #' reg <- '
 #'   # latent variable definitions
 #'     visual =~ x1 + x2 + x3
@@ -58,6 +51,12 @@
 #' reg_fit <- sem(reg, data = HolzingerSwineford1939,
 #'                group = "school",
 #'                group.equal = c("loadings", "intercepts"))
+#' reg_pos <- lavTech(reg_fit)
+#' reg_est <- lavTech(reg_fit, what = "est")
+#' eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
+#'      alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
+#'      eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
+#'      alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
 #'
 #' veta_grand(lavInspect(reg_fit, what = "nobs"),
 #' beta_list = reg_est[which(names(reg_est) == "beta")],
@@ -73,19 +72,27 @@
 #'                           se = TRUE, acov_par = vcov(reg_fit),
 #'                           free_list = lavTech(reg_fit, what = "free"))
 #'
-#' grand_standardized_beta(lavInspect(reg_fit, what = "est"),
-#'                         ns = lavInspect(reg_fit, what = "nobs"),
-#'                         se = TRUE, acov_par = vcov(reg_fit),
-#'                         free_list = lavTech(reg_fit, what = "free"))
-
 
 grandStardardizedSolution <- function(model_list,
+                                      ns,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL) {
+  if (!is.null(ns)) {
+    grand_standardized_beta(model_list, ns, se, acov_par, free_list)
+    return
+  }
+  else {
+    grandStardardized_nullNS(model_list, se, acov_par, free_list)
+  }
+}
+
+grandStardardized_nullNS <- function(model_list,
+                                     se = TRUE, acov_par = NULL,
+                                     free_list = NULL) {
   tmp_std_beta <- std_beta_est(model_list)
   partable <- subset(inspect(fit, "list"), op == "~")
   out <- partable[, c("lhs", "op", "rhs", "exo", "group",
-                       "block", "label")]
+                      "block", "label")]
   out$est.std <- tmp_std_beta[which(tmp_std_beta != 0)]
   if (se) {
     free_beta_psi <- free_list[c("beta", "psi")]
@@ -107,6 +114,7 @@ grandStardardizedSolution <- function(model_list,
   class(out) <- c("lavaan.data.frame", "data.frame")
   out
 }
+
 
 # Latent variances
 veta <- function(beta, psi, gamma = NULL, cov_x = NULL) {
