@@ -16,7 +16,7 @@
 #'           multigroup 2S-PA.
 #' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
-#' @return An object of class \code{lavaan}, with an attribute \code{tspaModel}
+#' @return An object of classy7777777777777777777777777777777777777y \code{lavaan}, with an attribute \code{tspaModel}
 #'         that contains the model syntax.
 #' @export
 #' @examples
@@ -112,14 +112,83 @@
 #   return (tspa_fit)
 # }
 
-
-
 tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
     if (is.null(reliability) == FALSE){
         stop("tspa() currently does not support reliability model")
     }
     if (!is.data.frame(se)) {
         se <- as.data.frame(as.list(se))
+    }
+    # Detect if there are interaction terms, then compute the corresponding factor score and se.
+    if(grepl(":", model) == TRUE) {
+      get_fsint_data <- function (model, data) {
+        # Helper function 1: Parsing the model and extract the interaction pairs
+        interpairs <- function (model) {
+          str_elements <- gsub(" ", "",
+                               unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
+                                               split = "+", fixed = TRUE)))
+          inter_terms <- as.list(gsub("\n", "", str_elements[grep(":", str_elements)]))
+          inter_vars <- list()
+          for (i in seq(inter_terms)) {
+            terms <- strsplit(inter_terms[[i]], split = ":")
+            inter_vars[[i]] <- unlist(terms)
+            names(inter_vars)[i] <- paste0("inter_pair_", i)
+          }
+          return(inter_vars)
+        }
+
+        pairs <- interpairs(model)
+        pairs_count <- length(pairs)
+
+        # Generate a data frame of factor scores
+        updated_data <- data
+        column_names <- colnames(updated_data)
+
+        # Append the interaction terms
+        get_fs_int <- function (pairs, updated_data) {
+          fs_int <- updated_data[ ,paste0("fs_", pairs[[1]][1])]*updated_data[ ,paste0("fs_", pairs[[1]][2])]
+          fs_int <- fs_int - mean(fs_int)
+          return(fs_int)
+        }
+
+        get_fs_int_se <- function (pairs, updated_data) {
+          fs_int_se <- sqrt(1*updated_data[ ,paste0("fs_", pairs[[1]][1], "_se")][1]^2 +
+                              1*updated_data[ ,paste0("fs_", pairs[[1]][2], "_se")][1]^2 +
+                              updated_data[ ,paste0("fs_", pairs[[1]][1], "_se")][1]^2*
+                              updated_data[ ,paste0("fs_", pairs[[1]][2], "_se")][1]^2)
+          fs_int_se <- matrix(rep(fs_int_se, nrow(updated_data)))
+          return(fs_int_se)
+        }
+
+        while (pairs_count > 0) {
+          updated_data <- cbind(updated_data,
+                                get_fs_int(pairs, updated_data),
+                                get_fs_int_se(pairs, updated_data))
+          colnames(updated_data) <- c(column_names,
+                                      paste0("fs_", paste(pairs[[pairs_count]], collapse = ".")),
+                                      paste0("fs_", paste(pairs[[pairs_count]], collapse = "."), "_se"))
+          pairs_count <- pairs_count - 1
+        }
+
+        updated_data <- updated_data %>%
+          select_if(~ !any(is.na(.)))
+
+        return(updated_data)
+      }
+      data <- get_fsint_data(model, data)
+      gsub("fs_|_se", "", colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
+                                           grepl("se", colnames(data),
+                                                 fixed = TRUE) == TRUE])
+      as.data.frame(data[,colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
+                                           grepl("se", colnames(data),
+                                                 fixed = TRUE) == TRUE]])[1, ]^2
+      names_se <- names(se)
+      se <- cbind(se, as.data.frame(data[,colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
+                                                            grepl("se", colnames(data),
+                                                                  fixed = TRUE) == TRUE]])[1, ]^2)
+      names(se) <- c(names_se, gsub("fs_|_se", "", colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
+                                                                    grepl("se", colnames(data),
+                                                                          fixed = TRUE) == TRUE]))
     }
 
     if(nrow(se) == 1){
@@ -207,6 +276,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
 
 tspaSingleGroup <- function(model, data, se = NULL) {
     if (nrow(se) != 0){
+
         ev <- se^2
         var <- names(se)
         len <- length(se)
@@ -226,20 +296,20 @@ tspaSingleGroup <- function(model, data, se = NULL) {
         latent_var_str <- paste(latent_var, collapse="")
         error_constraint_str <- paste(error_constraint, collapse="")
         latent_variance_str <- paste(latent_variance, collapse="")
-        tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
-                            latent_var_str,
-                            "# constrain the errors\n",
-                            error_constraint_str,
-                            "# latent variances\n",
-                            latent_variance_str,
-                            "# regressions\n",
-                            model,
-                            "\n")
+        tspaModel <- gsub(":", ".", paste0("# latent variables (indicated by factor scores)\n",
+                                           latent_var_str,
+                                           "# constrain the errors\n",
+                                           error_constraint_str,
+                                           "# latent variances\n",
+                                           latent_variance_str,
+                                           "# regressions\n",
+                                           paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
+                                                  collapse = "\n"),
+                                           "\n"))
 
         return (tspaModel)
     }
 }
-
 
 tspaMultipleGroupSe <- function(model, data, se = NULL) {
   # if (is.list(se)) {
@@ -266,15 +336,16 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
       latent_var_str <- paste(latent_var, collapse="")
       error_constraint_str <- paste(error_constraint, collapse="")
       latent_variance_str <- paste(latent_variance, collapse="")
-      tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
-                          latent_var_str,
-                          "# constrain the errors\n",
-                          error_constraint_str,
-                          "# latent variances\n",
-                          latent_variance_str,
-                          "# regressions\n",
-                          model,
-                          "\n")
+      tspaModel <- gsub(":", ".", paste0("# latent variables (indicated by factor scores)\n",
+                                          latent_var_str,
+                                          "# constrain the errors\n",
+                                          error_constraint_str,
+                                          "# latent variances\n",
+                                          latent_variance_str,
+                                          "# regressions\n",
+                                          paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
+                                                 collapse = "\n"),
+                                          "\n"))
 
       return (tspaModel)
   }

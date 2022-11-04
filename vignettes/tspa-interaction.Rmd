@@ -151,7 +151,6 @@ fs_dat$fs_int <- fs_dat$fs_int - mean(fs_dat$fs_int)
 From equation (7) of Hsiao et al. (2018, doi: 10.1177/0013164416679877)
 
 ```{r}
-# Question
 fs_dat$fs_int_se <- sqrt(1 * 0.1219141 + 1 * 0.2024207 + 0.1219141 * 0.2024207)
 ```
 
@@ -163,10 +162,17 @@ sources =~ fs_sources
 tip =~ fs_tip
 int =~ fs_int
 # constrain the errors
+<<<<<<< HEAD
 fs_tvalue ~~ 0.1219141^2 * fs_tvalue
 fs_sources ~~ 0.2024207^2 * fs_sources
 fs_int ~~ 0.2419617^2 * fs_int
 fs_tip ~~ 0.694483^2 * fs_tip
+=======
+fs_tvalue ~~ 0.1219141 * fs_tvalue
+fs_sources ~~ 0.2024207 * fs_sources
+fs_int ~~ 0.3490127 * fs_int
+fs_tip ~~ 0.694483 * fs_tip
+>>>>>>> c79fcefe8675551587d32bf4ff869df4902d6ce5
 # regressions
 tip ~ tvalue + sources + int
 '
