@@ -35,7 +35,7 @@
 #'              free_list = lavInspect(fit, what = "free"),
 #'              est = c(1.5, 0.449, 3.453))
 #'
-#' grandStardardizedSolution(lavInspect(fit, what = "est"), se = TRUE,
+#' grandStardardizedSolution(fit, lavInspect(fit, what = "est"), se = TRUE,
 #'                           acov_par = vcov(fit),
 #'                           free_list = lavInspect(fit, what = "free"))
 #'
@@ -67,25 +67,33 @@
 #'                    free_list = reg_pos,
 #'                    est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
 #'
-#' grandStardardizedSolution(lavTech(reg_fit, what = "est"),
+#' grandStardardizedSolution(reg_fit, lavTech(reg_fit, what = "est"),
 #'                           ns = lavInspect(reg_fit, what = "nobs"),
 #'                           se = TRUE, acov_par = vcov(reg_fit),
 #'                           free_list = lavTech(reg_fit, what = "free"))
 #'
+#' reg <- '
+#'   # latent variable definitions
+#'     visual =~ x1 + x2 + x3
+#'     speed =~ x7 + x8 + x9
+#'     spactial
+#'   # regressions
+#'     visual ~ c(b1, b1) * speed
+#' '
 
-grandStardardizedSolution <- function(model_list,
+grandStardardizedSolution <- function(fit, model_list,
                                       ns = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL) {
   if (!is.null(ns)) {
-    grand_standardized_beta(model_list, ns, se, acov_par, free_list)
+    grand_standardized_beta(fit, model_list, ns, se, acov_par, free_list)
   }
   else {
-    grandStardardized_nullNS(model_list, se, acov_par, free_list)
+    grandStardardized_nullNS(fit, model_list, se, acov_par, free_list)
   }
 }
 
-grandStardardized_nullNS <- function(model_list,
+grandStardardized_nullNS <- function(fit, model_list,
                                      se = TRUE, acov_par = NULL,
                                      free_list = NULL) {
   tmp_std_beta <- std_beta_est(model_list)
@@ -216,9 +224,13 @@ grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
   })
 }
 
-grand_standardized_beta <- function(model_list, ns, se = TRUE,
+grand_standardized_beta <- function(fit, model_list, ns, se = TRUE,
                                     acov_par = NULL, free_list = NULL) {
-  out <- list(std_beta = grand_std_beta_est(model_list, ns))
+  tmp_std_beta <- unlist(grand_std_beta_est(model_list, ns))
+  partable <- subset(inspect(fit, "list"), op == "~")
+  out <- partable[, c("lhs", "op", "rhs", "exo", "group",
+                      "block", "label")]
+  out$est.std <- tmp_std_beta[which(tmp_std_beta != 0)]
   if (se) {
     free_beta_psi_alpha <- free_list[which(names(model_list) %in%
                                              c("beta", "psi", "alpha"))]
@@ -231,7 +243,15 @@ grand_standardized_beta <- function(model_list, ns, se = TRUE,
     pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
                                        free = free_beta_psi_alpha)
     acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
-    out$acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
+    tmp_acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
+    # need to change this
+    out$se <- sqrt(tmp_acov_std_beta[which(tmp_acov_std_beta != 0)])
+    out$z <- out$est.std / out$se
+    out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
+    ci < out$est.std + out$se * qnorm(c(1 - .95)/2, 1 - (1 - .95)/2)
+    out$ci.lower <- ci[1]
+    out$ci.upper <- ci[2]
   }
+  class(out) <- c("lavaan.data.frame", "data.frame")
   out
 }
