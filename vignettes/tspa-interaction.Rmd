@@ -236,3 +236,5 @@ summary(fitinttspa, standardized = TRUE)
 ```
 
 
+
+

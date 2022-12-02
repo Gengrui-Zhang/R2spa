@@ -132,7 +132,8 @@ upi <- function (model, data) {
                           match = FALSE,
                           doubleMC = TRUE,
                           namesProd = intNames)
-    inter_data <- select(inter_data, -names(data))
+    inter_data <- inter_data[ , !names(inter_data) %in%
+                        names(data)]
     return(inter_data)
   }
   while (pairs_count > 0) {
