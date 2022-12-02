@@ -68,7 +68,6 @@
 #'                        group = "school")
 #' fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
 #'
-#' \dontrun{
 #' # tspa model
 #' tspa(model = "visual ~ speed",
 #'      data = fs_hs,
@@ -83,7 +82,6 @@
 #'      se = list(visual = c(0.3391326, 0.311828),
 #'                speed = c(0.2786875, 0.2740507)),
 #'      group = "school")
-#' }
 
 
 
