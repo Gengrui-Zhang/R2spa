@@ -125,7 +125,6 @@ cat(attributes(tspa_3var_fit)$tspaModel)
 Diagnotisc plot:
 
 ```{r}
-par(mfrow = c(3,2))
 tspa_plot(tspa_3var_fit,
           ps = 10,
           col = "darkgray",
@@ -196,5 +195,6 @@ tspa_plot(tspa_fit,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
-          cex.axis = 1)
+          cex.axis = 1,
+          ask = TRUE)
 ```

@@ -1,28 +1,30 @@
 #' Diagnostic plots of fitted 2S-PA model
 #'
-#' @param tppa_fit An object of class \code{lavaan},
+#' @param tspa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
 #'
 #' @return A scatterplot and a residual plot between factor scores.
+#'
 #' @export
+#'
 #' @examples
-# model <- '
-# # latent variable definitions
-# ind60 =~ x1 + x2 + x3
-# dem60 =~ y1 + a*y2 + b*y3 + c*y4
-# # regressions
-# dem60 ~ ind60
-# '
-# fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-# model = "ind60 =~ x1 + x2 + x3")
-# fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
-#                        model = "dem60 =~ y1 + y2 + y3 + y4")
-# fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
-#
-# tspa_fit <- tspa(model = "dem60 ~ ind60",
-# data = fs_dat,
-# se = list(ind60 = 0.1213615, dem60 = 0.6756472))
-# tspa_plot(tspa_fit)
+#' model <- '
+#' # latent variable definitions
+#' ind60 =~ x1 + x2 + x3
+#' dem60 =~ y1 + a*y2 + b*y3 + c*y4
+#' # regressions
+#' dem60 ~ ind60
+#' '
+#' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
+#' model = "ind60 =~ x1 + x2 + x3")
+#' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
+#'                        model = "dem60 =~ y1 + y2 + y3 + y4")
+#' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
+#'
+#' tspa_fit <- tspa(model = "dem60 ~ ind60",
+#' data = fs_dat,
+#' se = list(ind60 = 0.1213615, dem60 = 0.6756472))
+#' tspa_plot(tspa_fit)
 
 tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
 
@@ -113,4 +115,9 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
   }
 
 }
+
+
+
+
+
 
