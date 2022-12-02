@@ -15,7 +15,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+The example is from <https://lavaan.ugent.be/tutorial/sem.html>.
 
 Load packages
 
@@ -24,8 +24,9 @@ library(lavaan)
 library(R2spa)
 ```
 
+## Single group, single predictor[^1]
 
-## Single group, single predictor^[In the model, `a`, `b`, and `c` are coefficients where variables `y1`, `y2`, `y3`, and `y4` are indicators of the latent variable `dem60`.]
+[^1]: In the model, `a`, `b`, and `c` are coefficients where variables `y1`, `y2`, `y3`, and `y4` are indicators of the latent variable `dem60`.
 
 ```{r}
 model <- ' 
@@ -70,7 +71,8 @@ tspa_plot(tspa_fit,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
-          cex.axis = 1)
+          cex.axis = 1,
+          ask = TRUE)
 ```
 
 ## Single group, multiple predictors
@@ -107,7 +109,9 @@ fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 ```
 
-To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard errors as either a list or a data frame. Values for standard errors can be found at column named `fs_[variable name]_se`.^[The text inside `[]` should be replaced with actual variable and model name.] For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame. In the output model, the values of error constraints are computed by squaring standard errors.
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard errors as either a list or a data frame. Values for standard errors can be found at column named `fs_[variable name]_se`.[^2] For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame. In the output model, the values of error constraints are computed by squaring standard errors.
+
+[^2]: The text inside `[]` should be replaced with actual variable and model name.
 
 ```{r}
 tspa_3var_fit <- tspa(model = "dem60 ~ ind60
@@ -121,12 +125,13 @@ cat(attributes(tspa_3var_fit)$tspaModel)
 Diagnotisc plot:
 
 ```{r}
-par(mar = c(2,2,3,2))
+par(mfrow = c(3,2))
 tspa_plot(tspa_3var_fit,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
-          cex.axis = 1)
+          cex.axis = 1,
+          ask = TRUE)
 ```
 
 ## Multigroup, single predictor
