@@ -133,6 +133,63 @@ summary(upi(data = df,
         standardized = TRUE)
 ```
 
+# Reliability-adjusted Product Indicator
+
+```{r}
+PE <- parameterEstimates(fitintMC)
+tvalues <- c("t1", "t2", "t3", "t4")
+sources <- c("s1", "s2", "s3", "s4", "s5")
+tips <- c("tip1", "tip2", "tip3")
+int <- names(dat3[, 14:33])
+
+# Sum of factor loadings
+tvalues_lambda <- sum(PE[match(tvalues, PE$rhs), "est"])
+sources_lambda <- sum(PE[match(sources, PE$rhs), "est"])
+tips_lambda <- sum(PE[match(tips, PE$rhs), "est"])
+int_lambda <- sum(PE[match(int, PE$rhs), "est"])
+
+# Sum of error variances and se
+PE_vcov <- PE[PE$op == "~~", ]
+PE_vcov <- PE_vcov[PE_vcov$label == "", ]
+tvalues_error <- sum(PE_vcov[match(tvalues, PE_vcov$rhs), "est"])
+sources_error <- sum(PE_vcov[match(sources, PE_vcov$rhs), "est"])
+tips_error <- sum(PE_vcov[match(tips, PE_vcov$rhs), "est"])
+int_error <- sum(PE_vcov[match(int, PE_vcov$rhs), "est"])
+
+tvalues_se <- sqrt(tvalues_error)
+sources_se <- sqrt(sources_error)
+tips_se <- sqrt(tips_error)
+int_se <- sqrt(int_error)
+
+# Sum of item scores
+dat3_sum <- dat3 %>% 
+  mutate(tvalues_sum = rowSums(dat3[, tvalues]),
+         sources_sum = rowSums(dat3[, sources]),
+         tips_sum = rowSums(dat3[, tips]),
+         int_sum = rowSums(dat3[, int]))
+
+# Single-indicator Model
+
+model_rapi <- "
+              tvalue =~ 2.987473*tvalues_sum
+              sources =~ 3.989224*sources_sum
+              tip =~ 1.328669*tips_sum
+              int =~ 12.92162*int_sum
+              
+              # Constrain the errors
+              tvalues_sum ~~ 1.70026*tvalues_sum
+              sources_sum ~~ 3.55476*sources_sum
+              tips_sum ~~ 2.498348*tips_sum
+              int_sum ~~ 21.61033*int_sum
+              
+              # regressions
+              tip ~ tvalue + sources + int
+              "
+
+fit_rapi <- sem(model_rapi, data = dat3_sum)
+summary(fit_rapi, standardized = TRUE)
+```
+
 
 # 2S-PA
 
