@@ -66,12 +66,21 @@ alambda
 We can also use `R2spa::get_fs()`:
 
 ```{r}
-get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE) |> head()
+(fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE)) |> head()
 ```
 
 Therefore, we need to specify cross-loadings when using 2S-PA.
 
 ```{r}
+tspa_fit <- tspa(model = "dem60 ~ ind60", data = fs_dat,
+                 vc = attr(fs_dat, "av_efs"), 
+                 cross_loadings = attr(fs_dat, "fsA"))
+cat(attr(tspa_fit, "tspaModel"))
+parameterestimates(tspa_fit)
+```
+
+
+```{r include=FALSE, eval=FALSE}
 # Compute factor scores using lavPredict
 fs_dat <- lavPredict(cfa_fit, acov = "standard")
 colnames(fs_dat) <- c("fs_ind60", "fs_dem60")
@@ -122,12 +131,24 @@ alambda
 We can also use `R2spa::get_fs()`:
 
 ```{r}
-get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE) |> head()
+(fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)) |> 
+  head()
 ```
 
 Therefore, we need to specify cross-loadings when using 2S-PA.
 
 ```{r}
+tspa_fit_3fac <- tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+              data = fs_dat_3fac,
+              vc = attr(fs_dat_3fac, "av_efs"),
+              cross_loadings = attr(fs_dat_3fac, "fsA"))
+cat(attr(tspa_fit_3fac, "tspaModel"))
+parameterestimates(tspa_fit_3fac)
+```
+
+
+```{r include=FALSE, eval=FALSE}
 # Compute factor scores using lavPredict
 fs_3fac_dat <- lavPredict(cfa_3fac_fit, acov = "standard")
 colnames(fs_3fac_dat) <- c("fs_ind60", "fs_dem60", "fs_dem65")
