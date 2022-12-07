@@ -16,107 +16,118 @@
 #' @example
 #' library(lavaan)
 #'
-#' ## single group example
-#' myModel <- '
+#' ## A single-group, two-factor example
+#' mod1 <- '
 #'    # latent variables
 #'      ind60 =~ x1 + x2 + x3
 #'      dem60 =~ y1 + y2 + y3 + y4
 #'    # regressions
 #'      dem60 ~ ind60
 #' '
-#' fit <- sem(model = myModel,
+#' fit1 <- sem(model = mod1,
 #'           data  = PoliticalDemocracy)
+#' grandStardardizedSolution(fit1)
 #'
-#' lavInspect(fit, what = "cov.lv")  # lavaan
-#' veta(fit@Model@GLIST$beta, fit@Model@GLIST$psi)
+#' ## A single-group, three-factor example
+#' mod2 <- '
+#'     # latent variables
+#'       ind60 =~ x1 + x2 + x3
+#'       dem60 =~ y1 + y2 + y3 + y4
+#'       dem65 =~ y5 + y6 + y7 + y8
+#'     # regressions
+#'       dem60 ~ ind60
+#'       dem65 ~ ind60 + dem60
+#' '
+#' fit2 <- sem(model = mod2,
+#'             data  = PoliticalDemocracy)
+#' grandStardardizedSolution(fit2)
 #'
-#'
-#' std_beta_est(lavInspect(fit, what = "est"),
-#'              free_list = lavInspect(fit, what = "free"),
-#'              est = c(1.5, 0.449, 3.453))
-#'
-#' grandStardardizedSolution(fit, lavInspect(fit, what = "est"), se = TRUE,
-#'                           acov_par = vcov(fit),
-#'                           free_list = lavInspect(fit, what = "free"))
-#'
-#' ## multiple group example
-#'
-#' reg <- '
+#' ## A multigroup, two-factor example
+#' mod3 <- '
 #'   # latent variable definitions
 #'     visual =~ x1 + x2 + x3
 #'     speed =~ x7 + x8 + x9
 #'   # regressions
 #'     visual ~ c(b1, b1) * speed
 #' '
-#' reg_fit <- sem(reg, data = HolzingerSwineford1939,
-#'                group = "school",
-#'                group.equal = c("loadings", "intercepts"))
-#' reg_pos <- lavTech(reg_fit)
-#' reg_est <- lavTech(reg_fit, what = "est")
-#' eeta(reg_est[[which(names(reg_est) == "beta")[1]]],
-#'      alpha = reg_est[[which(names(reg_est) == "alpha")[1]]])
-#'      eeta(reg_est[[which(names(reg_est) == "beta")[2]]],
-#'      alpha = reg_est[[which(names(reg_est) == "alpha")[2]]])
+#' fit3 <- sem(mod3, data = HolzingerSwineford1939,
+#'             group = "school",
+#'             group.equal = c("loadings", "intercepts"))
+#' grandStardardizedSolution(fit3)
 #'
-#' veta_grand(lavInspect(reg_fit, what = "nobs"),
-#' beta_list = reg_est[which(names(reg_est) == "beta")],
-#' psi_list = reg_est[which(names(reg_est) == "psi")],
-#' alpha_list = reg_est[which(names(reg_est) == "alpha")])
-#'
-#' grand_std_beta_est(reg_est, ns = lavInspect(reg_fit, what = "nobs"),
-#'                    free_list = reg_pos,
-#'                    est = c(.492, .309, .501, .382, .495, .501, -.120, -.167))
-#'
-#' grandStardardizedSolution(reg_fit, lavTech(reg_fit, what = "est"),
-#'                           ns = lavInspect(reg_fit, what = "nobs"),
-#'                           se = TRUE, acov_par = vcov(reg_fit),
-#'                           free_list = lavTech(reg_fit, what = "free"))
-#'
-#' reg <- '
+#' ## A multigroup, three-factor example
+#' mod4 <- '
 #'   # latent variable definitions
 #'     visual =~ x1 + x2 + x3
+#'     textual =~ x4 + x5 + x6
 #'     speed =~ x7 + x8 + x9
-#'     spactial
+#'
 #'   # regressions
-#'     visual ~ c(b1, b1) * speed
+#'     visual ~ c(b1, b1) * textual + c(b2, b2) * speed
 #' '
+#' fit4 <- sem(mod4, data = HolzingerSwineford1939,
+#'             group = "school",
+#'             group.equal = c("loadings", "intercepts"))
+#' grandStardardizedSolution(fit4)
 
-grandStardardizedSolution <- function(fit, model_list,
-                                      ns = NULL,
+
+grandStardardizedSolution <- function(fit, model_list = NULL,
                                       se = TRUE, acov_par = NULL,
-                                      free_list = NULL) {
-  if (!is.null(ns)) {
-    grand_standardized_beta(fit, model_list, ns, se, acov_par, free_list)
-  }
-  else {
-    grandStardardized_nullNS(fit, model_list, se, acov_par, free_list)
-  }
-}
+                                      free_list = NULL, level = .95) {
+  if (is.null(model_list)) model_list <- lavTech(fit, what = "est")
+  ns <- lavInspect(fit, what = "nobs")
+  if (length(ns) == 1) ns <- NULL
+  if (is.null(acov_par)) acov_par <- vcov(fit)
+  if (is.null(free_list)) free_list <- lavTech(fit, what = "free")
 
-grandStardardized_nullNS <- function(fit, model_list,
-                                     se = TRUE, acov_par = NULL,
-                                     free_list = NULL) {
-  tmp_std_beta <- std_beta_est(model_list)
   partable <- subset(inspect(fit, "list"), op == "~")
   out <- partable[, c("lhs", "op", "rhs", "exo", "group",
                       "block", "label")]
-  out$est.std <- tmp_std_beta[which(tmp_std_beta != 0)]
+  partable_beta <- lavTech(fit, what = "partable", list.by.group = TRUE)
+
+  # Get standardized betas
+  if (is.null(ns)) {
+    tmp_std_beta <- std_beta_est(model_list)
+    all_beta_pos <- partable_beta[[1]]$beta
+  } else {
+    tmp_std_beta <- unlist(grand_std_beta_est(model_list, ns))
+    group_names <- names(partable_beta)
+    all_beta_pos <- sapply(group_names, function(x) { partable_beta[[x]]$beta })
+  }
+  beta_pos <- which(all_beta_pos != 0)
+  out$est.std <- tmp_std_beta[beta_pos]
+
+  # Get SEs for the standardized betas
   if (se) {
-    free_beta_psi <- free_list[c("beta", "psi")]
-    est <- .combine_est(model_list[c("beta", "psi")],
-                        free = free_beta_psi)
-    jac <- lav_func_jacobian_complex(function(x)
-      std_beta_est(model_list, free_list = free_list, est = x),
-      x = est)
-    pos_beta_psi <- .combine_est(free_beta_psi, free = free_beta_psi)
-    acov_beta_psi <- acov_par[pos_beta_psi, pos_beta_psi]
-    tmp_acov_std_beta <- jac %*% acov_beta_psi %*% t(jac)
-    out$se <- sqrt(tmp_acov_std_beta[which(tmp_acov_std_beta != 0)])
+    if (is.null(ns)) {
+      free_beta_psi <- free_list[c("beta", "psi")]
+      est <- .combine_est(model_list[c("beta", "psi")],
+                          free = free_beta_psi)
+      jac <- lav_func_jacobian_complex(function(x)
+        std_beta_est(model_list, free_list = free_list, est = x),
+        x = est)
+      pos_par <- .combine_est(free_beta_psi, free = free_beta_psi)
+    } else {
+      free_beta_psi_alpha <- free_list[which(names(model_list) %in%
+                                               c("beta", "psi", "alpha"))]
+      est <- .combine_est(model_list[which(names(model_list) %in%
+                                             c("beta", "psi", "alpha"))],
+                          free = free_beta_psi_alpha)
+      jac <- lav_func_jacobian_complex(function(x)
+        unlist(grand_std_beta_est(model_list, ns = ns,
+                                  free_list = free_list, est = x)),
+        x = est)
+      pos_par <- .combine_est(free_beta_psi_alpha,
+                              free = free_beta_psi_alpha)
+    }
+    acov_par <- acov_par[pos_par, pos_par]
+    tmp_acov_std_beta <- jac %*% acov_par %*% t(jac)
+    out$se <- sqrt(diag(as.matrix(tmp_acov_std_beta[beta_pos, beta_pos])))
     out$z <- out$est.std / out$se
     out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
-    ci <- out$est.std + out$se * qnorm(c((1 - .95)/2, 1 - (1 - .95)/2))
-    out$ci.lower <- ci[1]
-    out$ci.upper <- ci[2]
+    ci <- out$est.std + out$se %o% qnorm(c((1 - level)/2, 1 - (1 - level)/2))
+    out$ci.lower <- ci[, 1]
+    out$ci.upper <- ci[, 2]
   }
   class(out) <- c("lavaan.data.frame", "data.frame")
   out
@@ -222,36 +233,4 @@ grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
   lapply(beta_list, function(x) {
     diag(inv_s_eta) %*% x %*% diag(s_eta)
   })
-}
-
-grand_standardized_beta <- function(fit, model_list, ns, se = TRUE,
-                                    acov_par = NULL, free_list = NULL) {
-  tmp_std_beta <- unlist(grand_std_beta_est(model_list, ns))
-  partable <- subset(inspect(fit, "list"), op == "~")
-  out <- partable[, c("lhs", "op", "rhs", "exo", "group",
-                      "block", "label")]
-  out$est.std <- tmp_std_beta[which(tmp_std_beta != 0)]
-  if (se) {
-    free_beta_psi_alpha <- free_list[which(names(model_list) %in%
-                                             c("beta", "psi", "alpha"))]
-    est <- .combine_est(model_list[which(names(model_list) %in%
-                                           c("beta", "psi", "alpha"))],
-                        free = free_beta_psi_alpha)
-    jac <- lav_func_jacobian_complex(function(x)
-      unlist(grand_std_beta_est(model_list, ns = ns, free_list = free_list, est = x)),
-      x = est)
-    pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
-                                       free = free_beta_psi_alpha)
-    acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
-    tmp_acov_std_beta <- jac %*% acov_beta_psi_alpha %*% t(jac)
-    # need to change this
-    out$se <- sqrt(tmp_acov_std_beta[which(tmp_acov_std_beta != 0)])
-    out$z <- out$est.std / out$se
-    out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
-    ci < out$est.std + out$se * qnorm(c(1 - .95)/2, 1 - (1 - .95)/2)
-    out$ci.lower <- ci[1]
-    out$ci.upper <- ci[2]
-  }
-  class(out) <- c("lavaan.data.frame", "data.frame")
-  out
 }
