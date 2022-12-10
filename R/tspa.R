@@ -20,45 +20,46 @@
 #' @examples
 #' library(lavaan)
 #'
-#' ### single-group example
-#'
-#' # get factor scores
-#' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-#'                        model = "ind60 =~ x1 + x2 + x3")
-#' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
-#'                        model = "dem60 =~ y1 + y2 + y3 + y4")
-#' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
-#'
-#' # tspa model
-#' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      se = c(ind60 = 0.1213615, dem60 = 0.6756472))
-#'
-#' # two-factor model
-#' cfa_2fac <- '
+#' # single-group, two-factor example
+#' mod1 <- '
 #'    # latent variables
 #'      ind60 =~ x1 + x2 + x3
 #'      dem60 =~ y1 + y2 + y3 + y4
 #' '
-#' fs_dat <- get_fs(PoliticalDemocracy, model = cfa_2fac, std.lv = TRUE)
-#' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      vc = attr(fs_dat, "av_efs"), cross_loadings = attr(fs_dat, "fsA"))
+#' fs_dat1 <- get_fs(PoliticalDemocracy, model = mod1, std.lv = TRUE)
+#' tspa(model = "dem60 ~ ind60", data = fs_dat1,
+#'      vc = attr(fs_dat1, "av_efs"), cross_loadings = attr(fs_dat1, "fsA"))
 #'
-#' # three-factor model
-#' cfa_3fac <-  '
+#' # single-group, three-factor example
+#' mod2 <-  '
 #'   # latent variables
-#'   ind60 =~ x1 + x2 + x3
-#'   dem60 =~ y1 + y2 + y3 + y4
-#'   dem65 =~ y5 + y6 + y7 + y8
+#'     ind60 =~ x1 + x2 + x3
+#'     dem60 =~ y1 + y2 + y3 + y4
+#'     dem65 =~ y5 + y6 + y7 + y8
 #' '
-#' fs_dat <- get_fs(PoliticalDemocracy, mode = cfa_3fac, std.lv = TRUE)
+#' fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
 #' tspa(model = "dem60 ~ ind60
 #'               dem65 ~ ind60 + dem60",
-#'      data = fs_dat,
-#'      vc = attr(fs_dat, "av_efs"),
-#'      cross_loadings = attr(fs_dat, "fsA"))
+#'      data = fs_dat2,
+#'      vc = attr(fs_dat2, "av_efs"),
+#'      cross_loadings = attr(fs_dat2, "fsA"))
 #'
-#' ### multigroup example
+#' # multigroup, two-factor example
+#' \dontrun{
+#' mod3 <- '
+#'   # latent variables
+#'     visual =~ x1 + x2 + x3
+#'     speed =~ x7 + x8 + x9
 #'
+#' fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
+#'                   group = "school")
+#' tspa(model = "visual ~ speed",
+#'      data = fs_dat3,
+#'      vc = attr(fs_dat3, "av_efs"),
+#'      cross_loadings = attr(fs_dat3, "fsA"))
+#' }
+#'
+#' \dontrun{
 #' # get factor scores
 #' fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
 #'                         model = "visual =~ x1 + x2 + x3",
@@ -155,7 +156,8 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
   tspa_fit <- sem(model = tspaModel,
                   data  = data,
                   ...)
-  attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
+  attributes(tspa_fit)$tspaModel <- tspaModel
+  # to access the attribute, use attr(x,"tspaModel")
   return (tspa_fit)
   #
   #   var <- names(reliability)
