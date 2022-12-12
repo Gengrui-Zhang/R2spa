@@ -19,6 +19,9 @@ fit1 <- sem(model = mod1,
             data  = PoliticalDemocracy)
 s2_std_beta <- grandStardardizedSolution(fit1)
 
+test_that("Test for single group warning message",
+{expect_warning(warning(grandStardardizedSolution(fit1)), "The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.")})
+
 test_that("Standardized beta in a model with single group, two factors",
           { expect_lt(abs(0.4604657 - s2_std_beta$est.std), .0001) })
 test_that("SE of standardized beta in a model with single group, two-factors",
