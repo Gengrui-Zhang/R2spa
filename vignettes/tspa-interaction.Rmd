@@ -140,13 +140,11 @@ PE <- parameterEstimates(fitintMC)
 tvalues <- c("t1", "t2", "t3", "t4")
 sources <- c("s1", "s2", "s3", "s4", "s5")
 tips <- c("tip1", "tip2", "tip3")
-int <- names(dat3[, 14:33])
 
 # Sum of factor loadings
 tvalues_lambda <- sum(PE[match(tvalues, PE$rhs), "est"])
 sources_lambda <- sum(PE[match(sources, PE$rhs), "est"])
 tips_lambda <- sum(PE[match(tips, PE$rhs), "est"])
-int_lambda <- sum(PE[match(int, PE$rhs), "est"])
 
 # Sum of error variances and se
 PE_vcov <- PE[PE$op == "~~", ]
@@ -154,42 +152,64 @@ PE_vcov <- PE_vcov[PE_vcov$label == "", ]
 tvalues_error <- sum(PE_vcov[match(tvalues, PE_vcov$rhs), "est"])
 sources_error <- sum(PE_vcov[match(sources, PE_vcov$rhs), "est"])
 tips_error <- sum(PE_vcov[match(tips, PE_vcov$rhs), "est"])
-int_error <- sum(PE_vcov[match(int, PE_vcov$rhs), "est"])
 
 tvalues_se <- sqrt(tvalues_error)
 sources_se <- sqrt(sources_error)
 tips_se <- sqrt(tips_error)
-int_se <- sqrt(int_error)
 
 # Sum of item scores
-dat3_sum <- dat3 %>% 
-  mutate(tvalues_sum = rowSums(dat3[, tvalues]),
-         sources_sum = rowSums(dat3[, sources]),
-         tips_sum = rowSums(dat3[, tips]),
-         int_sum = rowSums(dat3[, int]))
+dat_sum <- dat %>% 
+  mutate(tvalues_sum = rowSums(dat[, tvalues]),
+         tsum_centered = tvalues_sum - mean(tvalues_sum, na.rm = T),
+         sources_sum = rowSums(dat[, sources]),
+         ssum_centered = sources_sum - mean(sources_sum, na.rm = T),
+         tips_sum = rowSums(dat[, tips]),
+         tips_sum_centered = tips_sum - mean(tips_sum, na.rm = T),
+         int = tsum_centered*ssum_centered,
+         int_centered = int - mean(int, na.rm = T))
+
+int_var <- tvalues_lambda^2*sources_error + 
+  sources_lambda^2*tvalues_error + 
+  sources_error*tvalues_error 
+
+sqrt(int_var)
 
 # Single-indicator Model
 
 model_rapi <- "
-              tvalue =~ 2.987473*tvalues_sum
-              sources =~ 3.989224*sources_sum
-              tip =~ 1.328669*tips_sum
-              int =~ 12.92162*int_sum
+              tvalue =~ 2.987473*tsum_centered
+              sources =~ 3.989224*ssum_centered
+              tip =~ 1.328669*tips_sum_centered
+              product_ind =~ 2.987473*3.989224*int_centered
               
               # Constrain the errors
-              tvalues_sum ~~ 1.70026*tvalues_sum
-              sources_sum ~~ 3.55476*sources_sum
-              tips_sum ~~ 2.498348*tips_sum
-              int_sum ~~ 21.61033*int_sum
+              tsum_centered ~~ 1.70026*tsum_centered
+              ssum_centered ~~ 3.55476*ssum_centered
+              tips_sum_centered ~~ 2.498348*tips_sum_centered
+              int_centered ~~ 64.82799*int_centered
               
               # regressions
-              tip ~ tvalue + sources + int
+              tip ~ tvalue + sources + product_ind
               "
 
-fit_rapi <- sem(model_rapi, data = dat3_sum)
+fit_rapi <- sem(model_rapi, data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
 summary(fit_rapi, standardized = TRUE)
 ```
 
+```{r rapi function}
+# Testing
+df <- read.csv("https://osf.io/download/grwn2/")
+model <- '
+tvalue =~ t1 + t2 + t3 + t4
+sources =~ s1 + s2 + s3 + s4 + s5
+tip =~ tip1 + tip2 + tip3
+tip ~ tvalue + sources + tvalue:sources
+'
+summary(rapi(data = df,
+            model = model),
+        fit.measure = TRUE,
+        standardized = TRUE)
+```
 
 # 2S-PA
 
