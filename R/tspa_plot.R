@@ -2,8 +2,15 @@
 #'
 #' @param tspa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
+#' @param ask Logic input. If 'True' is indicated, the user will be asked before
+#'            before each plot is generated. The default setting is 'False'.
+#' @param title Character. A default or user-defined name or of the title of scatterplot.
+#' @param xlab Character. A default or user-defined name of the x-aix of scatterplot.
+#' @param ylab Character. A default or user-defined name of the y-aix of scatterplot.
+#' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
+#'            \code{\link[graphics]{plot}} for a list.
 #'
-#' @return A scatterplot and a residual plot between factor scores.
+#' @return A scatterplot between factor scores, and a residual plot.
 #'
 #' @export
 #'
@@ -26,7 +33,12 @@
 #' se = list(ind60 = 0.1213615, dem60 = 0.6756472))
 #' tspa_plot(tspa_fit)
 
-tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
+tspa_plot <- function (tspa_fit,
+                       ask = FALSE,
+                       title = NULL,
+                       xlab = NULL,
+                       ylab = NULL,
+                       ...) {
 
   fit_data <- parameterestimates(tspa_fit)
   latent_scores <- lavInspect(tspa_fit, what = "data")
@@ -34,6 +46,7 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
   if (is.list(latent_scores)) {
     latent_names <- colnames(latent_scores[[1]])
     df_latent_scores <- lapply(latent_scores, data.frame)
+    g_names<- abbreviate(names(df_latent_scores))
     latent_dv <- c(t(na.omit(fit_data[1:(nrow(fit_data)/length(latent_scores)), ][which(fit_data$op == "~"),]["lhs"])))
     latent_iv <- c(t(na.omit(fit_data[1:(nrow(fit_data)/length(latent_scores)), ][which(fit_data$op == "~"),]["rhs"])))
     latent_model <- list()
@@ -49,9 +62,11 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
         }
         plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
              latent_scores[[g]][ ,paste0("fs_", latent_dv[i])],
-             ylab = paste0("fs_", latent_iv[i]),
-             xlab = paste0("fs_", latent_dv[i]),
-             main = paste0("Scatterplot", " (group ", g, ")"),
+             ylab = ifelse(is.null(ylab), paste0("fs_", latent_iv[i]), ylab),
+             xlab = ifelse(is.null(xlab), paste0("fs_", latent_dv[i]), xlab),
+             main = ifelse(is.null(title),
+                           paste0("Scatterplot", " (Group ", g, ": ", g_names[g], ")"),
+                           title),
              pch = 16,
              ...)
         abline(latent_model[[g]])
@@ -63,7 +78,7 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
         plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])], df_latent_scores[[g]]$residuals,
              ylab = "Residuals",
              xlab = "Fitted values",
-             main = paste0("Residual Plot (group ", g, ")"),
+             main = paste0("Residual Plot", " (Group ", g, ": ", g_names[g], ")"),
              pch = 18,
              ...)
         abline(0, 0,
@@ -89,9 +104,11 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
       }
       plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
            latent_scores[ ,paste0("fs_", latent_dv[i])],
-           ylab = paste0("fs_", latent_dv[i]),
-           xlab = paste0("fs_", latent_dv[i]),
-           main = paste("Scatterplot"),
+           ylab = ifelse(is.null(ylab), paste0("fs_", latent_iv[i]), ylab),
+           xlab = ifelse(is.null(xlab), paste0("fs_", latent_dv[i]), xlab),
+           main = ifelse(is.null(title),
+                         paste0("Scatterplot"),
+                         title),
            pch = 16,
            ...)
       abline(latent_model)
@@ -115,9 +132,6 @@ tspa_plot <- function (tspa_fit, ask = FALSE, ...) {
   }
 
 }
-
-
-
 
 
 
