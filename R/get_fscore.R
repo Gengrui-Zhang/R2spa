@@ -72,11 +72,22 @@ get_fs <- function(data, model = NULL, group = NULL,
     prepare_fs_dat(y, est)
   } else {
     fs_list <- lapply(seq_along(est), function(i) {
-      fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
-      fs_dat[[group]] <- names(est[i])
-      fs_dat
+      # fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
+      # fs_dat[[group]] <- names(est[i])
+      # fs_dat
+      prepare_fs_dat(y[[i]], est[[i]])
     })
-    do.call(rbind, fs_list)
+    # do.call(rbind, fs_list)
+    attr(fs_list, "av_efs") <- setNames(
+      lapply(fs_list, attr, "av_efs"),
+      fit@Data@group.label
+    )
+    attr(fs_list, "fsA") <- setNames(
+      lapply(fs_list, attr, "fsA"),
+      fit@Data@group.label
+    )
+    names(fs_list) <- fit@Data@group.label
+    fs_list
   }
 }
 
