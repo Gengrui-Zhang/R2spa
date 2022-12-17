@@ -114,13 +114,10 @@ augment_fs <- function(est, fs, fs_ev) {
     }
   }
   fsA <- attr(fs, "fsA")
+  fs_names <- paste0("fs_", colnames(fsA))
   fs_lds <- lapply(seq_len(ncol(fsA)), function(i) {
     setNames(fsA[, i],
-             paste(
-               colnames(fsA)[i],
-               paste0("fs_", names(attr(fs, "fsA")[, i])),
-               sep = "_by_"
-             ))
+             paste(colnames(fsA)[i], fs_names, sep = "_by_"))
   })
   fs_lds <- unlist(fs_lds)
   fs_dat <- cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
