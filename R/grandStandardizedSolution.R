@@ -77,7 +77,7 @@ grandStardardizedSolution <- function(fit, model_list = NULL,
   if (is.null(model_list)) model_list <- lavTech(fit, what = "est")
   ns <- lavInspect(fit, what = "nobs")
   if (length(ns) == 1) ns <- NULL
-  if (is.null(ns)) warning("The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.")
+  if (is.null(ns)) message("The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.")
   if (is.null(acov_par)) acov_par <- vcov(fit)
   if (is.null(free_list)) free_list <- lavTech(fit, what = "free")
 
