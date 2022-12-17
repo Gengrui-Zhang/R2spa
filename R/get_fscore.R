@@ -72,10 +72,10 @@ get_fs <- function(data, model = NULL, group = NULL,
     prepare_fs_dat(y, est)
   } else {
     fs_list <- lapply(seq_along(est), function(i) {
-      # fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
-      # fs_dat[[group]] <- names(est[i])
-      # fs_dat
-      prepare_fs_dat(y[[i]], est[[i]])
+      fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
+      fs_dat[[group]] <- names(est[i])
+      fs_dat
+      # prepare_fs_dat(y[[i]], est[[i]])
     })
     # do.call(rbind, fs_list)
     attr(fs_list, "av_efs") <- setNames(
