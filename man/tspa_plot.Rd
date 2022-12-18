@@ -4,7 +4,15 @@
 \alias{tspa_plot}
 \title{Diagnostic plots of fitted 2S-PA model}
 \usage{
-tspa_plot(tspa_fit, ask = FALSE, title = NULL, xlab = NULL, ylab = NULL, ...)
+tspa_plot(
+  tspa_fit,
+  ask = FALSE,
+  title = NULL,
+  xlab = NULL,
+  ylab = NULL,
+  abbreviation = TRUE,
+  ...
+)
 }
 \arguments{
 \item{tspa_fit}{An object of class \code{lavaan},
@@ -18,6 +26,8 @@ before each plot is generated. The default setting is 'False'.}
 \item{xlab}{Character. A default or user-defined name of the x-aix of scatterplot.}
 
 \item{ylab}{Character. A default or user-defined name of the y-aix of scatterplot.}
+
+\item{abbreviation}{Logic input. If 'False' is indicated}
 
 \item{...}{Additional arguments passed to \code{\link[graphics]{plot}}. See
 \code{\link[graphics]{plot}} for a list.}

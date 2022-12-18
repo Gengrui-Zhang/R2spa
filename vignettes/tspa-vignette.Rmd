@@ -72,11 +72,7 @@ tspa_plot(tspa_fit,
           col = "darkgray",
           cex.lab = 1.2,
           cex.axis = 1,
-          title = "scatterplot_a",
-          xlab = "visual",
-          ylab = "speed",
-          xlim = c(-2, 2),
-          ylim = c(1, 2),
+          abbreviation = FALSE,
           ask = FALSE)
 ```
 
@@ -119,7 +115,7 @@ To build a Two-Stage Path Analysis model, simply call the `tspa()` function with
 [^2]: The text inside `[]` should be replaced with actual variable and model name.
 
 ```{r}
-tspa_3var_fit <- tspa(model = "dem60 ~ ind60
+tspa_fit_2 <- tspa(model = "dem60 ~ ind60
                           dem65 ~ ind60 + dem60", 
                       data = fs_dat, 
                       se = list(ind60 = 0.1213615, dem60 = 0.6756472, 
@@ -130,7 +126,7 @@ cat(attributes(tspa_3var_fit)$tspaModel)
 Diagnotisc plot:
 
 ```{r}
-tspa_plot(tspa_3var_fit,
+tspa_plot(tspa_fit_2,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
