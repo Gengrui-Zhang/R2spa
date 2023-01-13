@@ -23,8 +23,7 @@ s2_std_beta <- grandStardardizedSolution(fit1)
 s2_std_beta_lav <- subset(standardizedSolution(fit1), op == "~")
 
 test_that("Test for single group warning message",
-          { expect_warning(warning(grandStardardizedSolution(fit1)),
-                           "The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.") })
+{expect_message(grandStardardizedSolution(fit1), "The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.", fixed=TRUE)})
 
 test_that("Standardized beta in a model with single group, two factors",
           { expect_equal(s2_std_beta$est.std, s2_std_beta_lav$est.std) })
@@ -110,8 +109,8 @@ jac <- lav_func_jacobian_complex(function(x)
 pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
                                    free = free_beta_psi_alpha)
 acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
-std_se <- jac %*% acov_beta_psi_alpha %*% t(jac)
-m2_std_se_h <- std_se[3, c(3, 7)]
+acov <- jac %*% acov_beta_psi_alpha %*% t(jac)
+m2_std_se_h <- sqrt(acov[3, c(3, 7)])
 
 apply(rbind(m2_std_betas_h, m2_std_beta$est.std), 2,
       function(x) {
@@ -176,7 +175,7 @@ pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
                                    free = free_beta_psi_alpha)
 acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
 std_se <- jac %*% acov_beta_psi_alpha %*% t(jac)
-m3_std_se_h <- diag(std_se[c(4, 7, 13, 16), c(4, 7, 13, 16)])
+m3_std_se_h <- sqrt(diag(std_se[c(4, 7, 13, 16), c(4, 7, 13, 16)]))
 
 apply(rbind(m3_std_betas_h, m3_std_beta$est.std), 2,
       function(x) {

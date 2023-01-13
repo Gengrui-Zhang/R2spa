@@ -77,7 +77,7 @@ grandStardardizedSolution <- function(fit, model_list = NULL,
   if (is.null(model_list)) model_list <- lavTech(fit, what = "est")
   ns <- lavInspect(fit, what = "nobs")
   if (length(ns) == 1) ns <- NULL
-  if (is.null(ns)) warning("The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.")
+  if (is.null(ns)) message("The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.")
   if (is.null(acov_par)) acov_par <- vcov(fit)
   if (is.null(free_list)) free_list <- lavTech(fit, what = "free")
 
@@ -123,8 +123,7 @@ grandStardardizedSolution <- function(fit, model_list = NULL,
     }
     acov_par <- acov_par[pos_par, pos_par]
     tmp_acov_std_beta <- jac %*% acov_par %*% t(jac)
-    # should we take square root here?
-    out$se <- diag(as.matrix(tmp_acov_std_beta[beta_pos, beta_pos]))
+    out$se <- sqrt(diag(as.matrix(tmp_acov_std_beta[beta_pos, beta_pos])))
     out$z <- out$est.std / out$se
     out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
     ci <- out$est.std + out$se %o% qnorm(c((1 - level)/2, 1 - (1 - level)/2))
