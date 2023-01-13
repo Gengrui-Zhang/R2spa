@@ -64,6 +64,7 @@ tspa_plot <- function (tspa_fit,
         if (ask == TRUE) {
           invisible(readline(prompt = "Hit <Return> to see next plot: "))
         }
+
         plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
              latent_scores[[g]][ ,paste0("fs_", latent_dv[i])],
              ylab = ifelse(is.null(label_y), paste0("fs_", latent_iv[i]),
@@ -108,6 +109,7 @@ tspa_plot <- function (tspa_fit,
       if (ask == TRUE) {
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
+
       plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
            latent_scores[ ,paste0("fs_", latent_dv[i])],
            ylab = ifelse(is.null(label_y), paste0("fs_", latent_iv[i]),

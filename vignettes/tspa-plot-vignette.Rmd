@@ -20,7 +20,7 @@ library(lavaan)
 library(R2spa)
 ```
 
-## Single group, single predictor[^1]
+## Single group, single predictor
 
 ```{r}
 model <- ' 
@@ -97,7 +97,7 @@ tspa_3var_fit <- tspa(model = "dem60 ~ ind60
 ```
 
 ```{r example_single_group_multiple_factors}
-# Title, xlab, and ylab each with the same name.
+# Title, xlab, and ylab each with same names.
 tspa_plot(tspa_3var_fit,
           ps = 10,
           col = "darkgray",
