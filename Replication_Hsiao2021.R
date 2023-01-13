@@ -8,8 +8,10 @@ library(MASS)
 library(mnormt)
 library(dplyr)
 library(tidyverse)
+library(ufs)
+library(MBESS)
 
-# Part 1: Data Generation
+# Data Generation
 
  # Helper Function
  generate_sem_data <- function(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y) {
@@ -41,7 +43,7 @@ library(tidyverse)
  }
 
  DESIGNFACTOR <- createDesign(
-   N = c(100, 500),
+   N = c(250, 500),
    beta1 = 1,  # fixed
    beta2 = 0.9,  # fixed
    beta3 = c(0.75, 0.80, 0.85),  # three conditions
@@ -110,6 +112,7 @@ library(tidyverse)
  }
 
  extract_res <- function (condition, dat, fixed_objects = NULL) {
+
   # Fit using rapi function
     fit_rapi <- rapi(model = fixed_objects$model, data = dat)
   # Fit using upi function
@@ -128,6 +131,7 @@ library(tidyverse)
                      data = fs_dat,
                      se = list(X = fs_dat$fs_X_se[1],
                                M = fs_dat$fs_M_se[1]))
+
   # Extract parameter estimates and standard errors
     paret <- c(coef(fit_rapi)["Y~X"],
                sqrt(vcov(fit_rapi)["Y~X", "Y~X"]),
@@ -153,9 +157,16 @@ library(tidyverse)
     return(paret)
  }
 
+--------------------------------------------------------------------------------------------------------------------
  # Test it
- test_df <- GenData(condition = DESIGNFACTOR[2, ], fixed_objects = FIXED_PARAMETER)
- results <- extract_res(condition = DESIGNFACTOR[2, ], dat = test_df, fixed_objects = FIXED_PARAMETER)
+ test_df <- GenData(condition = DESIGNFACTOR[22, ], fixed_objects = FIXED_PARAMETER)
+ test_results <- extract_res(condition = DESIGNFACTOR[22, ], dat = test_df, fixed_objects = FIXED_PARAMETER)
+ # Test alpha
+ test_rel_x <- test_df %>%
+                   select(x1:x3) %>%
+                   scaleStructure()
+ test_rel_x$output$dat
+--------------------------------------------------------------------------------------------------------------------
 
  evaluate_res <- function (condition, results, fixed_objects = NULL) {
    # Helper function: relative SE bias
@@ -168,6 +179,7 @@ library(tidyverse)
    }
 
    gamma <- 0.3
+
    c(
      bias = bias(results[, c("rapi_yx_est", "upi_yx_est", "tspa_yx_est",
                              "rapi_ym_est", "upi_ym_est", "tspa_ym_est",
@@ -191,9 +203,66 @@ library(tidyverse)
    )
  }
 
+# Run 200 replications
+
  sim_trial <- runSimulation(design = DESIGNFACTOR,
-                            replications = 100,
+                            replications = 200,
                             generate = GenData,
                             analyse = extract_res,
                             summarise = evaluate_res,
-                            fixed_objects = FIXED_PARAMETER)
+                            fixed_objects = FIXED_PARAMETER,
+                            save = TRUE,
+                            save_results = TRUE,
+                            filename = "simulation_result_1",
+                            parallel = TRUE,
+                            ncores = min(4L, parallel::detectCores() - 1))
+
+# Summarize the results
+
+ sim_results <- sim_trial %>%
+   gather("var", "val", bias.rapi_yx_est:rse_bias.tspa_yint_se) %>%
+   select(-c(SIM_TIME:WARNINGS)) %>%
+   separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
+   separate(col = parmet, into = c("method", "par", "result"),  sep = "_") %>%
+   select(-result) %>%
+   spread(stats, val) %>%
+   relocate(REPLICATIONS, .after = last_col()) %>%
+   mutate(N_lab = as_factor(paste0("italic(N) == ", N)),
+          beta1_lab = as_factor(paste0("\\beta_{1} == ", beta1)),
+          beta2_lab = as_factor(paste0("\\beta_{1} == ", beta2)),
+          beta3_lab = as_factor(paste0("\\beta_{1} == ", beta3)),
+          cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
+          rel_lab = as_factor(paste0("Reliability == ", rel)))
+
+ write_csv(sim_results, "sim_results_1218.csv")
+
+# Plot the results
+
+ # Bias
+ sim_results %>%
+   ggplot(aes(x = factor(N), y = bias, color = method)) +
+   geom_boxplot() +
+   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+   labs(x = "Sample Size (N)", y = "Bias")
+
+ # Standard Bias
+ sim_results %>%
+   ggplot(aes(x = factor(N), y = std_bias, color = method)) +
+   geom_boxplot() +
+   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+   labs(x = "Sample Size (N)", y = "Standard Bias")
+
+ # Relative SE Bias
+ sim_results %>%
+   ggplot(aes(x = factor(N), y = rse_bias, color = method)) +
+   geom_boxplot() +
+   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+   labs(x = "Sample Size (N)", y = "Relative SE Bias")
+
+ # RMSE
+ sim_results %>%
+   ggplot(aes(x = factor(N), y = rmse, color = method)) +
+   geom_boxplot() +
+   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+   labs(x = "Sample Size (N)", y = "RMSE")
+
