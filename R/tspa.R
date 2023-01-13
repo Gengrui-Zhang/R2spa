@@ -151,8 +151,8 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
   tspa_fit <- sem(model = tspaModel,
                   data  = data,
                   ...)
-  attributes(tspa_fit)$tspaModel <- tspaModel
   # to access the attribute, use attr(x,"tspaModel")
+  attr(tspa_fit, "tspaModel") <- tspaModel
   return (tspa_fit)
   #
   #   var <- names(reliability)
