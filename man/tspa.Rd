@@ -29,6 +29,18 @@ factor for single-group 2S-PA. A list or data frame storing
 the standard errors of each group in each latent factor for
 multigroup 2S-PA.}
 
+\item{vc}{A variance-covariance matrix of the latent variables, which can
+be obtained from the output of \code{get_fs()} using \code{attr()}
+with the argument \code{which = "av_efs"}.}
+
+\item{cross_loadings}{A matrix of loadings and cross-loadings from the
+factor scores \code{fs} to the latent variables, which
+can be obtained from the output of \code{get_fs()}
+using \code{attr()} with the argument
+\code{which = "fsA"}.
+For details see the multiple-factors vignette:
+\code{vignette("multiple-factors", package = "R2spa")}.}
+
 \item{...}{Additional arguments passed to \code{\link[lavaan]{sem}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
