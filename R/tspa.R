@@ -21,22 +21,22 @@
 #' library(lavaan)
 #'
 #' # single-group, two-factor example
-#' mod1 <- '
+#' mod1 <- "
 #'    # latent variables
 #'      ind60 =~ x1 + x2 + x3
 #'      dem60 =~ y1 + y2 + y3 + y4
-#' '
+#' "
 #' fs_dat1 <- get_fs(PoliticalDemocracy, model = mod1, std.lv = TRUE)
 #' tspa(model = "dem60 ~ ind60", data = fs_dat1,
 #'      vc = attr(fs_dat1, "av_efs"), cross_loadings = attr(fs_dat1, "fsA"))
 #'
 #' # single-group, three-factor example
-#' mod2 <-  '
+#' mod2 <- "
 #'   # latent variables
 #'     ind60 =~ x1 + x2 + x3
 #'     dem60 =~ y1 + y2 + y3 + y4
 #'     dem65 =~ y5 + y6 + y7 + y8
-#' '
+#' "
 #' fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
 #' tspa(model = "dem60 ~ ind60
 #'               dem65 ~ ind60 + dem60",
@@ -45,21 +45,18 @@
 #'      cross_loadings = attr(fs_dat2, "fsA"))
 #'
 #' # multigroup, two-factor example
-#' \dontrun{
-#' mod3 <- '
+#' mod3 <- "
 #'   # latent variables
 #'     visual =~ x1 + x2 + x3
 #'     speed =~ x7 + x8 + x9
-#'
+#' "
 #' fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
 #'                   group = "school")
 #' tspa(model = "visual ~ speed",
 #'      data = fs_dat3,
 #'      vc = attr(fs_dat3, "av_efs"),
 #'      cross_loadings = attr(fs_dat3, "fsA"))
-#' }
 #'
-#' \dontrun{
 #' # get factor scores
 #' fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
 #'                         model = "visual =~ x1 + x2 + x3",
@@ -83,8 +80,6 @@
 #'      se = list(visual = c(0.3391326, 0.311828),
 #'                speed = c(0.2786875, 0.2740507)),
 #'      group = "school")
-
-
 
 
 # # modify for multiple group tspa model

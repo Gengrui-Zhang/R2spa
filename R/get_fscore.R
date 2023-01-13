@@ -16,6 +16,7 @@
 #'         the standard errors (with suffix "_se").
 #'
 #' @importFrom lavaan cfa lavInspect sem
+#' @importFrom stats setNames
 #'
 #' @export
 #'
