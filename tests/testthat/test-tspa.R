@@ -209,7 +209,10 @@ fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
                        model = "speed =~ x7 + x8 + x9",
                        group = "school")
-fs_dat_multi <- cbind(fs_dat_visual, fs_dat_speed)
+fs_dat_multi <- cbind(
+  do.call(rbind, fs_dat_visual),
+  do.call(rbind, fs_dat_speed)
+)
 
 # SEM model
 sem_model_multi <- '
