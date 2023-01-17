@@ -157,7 +157,7 @@ library(MBESS)
     return(paret)
  }
 
---------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------
  # Test it
  test_df <- GenData(condition = DESIGNFACTOR[22, ], fixed_objects = FIXED_PARAMETER)
  test_results <- extract_res(condition = DESIGNFACTOR[22, ], dat = test_df, fixed_objects = FIXED_PARAMETER)
@@ -166,7 +166,7 @@ library(MBESS)
                    select(x1:x3) %>%
                    scaleStructure()
  test_rel_x$output$dat
---------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------
 
  evaluate_res <- function (condition, results, fixed_objects = NULL) {
    # Helper function: relative SE bias
@@ -238,6 +238,7 @@ library(MBESS)
 
 # Plot the results
 
+ sim_results <- read.csv("sim_results_1218.csv")
  # Bias
  sim_results %>%
    ggplot(aes(x = factor(N), y = bias, color = method)) +
