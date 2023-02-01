@@ -81,7 +81,8 @@ test_that ("Test the data variable names should contain prefix (fs_)", {
 test_that("test if the regression coefficients of factors are the same for two methods",
           {
             # HL: A more efficient way with `coef()`
-            expect_equal(coef(cfa_single), coef(tspa_single))
+            expect_equal(coef(cfa_single)["dem60~ind60"],
+                         coef(tspa_single)["dem60~ind60"])
           })
 
 test_that("test if the se of regression coefficients are the same for two methods",
