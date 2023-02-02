@@ -184,8 +184,6 @@ GenData <- function (condition, fixed_objects = NULL) {
 
     }
 
-    browser()
-
     c(
       std_bias = bias(results_est,
                       parameter = pop_par,
