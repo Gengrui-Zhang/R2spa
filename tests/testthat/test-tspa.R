@@ -91,7 +91,13 @@ test_that("test if the se of regression coefficients are the same for two method
             # JZ: I have one question here. Do equal vcov() results mean the standard error
             #     and regression coefficients are equal for two methods? I believe this is because
             #     regression coefficents and se are calculated from var/cov matrix?
-            expect_equal(vcov(cfa_single), vcov(tspa_single))
+            expect_equal(
+              vcov(cfa_single)[c("dem60~ind60", "v1", "v2"),
+                               c("dem60~ind60", "v1", "v2")] |> unname(),
+              vcov(tspa_single)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+                                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")] |>
+                unname()
+            )
           })
 
 # Fit measures
@@ -321,4 +327,5 @@ test_that("The order of loadings in the output", {
   expect_equal(c("dem60", "dem65", "dem65"), model_order$lhs)
   expect_equal(c("ind60", "ind60", "dem60"), model_order$rhs)
 })
+
 

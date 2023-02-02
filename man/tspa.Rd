@@ -89,7 +89,25 @@ fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
 tspa(model = "visual ~ speed",
      data = fs_dat3,
      vc = attr(fs_dat3, "av_efs"),
-     cross_loadings = attr(fs_dat3, "fsA"))
+     cross_loadings = attr(fs_dat3, "fsA"),
+     group = "school")
+
+# multigroup, three-factor example
+mod4 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed =~ x7 + x8 + x9
+
+"
+fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
+                  group = "school")
+tspa(model = "visual ~ speed
+              textual ~ visual + speed",
+     data = fs_dat4,
+     vc = attr(fs_dat4, "av_efs"),
+     cross_loadings = attr(fs_dat4, "fsA"),
+     group = "school")
 
 # get factor scores
 fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
