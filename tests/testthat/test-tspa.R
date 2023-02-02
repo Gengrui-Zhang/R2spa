@@ -321,11 +321,54 @@ tspa_mod_s <- tspaSingleGroupMF(
   cross_loadings = attr(fs_dat_3fac, "fsA")
 )
 
-model_order <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
+factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
+loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
 
-test_that("The order of loadings in the output", {
-  expect_equal(c("dem60", "dem65", "dem65"), model_order$lhs)
-  expect_equal(c("ind60", "ind60", "dem60"), model_order$rhs)
+test_that("The order of factors in the model from tspaSingleGroupMF()", {
+  expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
+  expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
+})
+test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+  expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
+               loadings_order_s$lhs)
+  expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
+               loadings_order_s$rhs)
 })
 
+
+# Test tspaMultipleGroupMF()
+mod4 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed =~ x7 + x8 + x9
+
+"
+fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
+                  group = "school")
+tspa_mod_m <- tspaMultipleGroupMF(
+  model = "visual ~ speed
+           textual ~ visual + speed",
+  data = fs_dat4,
+  vc = attr(fs_dat4, "av_efs"),
+  cross_loadings = attr(fs_dat4, "fsA")
+)
+
+factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
+                          op == "~")
+loadings_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
+                           op == "=~")
+
+test_that("The order of factors in the model from tspaSingleGroupMF()", {
+  expect_equal(rep(c("visual", "textual", "textual"), 2),
+               factors_order_m$lhs)
+  expect_equal(rep(c("speed", "visual", "speed"), 2),
+               factors_order_m$rhs)
+})
+test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+  expect_equal(rep(c("visual", "textual", "speed"), each = 3) |> rep(2),
+               loadings_order_m$lhs)
+  expect_equal(rep(c("fs_visual", "fs_textual", "fs_speed"), 6),
+               loadings_order_m$rhs)
+})
 
