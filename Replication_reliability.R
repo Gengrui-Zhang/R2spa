@@ -1,15 +1,16 @@
 # Replication of Hsiao (2021)
-#
-# library(semTools)
-# library(lavaan)
-# library(semPlot)
+
+library(semTools)
+library(lavaan)
+library(semPlot)
 library(SimDesign)
-# library(MASS)
-# library(mnormt)
-# library(dplyr)
-# library(tidyverse)
-# library(ufs)
-# library(MBESS)
+library(MASS)
+library(mnormt)
+library(dplyr)
+library(tidyverse)
+library(ufs)
+library(MBESS)
+devtools::load_all(".")
 
 # Data Generation
 
@@ -199,7 +200,7 @@ GenData <- function (condition, fixed_objects = NULL) {
   }
 
   sim_hsiao <- runSimulation(design = DESIGNFACTOR,
-                             replications = 1,
+                             replications = 2000,
                              generate = GenData,
                              analyse = extract_res,
                              summarise = evaluate_res,
