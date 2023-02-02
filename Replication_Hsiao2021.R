@@ -275,8 +275,7 @@ library(MBESS)
    beta2 = 0.9,  # fixed
    beta3 = c(0.75, 0.80, 0.85),  # three conditions
    cor_xm = c(0, 0.3, 0.6), # correlation between latent x and m / error variance of Y
-   rel = c(0.7, 0.8, 0.9),
-   rel_type = c("alpha", "omega", "H", "GLB")
+   rel = c(0.7, 0.8, 0.9)
  )
 
  FIXED_PARAMETER <- list(model = '
@@ -298,14 +297,35 @@ library(MBESS)
  )
 
  extract_res <- function (condition, dat, fixed_objects = NULL) {
-   # Fit using rapi function
-   fit_rapi <- rapi_rel(model = fixed_objects$model,
+   # rapi with alpha
+   rapi_alpha <- rapi_rel(model = fixed_objects$model,
+                          data = dat,
+                          rel = "alpha")
+   # rapi with omega
+   rapi_omega <- rapi_rel(model = fixed_objects$model,
+                          data = dat,
+                          rel = "omega")
+   # rapi with H
+   rapi_H <- rapi_rel(model = fixed_objects$model,
+                      data = dat,
+                      rel = "H")
+   # rapi with GLB
+   rapi_GLB <- rapi_rel(model = fixed_objects$model,
                         data = dat,
-                        rel = condition$rel_type)
+                        rel = "GLB")
    # Extract parameter estimates and standard errors
-   paret <- c(coef(fit_rapi)["Y~int"],
-              sqrt(vcov(fit_rapi)["Y~int", "Y~int"]))
-   names(paret) <- c("rapi_yint_est", "rapi_yint_se")
+   paret <- c(coef(rapi_alpha)["Y~int"],
+              sqrt(vcov(rapi_alpha)["Y~int", "Y~int"]),
+              coef(rapi_omega)["Y~int"],
+              sqrt(vcov(rapi_omega)["Y~int", "Y~int"]),
+              coef(rapi_H)["Y~int"],
+              sqrt(vcov(rapi_H)["Y~int", "Y~int"]),
+              coef(rapi_GLB)["Y~int"],
+              sqrt(vcov(rapi_GLB)["Y~int", "Y~int"]))
+   names(paret) <- c("rapi_alpha_est", "rapi_alpha_se",
+                     "rapi_omega_est", "rapi_omega_se",
+                     "rapi_H_est", "rapi_H_se",
+                     "rapi_GLB_est", "rapi_GLB_se")
    return(paret)
  }
 
@@ -315,6 +335,11 @@ library(MBESS)
    pop_par <- ifelse(condition$beta3 == 0.75, fixed_objects$pop_loading$large,
                      ifelse(condition$beta3 == 0.8, fixed_objects$pop_loading$medium,
                             ifelse(condition$beta3 == 0.85, fixed_objects$pop_loading$small, NA)))
+
+
+   # Separate estimates and se
+   results_est <- as.data.frame(results[colnames(results)[grepl("_est", colnames(results))]])
+   results_se <- as.data.frame(results[colnames(results)[grepl("_se", colnames(results))]])
 
    # Helper function for calculating relative se bias
    rse_bias <- function(est_se, est) {
@@ -327,36 +352,39 @@ library(MBESS)
 
    # Helper functuion for calculating coverage rate
    coverage_rate <- function(est_se, est, pop) {
-     cover <- c()
+     ci_est <- list()
      est_se <- as.matrix(est_se)
      est <- as.matrix(est)
      lo.95 <- est - qnorm(.975)*est_se
      hi.95 <- est + qnorm(.975)*est_se
-     ci_est <- as.data.frame(cbind(lo.95, hi.95))
-     names(ci_est) <- c("lo.95", "hi.95")
-     for (i in seq_len(nrow(ci_est))) {
-       cover[i] <- ifelse(between(pop, ci_est$lo.95[i], ci_est$hi.95[i]), 1, 0)
+
+     for (i in seq_len(length(colnames(est)))) {
+       ci_est[[i]] <- cbind(lo.95[,i], hi.95[,i])
+       names(ci_est)[i] <- colnames(est)[i]
      }
-     return(sum(cover == 1)/length(cover)*100)
+
+     return(unlist(lapply(ci_est, ECR, parameter = pop)))
+
    }
 
+   browser()
+
    c(
-     std_bias = bias(results["rapi_yint_est"],
-                 parameter = pop_par,
-                 type = "standardized"),
-     coverage_rate(results["rapi_yint_se"],
-                   results["rapi_yint_est"],
-                   pop = pop_par),
-     rmse = RMSE(results["rapi_yint_est"],
-                 parameter = pop_par),
-     rse_bias = bias(results["rapi_yint_est"],
+     std_bias = bias(results_est,
                      parameter = pop_par,
-                     type = "relative")
+                     type = "standardized"),
+     coverage = coverage_rate(results_se,
+                              results_est,
+                              pop = pop_par),
+     rmse = RMSE(results_est,
+                 parameter = pop_par),
+     rse_bias = rse_bias(results_se,
+                         results_est)
    )
  }
 
  sim_hsiao <- runSimulation(design = DESIGNFACTOR,
-                            replications = 1,
+                            replications = 2000,
                             generate = GenData,
                             analyse = extract_res,
                             summarise = evaluate_res,
@@ -364,8 +392,9 @@ library(MBESS)
                             # save = TRUE,
                             # save_results = TRUE,
                             # filename = "hsiao_result",
-                            parallel = TRUE,
-                            ncores = min(4L, parallel::detectCores() - 1))
+                            # parallel = TRUE,
+                            # ncores = min(4L, parallel::detectCores() - 1)
+ )
 
 
 
