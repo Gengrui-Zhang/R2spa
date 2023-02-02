@@ -267,3 +267,106 @@ library(MBESS)
    facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
    labs(x = "Sample Size (N)", y = "RMSE")
 
+#--------------------------------------------------------------------------------------------------------------------
+ # Compare with Hsiao 2021
+ DESIGNFACTOR <- createDesign(
+   N = c(250, 500),
+   beta1 = 1,  # fixed
+   beta2 = 0.9,  # fixed
+   beta3 = c(0.75, 0.80, 0.85),  # three conditions
+   cor_xm = c(0, 0.3, 0.6), # correlation between latent x and m / error variance of Y
+   rel = c(0.7, 0.8, 0.9),
+   rel_type = c("alpha", "omega", "H", "GLB")
+ )
+
+ FIXED_PARAMETER <- list(model = '
+                                  # Measurement Model
+                                    X =~ x1 + x2 + x3
+                                    M =~ m1 + m2 + m3
+                                  # Structural Model
+                                    Y ~ X + M + X:M
+                                  ',
+                         mu_x = 0, # latent mean of x: fixed at 0
+                         mu_m = 0, # latent mean of m: fixed at 0,
+                         mu_xm = 0,
+                         gamma = list(xy = 0.3, # linear effects of x and y: fixed at 0.3
+                                      my = 0.3, # linear effects of x and y: fixed at 0.3
+                                      xmy = 0.3), # # linear effects of xm and y: fixed at 0.3
+                         pop_loading = list(large = 0.256,
+                                            medium = 0.247,
+                                            small = 0.238)
+ )
+
+ extract_res <- function (condition, dat, fixed_objects = NULL) {
+   # Fit using rapi function
+   fit_rapi <- rapi_rel(model = fixed_objects$model,
+                        data = dat,
+                        rel = condition$rel_type)
+   # Extract parameter estimates and standard errors
+   paret <- c(coef(fit_rapi)["Y~int"],
+              sqrt(vcov(fit_rapi)["Y~int", "Y~int"]))
+   names(paret) <- c("rapi_yint_est", "rapi_yint_se")
+   return(paret)
+ }
+
+ evaluate_res <- function (condition, results, fixed_objects = NULL) {
+
+   # Population parameter
+   pop_par <- ifelse(condition$beta3 == 0.75, fixed_objects$pop_loading$large,
+                     ifelse(condition$beta3 == 0.8, fixed_objects$pop_loading$medium,
+                            ifelse(condition$beta3 == 0.85, fixed_objects$pop_loading$small, NA)))
+
+   # Helper function for calculating relative se bias
+   rse_bias <- function(est_se, est) {
+     est_se <- as.matrix(est_se)
+     est <- as.matrix(est)
+     est_se <- colMeans(est_se)
+     emp_sd <- apply(est, 2L, sd)
+     est_se / emp_sd - 1
+   }
+
+   # Helper functuion for calculating coverage rate
+   coverage_rate <- function(est_se, est, pop) {
+     cover <- c()
+     est_se <- as.matrix(est_se)
+     est <- as.matrix(est)
+     lo.95 <- est - qnorm(.975)*est_se
+     hi.95 <- est + qnorm(.975)*est_se
+     ci_est <- as.data.frame(cbind(lo.95, hi.95))
+     names(ci_est) <- c("lo.95", "hi.95")
+     for (i in seq_len(nrow(ci_est))) {
+       cover[i] <- ifelse(between(pop, ci_est$lo.95[i], ci_est$hi.95[i]), 1, 0)
+     }
+     return(sum(cover == 1)/length(cover)*100)
+   }
+
+   c(
+     std_bias = bias(results["rapi_yint_est"],
+                 parameter = pop_par,
+                 type = "standardized"),
+     coverage_rate(results["rapi_yint_se"],
+                   results["rapi_yint_est"],
+                   pop = pop_par),
+     rmse = RMSE(results["rapi_yint_est"],
+                 parameter = pop_par),
+     rse_bias = bias(results["rapi_yint_est"],
+                     parameter = pop_par,
+                     type = "relative")
+   )
+ }
+
+ sim_hsiao <- runSimulation(design = DESIGNFACTOR,
+                            replications = 1,
+                            generate = GenData,
+                            analyse = extract_res,
+                            summarise = evaluate_res,
+                            fixed_objects = FIXED_PARAMETER,
+                            # save = TRUE,
+                            # save_results = TRUE,
+                            # filename = "hsiao_result",
+                            parallel = TRUE,
+                            ncores = min(4L, parallel::detectCores() - 1))
+
+
+
+
