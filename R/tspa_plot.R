@@ -67,9 +67,9 @@ tspa_plot <- function (tspa_fit,
 
         plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
              latent_scores[[g]][ ,paste0("fs_", latent_dv[i])],
-             ylab = ifelse(is.null(label_y), paste0("fs_", latent_iv[i]),
+             ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
                            ifelse(length(label_y) > 1, label_y[i], label_y)),
-             xlab = ifelse(is.null(label_x), paste0("fs_", latent_dv[i]),
+             xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
                            ifelse(length(label_x) > 1, label_x[i], label_x)),
              main = ifelse(is.null(title),
                            paste0("Scatterplot", " (Group ", g, ": ", g_names[g], ")"),
@@ -82,7 +82,8 @@ tspa_plot <- function (tspa_fit,
           invisible(readline(prompt = "Hit <Return> to see next plot: "))
         }
         df_latent_scores[[g]]$residuals <- latent_model[[g]]$residuals
-        plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])], df_latent_scores[[g]]$residuals,
+        plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
+             df_latent_scores[[g]]$residuals,
              ylab = "Residuals",
              xlab = "Fitted values",
              main = paste0("Residual Plot", " (Group ", g, ": ", g_names[g], ")"),
@@ -112,9 +113,9 @@ tspa_plot <- function (tspa_fit,
 
       plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
            latent_scores[ ,paste0("fs_", latent_dv[i])],
-           ylab = ifelse(is.null(label_y), paste0("fs_", latent_iv[i]),
+           ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
                          ifelse(length(label_y) > 1, label_y[i], label_y)),
-           xlab = ifelse(is.null(label_x), paste0("fs_", latent_dv[i]),
+           xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
                          ifelse(length(label_x) > 1, label_x[i], label_x)),
            main = ifelse(is.null(title),
                          paste0("Scatterplot"),
@@ -127,7 +128,8 @@ tspa_plot <- function (tspa_fit,
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
       df_latent_scores$residuals <- latent_model$residuals
-      plot(latent_scores[ ,paste0("fs_", latent_iv[i])], df_latent_scores$residuals,
+      plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
+           df_latent_scores$residuals,
            ylab = "Residuals",
            xlab = "Fitted values",
            main = "Residual Plot",

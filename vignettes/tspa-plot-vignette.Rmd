@@ -18,6 +18,7 @@ Load packages
 ```{r load-pkg, message = FALSE}
 library(lavaan)
 library(R2spa)
+library(semdplot)
 ```
 
 ## Single group, single predictor
@@ -59,6 +60,19 @@ tspa_plot(tspa_fit_1,
           cex.axis = 1,
           ask = TRUE)
 ```
+
+```{r try with semdplot}
+fs_reg <- lm(fs_dat$fs_dem60 ~ fs_dat$fs_ind60, fs_dat)
+fs_sem <- sem("fs_dem60 ~ fs_ind60", fs_dat)
+summary(fs_reg)
+summary(fs_sem)
+
+p <- casewise_residuals(fs_sem)
+plot(p,
+     x_names = "fs_ind60",
+     y_names = "fs_dem60")
+```
+
 
 ## Single group, multiple predictors
 
@@ -102,10 +116,7 @@ tspa_plot(tspa_3var_fit,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
-          cex.axis = 1,
-          title = c("Scatterplot_I"),
-          label_x = c("factor_1"),
-          label_y = c("factor_a"))
+          cex.axis = 1)
 
 # Title, xlab, and ylab each with separate names.
 tspa_plot(tspa_3var_fit,
@@ -117,6 +128,20 @@ tspa_plot(tspa_3var_fit,
           label_x = c("factor_1", "factor_2", "factor_3"),
           label_y = c("factor_a", "factor_b", "factor_c"))
 ```
+
+```{r using semdplot package}
+fs_sem2 <- sem(model = "fs_dem60 ~ fs_ind60
+                        fs_dem65 ~ fs_ind60 + fs_dem60",
+               data = fs_dat)
+
+fit_res2 <- casewise_residuals(fs_sem2)
+p <- plot(fit_res2,
+           x_names = c("fs_ind60", "fs_dem60"),
+           y_names = c("fs_dem60", "fs_dem65"))
+
+plot(p)
+```
+
 
 ## Multigroup, single predictor
 
@@ -169,6 +194,19 @@ tspa_plot(tspa_fit_3,
           cex.axis = 1,
           abbreviation = FALSE)
 ```
+
+```{r}
+fs_sem3 <- sem(model = "fs_visual ~ fs_speed",
+               data = fs_hs)
+
+fit_res3 <- casewise_residuals(fs_sem3)
+p <- plot(fit_res3,
+           x_names = c("fs_speed"),
+           y_names = c("fs_visual"))
+
+plot(p)
+```
+
 
 
 
