@@ -93,10 +93,10 @@ test_that("test if the se of regression coefficients are the same for two method
             #     regression coefficents and se are calculated from var/cov matrix?
             expect_equal(
               vcov(cfa_single)[c("dem60~ind60", "v1", "v2"),
-                               c("dem60~ind60", "v1", "v2")] |> unname(),
+                               c("dem60~ind60", "v1", "v2")],
               vcov(tspa_single)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
-                                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")] |>
-                unname()
+                                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")],
+              ignore_attr = TRUE
             )
           })
 
