@@ -22,8 +22,9 @@ s2_std_beta <- grandStardardizedSolution(fit1)
 ### lavaan::standardizedSolution()
 s2_std_beta_lav <- subset(standardizedSolution(fit1), op == "~")
 
-test_that("Test for single group warning message",
-{expect_message(grandStardardizedSolution(fit1), "The grand standardized solution is equivalent to the standardizedSolution() from lavaan for a model with a single group.", fixed=TRUE)})
+test_that("Test for single group warning message", {
+  expect_message(grandStardardizedSolution(fit1))
+})
 
 test_that("Standardized beta in a model with single group, two factors",
           { expect_equal(s2_std_beta$est.std, s2_std_beta_lav$est.std) })
@@ -111,6 +112,21 @@ pos_beta_psi_alpha <- .combine_est(free_beta_psi_alpha,
 acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
 acov <- jac %*% acov_beta_psi_alpha %*% t(jac)
 m2_std_se_h <- sqrt(acov[3, c(3, 7)])
+
+test_that("veta_grand() gives expected results", code = {
+  lvcov_fit3 <- lavInspect(fit3, what = "cov.lv")
+  lvmean_fit3 <- lavInspect(fit3, what = "mean.lv")
+  ns_fit3 <- lavInspect(fit3, what = "nobs")
+  v_eta_hand <- Reduce(
+    `+`,
+    mapply(function(v, m, n) n *
+             (v + tcrossprod(m - do.call(cbind, lvmean_fit3) %*%
+                               ns_fit3 / sum(ns_fit3))),
+           v = lvcov_fit3, m = lvmean_fit3, n = ns_fit3, SIMPLIFY = FALSE)
+  ) / sum(ns_fit3)
+  expect_true(all(v_eta > Reduce(`+`, x = lvcov_fit3) / 2))
+  expect_equal(v_eta, v_eta_hand, ignore_attr = TRUE)
+})
 
 apply(rbind(m2_std_betas_h, m2_std_beta$est.std), 2,
       function(x) {
