@@ -79,6 +79,19 @@ fit3 <- sem(mod3, data = HolzingerSwineford1939,
 
 m2_std_beta <- grandStardardizedSolution(fit3)
 
+test_that("grand std est in the range of std estimates", code = {
+  gp_std_est <- subset(standardizedSolution(fit3), subset = op == "~")$est
+  gr_std_est <- m2_std_beta$est
+  expect_gte(mean(gr_std_est), min(gp_std_est))
+  expect_lte(mean(gr_std_est), max(gp_std_est))
+})
+
+test_that("grand std SE similar to average std SE", code = {
+  gp_std_se <- subset(standardizedSolution(fit3), subset = op == "~")$se
+  gr_std_se <- m2_std_beta$se
+  expect_equal(mean(gp_std_se), mean(gr_std_se), tolerance = 0.1)
+})
+
 ## Hand calculation
 ### std.est
 model_list <- lavTech(fit3, what = "est")
