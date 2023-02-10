@@ -13,7 +13,7 @@
 #' @return A matrix of the standardized model parameters and standard errors.
 #' @export
 #'
-#' @example
+#' @examples
 #' library(lavaan)
 #'
 #' ## A single-group, two-factor example
