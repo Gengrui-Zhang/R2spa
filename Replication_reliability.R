@@ -88,7 +88,7 @@ GenData <- function (condition, fixed_objects = NULL) {
 }
 
   DESIGNFACTOR <- createDesign(
-    N = c(250, 500),
+    N = c(25000, 50000),
     beta1 = 1,  # fixed
     beta2 = 0.9,  # fixed
     beta3 = c(0.75, 0.80, 0.85),  # three conditions
@@ -184,7 +184,7 @@ GenData <- function (condition, fixed_objects = NULL) {
       return(unlist(lapply(ci_est, ECR, parameter = pop)))
 
     }
-
+    browser()
     c(
       std_bias = bias(results_est,
                       parameter = pop_par,
@@ -200,18 +200,48 @@ GenData <- function (condition, fixed_objects = NULL) {
   }
 
   sim_hsiao <- runSimulation(design = DESIGNFACTOR,
-                             replications = 2000,
+                             replications = 1,
                              generate = GenData,
                              analyse = extract_res,
                              summarise = evaluate_res,
                              fixed_objects = FIXED_PARAMETER,
-                             save = TRUE,
-                             save_results = TRUE,
-                             filename = "hsiao21_replication",
-                             parallel = TRUE,
+                             # save = TRUE,
+                             # save_results = TRUE,
+                             # filename = "hsiao21_replication",
+                             # parallel = TRUE,
                              ncores = min(4L, parallel::detectCores() - 1)
                              )
 
 
 
+
+# Summarizing results
+
+  std_bias <- hsiao21_replication %>%
+    group_by(N, rel, cor_xm) %>%
+    summarise(alpha = mean(std_bias.rapi_alpha_est),
+              omega = mean(std_bias.rapi_omega_est),
+              H = mean(std_bias.rapi_H_est),
+              GLB = mean(std_bias.rapi_GLB_est))
+
+  coverage <- hsiao21_replication %>%
+    group_by(N, rel, cor_xm) %>%
+    summarise(alpha = mean(coverage.rapi_alpha_est),
+              omega = mean(coverage.rapi_omega_est),
+              H = mean(coverage.rapi_H_est),
+              GLB = mean(coverage.rapi_GLB_est))
+
+  rse_bias <- hsiao21_replication %>%
+    group_by(N, rel, cor_xm) %>%
+    summarise(alpha = mean(rse_bias.rapi_alpha_se),
+              omega = mean(rse_bias.rapi_omega_se),
+              H = mean(rse_bias.rapi_H_se),
+              GLB = mean(rse_bias.rapi_GLB_se))
+
+  rmse <- hsiao21_replication %>%
+    group_by(N, rel, cor_xm) %>%
+    summarise(alpha = mean(rmse.rapi_alpha_est),
+              omega = mean(rmse.rapi_omega_est),
+              H = mean(rmse.rapi_H_est),
+              GLB = mean(rmse.rapi_GLB_est))
 
