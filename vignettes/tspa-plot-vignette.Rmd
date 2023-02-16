@@ -1,7 +1,7 @@
 ---
 title: "tspa-plot-vignette"
 author: "Jimmy Zhang"
-date: "2022-12-18"
+date: "2023-02-16"
 output:
   html_document: default
   pdf_document: default
@@ -61,18 +61,11 @@ tspa_plot(tspa_fit_1,
           ask = TRUE)
 ```
 
-```{r try with semdplot}
-fs_reg <- lm(fs_dat$fs_dem60 ~ fs_dat$fs_ind60, fs_dat)
-fs_sem <- sem("fs_dem60 ~ fs_ind60", fs_dat)
-summary(fs_reg)
-summary(fs_sem)
-
-p <- casewise_residuals(fs_sem)
-plot(p,
-     x_names = "fs_ind60",
-     y_names = "fs_dem60")
+```{r example using casewise_residuals function}
+casewise_residuals(tspa_fit_1)
 ```
 
+It seems that `casewise_residuals` function does not support tspa model fits because they have latent variables.
 
 ## Single group, multiple predictors
 
@@ -128,20 +121,6 @@ tspa_plot(tspa_3var_fit,
           label_x = c("factor_1", "factor_2", "factor_3"),
           label_y = c("factor_a", "factor_b", "factor_c"))
 ```
-
-```{r using semdplot package}
-fs_sem2 <- sem(model = "fs_dem60 ~ fs_ind60
-                        fs_dem65 ~ fs_ind60 + fs_dem60",
-               data = fs_dat)
-
-fit_res2 <- casewise_residuals(fs_sem2)
-p <- plot(fit_res2,
-           x_names = c("fs_ind60", "fs_dem60"),
-           y_names = c("fs_dem60", "fs_dem65"))
-
-plot(p)
-```
-
 
 ## Multigroup, single predictor
 
