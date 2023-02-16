@@ -372,3 +372,35 @@ test_that("The order of loadings in the model from tspaSingleGroupMF()", {
                loadings_order_m$rhs)
 })
 
+# Compare results to using Bartlett's scores
+tspa_fit_m <- tspa(
+  model = "visual ~ speed
+           textual ~ visual + speed",
+  data = fs_dat4,
+  group = "school",
+  vc = attr(fs_dat4, "av_efs"),
+  cross_loadings = attr(fs_dat4, "fsA")
+)
+fs_dat4b <- get_fs(HolzingerSwineford1939, model = mod4,
+                   group = "school", method = "Bartlett")
+sem_fit_m <- sem(
+  model = "visual =~ fs_visual
+           speed =~ fs_speed
+           textual =~ fs_textual
+           fs_visual ~~ c(0.2633962, 0.2827317) * fs_visual
+           fs_textual ~~ c(0.1239827, 0.1282725) * fs_textual
+           fs_speed ~~ c(0.2020107, 0.1332701) * fs_speed
+           visual ~ speed
+           textual ~ visual + speed",
+  data = do.call(rbind, fs_dat4b),
+  group = "school"
+)
+
+test_that("Multiple-group multiple-factor example", code = {
+  sct <- standardizedSolution(tspa_fit_m)
+  scs <- standardizedSolution(sem_fit_m)
+  expect_equal(sct$est[sct$op == "~"], expected = scs$est[scs$op == "~"],
+               tolerance = 0.0001)
+  expect_equal(sct$se[sct$op == "~"], expected = scs$se[scs$op == "~"],
+               tolerance = 0.0001)
+})
