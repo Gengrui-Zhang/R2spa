@@ -5,7 +5,7 @@
 \title{Grand Standardized Solution}
 \usage{
 grandStardardizedSolution(
-  fit,
+  object,
   model_list = NULL,
   se = TRUE,
   acov_par = NULL,
@@ -14,8 +14,10 @@ grandStardardizedSolution(
 )
 }
 \arguments{
+\item{object}{An object of class lavaan.}
+
 \item{model_list}{A list of string variable describing the structural path
-model, in \code{lavaan} syntax}
+model, in \code{lavaan} syntax.}
 
 \item{se}{A Boolean variable. If TRUE, standard errors for the grand
 standardized parameters will be computed.}
@@ -25,6 +27,8 @@ model object.}
 
 \item{free_list}{A list of model matrices that indicate the position of
 the free parameters in the parameter vector.}
+
+\item{level}{The confidence level required.}
 }
 \value{
 A matrix of the standardized model parameters and standard errors.
