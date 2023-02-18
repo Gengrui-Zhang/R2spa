@@ -2,6 +2,7 @@
 
 export(compute_fscore)
 export(get_fs)
+export(grandStardardizedSolution)
 export(tspa)
 importFrom(lavaan,cfa)
 importFrom(lavaan,lavInspect)
