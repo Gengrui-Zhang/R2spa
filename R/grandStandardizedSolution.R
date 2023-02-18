@@ -2,15 +2,22 @@
 #'
 #' Grand standardized solution of a two-stage path analysis model.
 #'
+#' @param object An object of class lavaan.
 #' @param model_list A list of string variable describing the structural path
-#'                   model, in \code{lavaan} syntax
+#'                   model, in \code{lavaan} syntax.
 #' @param se A Boolean variable. If TRUE, standard errors for the grand
 #'                   standardized parameters will be computed.
 #' @param acov_par An asymptotic variance-covariance matrix for a fitted
 #'                 model object.
 #' @param free_list A list of model matrices that indicate the position of
 #'                  the free parameters in the parameter vector.
+#' @param level The confidence level required.
 #' @return A matrix of the standardized model parameters and standard errors.
+#'
+#' @importFrom stats pnorm qnorm
+#' @importFrom utils tail
+#' @importFrom lavaan vcov inspect lav_func_jacobian_complex
+#'
 #' @export
 #'
 #' @examples
@@ -71,22 +78,22 @@
 #' grandStardardizedSolution(fit4)
 
 
-grandStardardizedSolution <- function(fit, model_list = NULL,
+grandStardardizedSolution <- function(object, model_list = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL, level = .95) {
-  if (is.null(model_list)) model_list <- lavTech(fit, what = "est")
-  ns <- lavInspect(fit, what = "nobs")
+  if (is.null(model_list)) model_list <- lavTech(object, what = "est")
+  ns <- lavInspect(object, what = "nobs")
   if (length(ns) == 1) ns <- NULL
   if (is.null(ns)) message(
     "The grand standardized solution is equivalent to ",
     "lavaan::standardizedSolution() for a model with a single group.")
-  if (is.null(acov_par)) acov_par <- vcov(fit)
-  if (is.null(free_list)) free_list <- lavTech(fit, what = "free")
+  if (is.null(acov_par)) acov_par <- vcov(object)
+  if (is.null(free_list)) free_list <- lavTech(object, what = "free")
 
-  partable <- subset(inspect(fit, "list"), op == "~")
+  partable <- subset(inspect(object, "list"), op == "~")
   out <- partable[, c("lhs", "op", "rhs", "exo", "group",
                       "block", "label")]
-  partable_beta <- lavTech(fit, what = "partable", list.by.group = TRUE)
+  partable_beta <- lavTech(object, what = "partable", list.by.group = TRUE)
 
   # Get standardized betas
   if (is.null(ns)) {
