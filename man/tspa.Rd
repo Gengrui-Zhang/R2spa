@@ -4,7 +4,15 @@
 \alias{tspa}
 \title{Two-Stage Path Analysis}
 \usage{
-tspa(model, data, reliability = NULL, se = NULL, ...)
+tspa(
+  model,
+  data,
+  reliability = NULL,
+  se = NULL,
+  vc = NULL,
+  cross_loadings = NULL,
+  ...
+)
 }
 \arguments{
 \item{model}{A string variable describing the structural path model,
@@ -21,6 +29,18 @@ factor for single-group 2S-PA. A list or data frame storing
 the standard errors of each group in each latent factor for
 multigroup 2S-PA.}
 
+\item{vc}{A variance-covariance matrix of the latent variables, which can
+be obtained from the output of \code{get_fs()} using \code{attr()}
+with the argument \code{which = "av_efs"}.}
+
+\item{cross_loadings}{A matrix of loadings and cross-loadings from the
+factor scores \code{fs} to the latent variables, which
+can be obtained from the output of \code{get_fs()}
+using \code{attr()} with the argument
+\code{which = "fsA"}.
+For details see the multiple-factors vignette:
+\code{vignette("multiple-factors", package = "R2spa")}.}
+
 \item{...}{Additional arguments passed to \code{\link[lavaan]{sem}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
@@ -33,20 +53,61 @@ Fit a two-stage path analysis (2S-PA) model.
 }
 \examples{
 library(lavaan)
-### single-group example
 
-# get factor scores
-fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-                       model = "ind60 =~ x1 + x2 + x3")
-fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
-                       model = "dem60 =~ y1 + y2 + y3 + y4")
-fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
+# single-group, two-factor example
+mod1 <- "
+   # latent variables
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+"
+fs_dat1 <- get_fs(PoliticalDemocracy, model = mod1, std.lv = TRUE)
+tspa(model = "dem60 ~ ind60", data = fs_dat1,
+     vc = attr(fs_dat1, "av_efs"), cross_loadings = attr(fs_dat1, "fsA"))
 
-# tspa model
-tspa(model = "dem60 ~ ind60", data = fs_dat,
-     se = c(ind60 = 0.1213615, dem60 = 0.6756472))
+# single-group, three-factor example
+mod2 <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+"
+fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+     data = fs_dat2,
+     vc = attr(fs_dat2, "av_efs"),
+     cross_loadings = attr(fs_dat2, "fsA"))
 
-### multigroup example
+# multigroup, two-factor example
+mod3 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+"
+fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
+                  group = "school")
+tspa(model = "visual ~ speed",
+     data = fs_dat3,
+     vc = attr(fs_dat3, "av_efs"),
+     cross_loadings = attr(fs_dat3, "fsA"),
+     group = "school")
+
+# multigroup, three-factor example
+mod4 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed =~ x7 + x8 + x9
+
+"
+fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
+                  group = "school")
+tspa(model = "visual ~ speed
+              textual ~ visual + speed",
+     data = fs_dat4,
+     vc = attr(fs_dat4, "av_efs"),
+     cross_loadings = attr(fs_dat4, "fsA"),
+     group = "school")
 
 # get factor scores
 fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
@@ -55,9 +116,9 @@ fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
                        model = "speed =~ x7 + x8 + x9",
                        group = "school")
-fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+fs_hs <- cbind(do.call(rbind, fs_dat_visual),
+               do.call(rbind, fs_dat_speed))
 
-\dontrun{
 # tspa model
 tspa(model = "visual ~ speed",
      data = fs_hs,
@@ -72,5 +133,4 @@ tspa(model = "visual ~ c(b1, b1) * speed",
      se = list(visual = c(0.3391326, 0.311828),
                speed = c(0.2786875, 0.2740507)),
      group = "school")
-}
 }

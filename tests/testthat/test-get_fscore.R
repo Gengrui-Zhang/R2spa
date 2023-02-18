@@ -1,6 +1,3 @@
-# TODO List:
-# 1. Logical tests: e.g., lower bound of SE
-# 2. Regression score and Bartlett scores
 
 ####################################### Test get_fs() function ######################################
 # Loading packages and functions
@@ -39,13 +36,17 @@ test_that("Test that the function gives an output of data frame", {
   expect_s3_class(test_object_fs, "data.frame")
 })
 
+ncol_cfa <- function(x) {
+  nfac <- nrow(lavInspect(x, what = "cor.lv"))
+  # fs + se + loadings + ev
+  nfac * 2 + nfac ^ 2 + nfac * (nfac + 1) / 2
+}
+
 test_that("Test the number of factors is equal", {
-  # HL: original test doesn't seem right
-  expect_equal(length(test_object_fs) / 2,
-               nrow(lavInspect(
-                 cfa(model = single_model, data = PoliticalDemocracy),
-                 what = "cor.lv"
-               )))
+  expected_cols <- ncol_cfa(
+    cfa(model = single_model, data = PoliticalDemocracy)
+  )
+  expect_equal(length(test_object_fs), expected_cols)
 })
 
 test_that("Test that the number of rows is the same as the original data", {
@@ -115,33 +116,35 @@ test_object_fs_multi <-  get_fs(HolzingerSwineford1939[c("school", "x1", "x2", "
 # Class of output
 
 test_that("Test the number of factors is equal", {
-  # HL: Make it cleaner
-  expect_equal(length(test_object_fs_multi),
-               nrow(lavInspect(
-                 cfa(model = hs_model, data = PoliticalDemocracy),
-                 what = "cor.lv"
-               )) * 2 + 1)
+  expected_cols <- ncol_cfa(
+    cfa(model = hs_model, data = PoliticalDemocracy)
+  )
+  # Add 1 for group
+  expect_equal(length(test_object_fs_multi[[1]]), expected_cols + 1)
 })
 
 test_that("Test that the number of rows is the same as the original data", {
-  expect_identical(nrow(test_object_fs_multi), nrow(HolzingerSwineford1939))
+  expect_identical(nrow(test_object_fs_multi[[1]]) +
+                     nrow(test_object_fs_multi[[2]]),
+                   nrow(HolzingerSwineford1939))
 })
 
 # Test standard errors
 
 test_that("Test that standard errors for each observation are the same within groups", {
-  test_se <- tapply(test_object_fs_multi$fs_visual_se,
-                    test_object_fs_multi$school, var)
+  test_se <- vapply(test_object_fs_multi,
+                    FUN = function(x) var(x$fs_visual_se),
+                    FUN.VALUE = numeric(1))
   for (i in length(test_se)) {
     expect_identical(unname(test_se[i]), 0)
   }
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  # HL: Changed to not use & as I don't think the `expect_` functions return
-  #     logical values
-  expect_gt(min(test_object_fs_multi$fs_visual_se), 0)
-  expect_lt(max(test_object_fs_multi$fs_visual_se), 1)
+  expect_gt(min(test_object_fs_multi[[1]]$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi[[1]]$fs_visual_se), 1)
+  expect_gt(min(test_object_fs_multi[[2]]$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi[[2]]$fs_visual_se), 1)
 })
 
 # Bartlett scores
@@ -151,16 +154,19 @@ test_object_fs_multi_bar <-  get_fs(HolzingerSwineford1939[c("school", "x1", "x2
                                     method = "Bartlett")
 
 test_that("Test that standard errors for each observation are the same within groups", {
-  test_se <- tapply(test_object_fs_multi_bar$fs_visual_se,
-                    test_object_fs_multi_bar$school, var)
+  test_se <- vapply(test_object_fs_multi_bar,
+                    FUN = function(x) var(x$fs_visual_se),
+                    FUN.VALUE = numeric(1))
   for (i in length(test_se)) {
     expect_identical(unname(test_se[i]), 0)
   }
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  expect_gt(min(test_object_fs_multi_bar$fs_visual_se), 0)
-  expect_lt(max(test_object_fs_multi_bar$fs_visual_se), 1)
+  expect_gt(min(test_object_fs_multi_bar[[1]]$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi_bar[[1]]$fs_visual_se), 1)
+  expect_gt(min(test_object_fs_multi_bar[[2]]$fs_visual_se), 0)
+  expect_lt(max(test_object_fs_multi_bar[[2]]$fs_visual_se), 1)
 })
 
 ###### Multiple factors example #####
@@ -178,36 +184,38 @@ test_object_fs_multi_2 <- get_fs(HolzingerSwineford1939,
 # Class of output
 
 test_that("Test the number of factors is equal", {
-  expect_equal(length(test_object_fs_multi_2),
-               nrow(lavInspect(
-                 cfa(model = hs_model_2, data = HolzingerSwineford1939),
-                 what = "cor.lv"
-               )) * 2 + 1)
+  expected_cols <- ncol_cfa(
+    cfa(model = hs_model_2, data = HolzingerSwineford1939)
+  )
+  expect_equal(length(test_object_fs_multi_2[[1]]), expected_cols + 1)
 })
 
 test_that("Test that the number of rows is the same as the original data", {
-  expect_identical(nrow(test_object_fs_multi_2), nrow(HolzingerSwineford1939))
+  expect_identical(nrow(test_object_fs_multi_2[[1]]) +
+                     nrow(test_object_fs_multi_2[[2]]),
+                   nrow(HolzingerSwineford1939))
 })
 
 # Test standard errors
 
 test_that("Test that standard errors for each observation are the same within groups", {
-  # HL: redo the test
-  fs_names <- colnames(test_object_fs_multi_2)  # HL: use small letter
+  fs_names <- colnames(test_object_fs_multi_2[[1]])
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-    test_se <- tapply(test_object_fs_multi_2[[i]],
-                      test_object_fs_multi$school, var)
+    test_se <- vapply(test_object_fs_multi_2,
+                      FUN = function(x) var(x[[i]]),
+                      FUN.VALUE = numeric(1))
     expect_identical(max(test_se), 0)
   }
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  fs_names <- colnames(test_object_fs_multi_2)
+  rb_test_object <- do.call(rbind, test_object_fs_multi_2)
+  fs_names <- colnames(rb_test_object)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(test_object_fs_multi_2[,i]), 0)
-      expect_lt(max(test_object_fs_multi_2[,i]), 1)
+      expect_gt(min(rb_test_object[,i]), 0)
+      expect_lt(max(rb_test_object[,i]), 1)
   }
 })
 
@@ -217,22 +225,23 @@ test_object_fs_multi_2_bar <- get_fs(HolzingerSwineford1939,
                                      group = "school")
 
 test_that("Test that standard errors for each observation are the same within groups", {
-  # HL: redo the test
-  fs_names <- colnames(test_object_fs_multi_2_bar)  # HL: use small letter
+  rb_test_object <- do.call(rbind, test_object_fs_multi_2_bar)
+  fs_names <- colnames(rb_test_object)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-    test_se <- tapply(test_object_fs_multi_2_bar[[i]],
-                      test_object_fs_multi_2_bar$school, var)
+    test_se <- tapply(rb_test_object[[i]],
+                      rb_test_object$school, var)
     expect_identical(max(test_se), 0)
   }
 })
 
 test_that("Test that standard errors for each observation are positive numbers and within 1", {
-  fs_names <- colnames(test_object_fs_multi_2_bar)
+  rb_test_object <- do.call(rbind, test_object_fs_multi_2_bar)
+  fs_names <- colnames(rb_test_object)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(test_object_fs_multi_2_bar[, i]), 0)
-      expect_lt(max(test_object_fs_multi_2_bar[, i]), 1)
+      expect_gt(min(rb_test_object[, i]), 0)
+      expect_lt(max(rb_test_object[, i]), 1)
   }
 })
 
