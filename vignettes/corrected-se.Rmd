@@ -1,0 +1,196 @@
+---
+title: "Corrected Standard Errors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{corrected-se}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette shows how to obtain grand standardized estimates for the latent variables for multi-group `lavaan` objects, using the `R2spa::grandStandardizdSolution()` function.
+
+```{r load-pkg, message = FALSE}
+library(lavaan)
+library(R2spa)
+library(numDeriv)
+library(boot)
+```
+
+```{r}
+model <- ' 
+  # latent variable definitions
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+
+  # regressions
+    dem60 ~ ind60
+'
+```
+
+```{r}
+cfa_ind60 <- cfa("ind60 =~ x1 + x2 + x3", data = PoliticalDemocracy,
+                 std.lv = TRUE)
+vc1 <- vcov(cfa_ind60)
+# Function for error variance of factor score
+compute_ev_fs <- function(x, lam_idx, th_idx) {
+  lam <- x[lam_idx]
+  th <- diag(x[th_idx])
+  covy <- tcrossprod(lam) + th
+  ginvcovy <- MASS::ginv(covy)
+  tlam_invcov <- crossprod(lam, ginvcovy)
+  tlam_invcov %*% th %*% t(tlam_invcov)
+}
+# compute_ev_fs(coef(cfa_ind60))
+coef_ind60 <- coef(cfa_ind60)
+g_ev_fs1 <- grad(compute_ev_fs, coef(cfa_ind60),
+                 lam_idx = 1:3, th_idx = 4:6)  # gradient
+# Delta method variance
+v_ev_fs1 <- crossprod(g_ev_fs1, vcov(cfa_ind60)) %*% g_ev_fs1
+
+cfa_dem60 <- cfa("dem60 =~ y1 + y2 + y3 + y4",
+                 data = PoliticalDemocracy, std.lv = TRUE)
+vc2 <- vcov(cfa_dem60)
+# compute_ev_fs(coef(cfa_ind60))
+g_ev_fs2 <- grad(compute_ev_fs, coef(cfa_dem60),
+                 lam_idx = 1:4, th_idx = 5:8)  # gradient
+# Delta method variance
+v_ev_fs2 <- crossprod(g_ev_fs2, vcov(cfa_dem60)) %*% g_ev_fs2
+fs_dat <- data.frame(
+  fs_ind60 = as.numeric(lavPredict(cfa_ind60)),
+  fs_dem60 = as.numeric(lavPredict(cfa_dem60))
+)
+se_fs <- list(
+  ind60 = sqrt(compute_ev_fs(coef(cfa_ind60), lam_idx = 1:3, th_idx = 4:6)),
+  dem60 = sqrt(compute_ev_fs(coef(cfa_dem60), lam_idx = 1:4, th_idx = 5:8))
+)
+vc_ev_fs <- diag(c(v_ev_fs1, v_ev_fs2))
+```
+
+```{r}
+# 2S-PA
+tspa_fit <- tspa(model = "dem60 ~ ind60", 
+                 data = fs_dat, 
+                 se = se_fs)
+# Estimate as function of constraints
+tspa_est <- function(se) {
+  coef(tspa(model = "dem60 ~ ind60", 
+            data = fs_dat, 
+            se = list(ind60 = se[1], dem60 = se[2])))
+}
+tspa_est(unlist(se_fs))
+# Jacobian
+jac <- jacobian(tspa_est, x = unlist(se_fs))
+# Corrected covariance matrix
+vcov(tspa_fit) + jac %*% vc_ev_fs %*% t(jac)
+```
+
+Bootstrap Standard Errors
+
+```{r, eval = FALSE}
+run_tspa <- function(df, inds) {
+  fs_ind60 <- get_fs(data = df[inds, ], model = "ind60 =~ x1 + x2 + x3", 
+                     se = "none", test = "none")
+  fs_dem60 <- get_fs(data = df[inds, ], model = "dem60 =~ y1 + y2 + y3 + y4",
+                     se = "none", test = "none")
+  fs_dat <- cbind(fs_ind60, fs_dem60)
+  tspa_fit <- tspa(model = "dem60 ~ ind60", 
+                   data = fs_dat, 
+                   se = list(ind60 = fs_ind60[1, 2],
+                             dem60 = fs_dem60[1, 2]),
+                   test = "none")
+  coef(tspa_fit)
+}
+boo <- boot(PoliticalDemocracy, statistic = run_tspa, R = 999)
+```
+
+Use joint measurement model
+
+```{r}
+cfa_joint <- cfa("ind60 =~ x1 + x2 + x3
+                  dem60 =~ y1 + y2 + y3 + y4",
+                 data = PoliticalDemocracy)
+compute_pars_joint <- function(x) {
+  lam <- matrix(0, nrow = 7, ncol = 2)
+  lam[1:3, 1] <- c(1, x[1:2])
+  lam[4:7, 2] <- c(1, x[3:5])
+  th <- diag(x[6:12])
+  psi <- lav_matrix_lower2full(matrix(c(x[c(13, 15, 14)])))
+  covy <- lam %*% psi %*% t(lam) + th
+  ginvcovy <- MASS::ginv(covy)
+  tlam_invcov <- crossprod(lam, ginvcovy)
+  a_mat <- psi %*% tlam_invcov
+  fsA <- a_mat %*% lam
+  av_efs <- a_mat %*% th %*% t(a_mat)
+  c(fsA, av_efs[lower.tri(av_efs, diag = TRUE)])
+}
+# Measurement parameters
+pars_joint <- compute_pars_joint(coef(cfa_joint))
+g_joint <- jacobian(compute_pars_joint, coef(cfa_joint))
+# Delta method variance
+v_pars_joint <- g_joint %*% vcov(cfa_joint) %*% t(g_joint)
+# Factor score
+fs_joint <- get_fs(PoliticalDemocracy,
+                   model = "ind60 =~ x1 + x2 + x3
+                            dem60 =~ y1 + y2 + y3 + y4")
+```
+
+```{r}
+tspa_fit2 <- tspa(model = "dem60 ~ ind60",
+                  data = fs_joint,
+                  vc = attr(fs_joint, "av_efs"),
+                  cross_loadings = attr(fs_joint, "fsA"))
+# Estimate as function of constraints
+tspa_est <- function(pars) {
+  fsA <- matrix(pars[1:4], nrow = 2, ncol = 2)
+  av_efs <- lav_matrix_lower2full(pars[5:7])
+  dimnames(av_efs) <- list(c("ind60", "dem60"), c("ind60", "dem60"))
+  coef(tspa(model = "dem60 ~ ind60", data = fs_joint,
+            vc = av_efs, cross_loadings = fsA))
+}
+tspa_est(pars_joint)
+# Jacobian
+jac <- jacobian(tspa_est, x = pars_joint)
+# Corrected covariance matrix
+vcov(tspa_fit2) + jac %*% v_pars_joint %*% t(jac)
+```
+
+Compare to joint model
+
+```{r}
+sem_fit <- sem(model, data = PoliticalDemocracy)
+vcov(sem_fit)[c(6, 14, 15), c(6, 14, 15)]
+```
+
+Bootstrap Standard Errors
+
+```{r, eval = FALSE}
+run_tspa2 <- function(df, inds) {
+  fs_joint <- get_fs(df[inds, ],
+                     model = "ind60 =~ x1 + x2 + x3
+                              dem60 =~ y1 + y2 + y3 + y4",
+                     se = "none", test = "none")
+  tspa_fit2 <- tspa(model = "dem60 ~ ind60",
+                    data = fs_joint,
+                    vc = attr(fs_joint, "av_efs"),
+                    cross_loadings = attr(fs_joint, "fsA"),
+                    test = "none")
+  coef(tspa_fit2)
+}
+boo <- boot(PoliticalDemocracy, statistic = run_tspa2, R = 999)
+run_sem2 <- function(df, inds) {
+  sem_fit <- sem(model, data = df[inds, ])
+  coef(sem_fit)[c(6, 14, 15)]
+}
+boo2 <- boot(PoliticalDemocracy, statistic = run_sem2, R = 999)
+```
