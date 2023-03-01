@@ -100,6 +100,7 @@ augment_fs <- function(est, fs, fs_ev) {
   # fs_rho <- 1 - fs_se^2 / diag(psi)
   # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
+  # fs_se[is.nan(fs_se)] <- 0
   colnames(fs) <- paste0("fs_", colnames(fs))
   colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
   num_lvs <- ncol(fs_ev)
@@ -177,6 +178,7 @@ compute_fscore <- function(y, lambda, theta, psi,
   method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
   if (is.null(alpha)) alpha <- rep(0, ncol(as.matrix(lambda)))
+  diag(theta) <- pmax(diag(theta), 0)  # force PD Theta
   covy <- lambda %*% psi %*% t(lambda) + theta
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
