@@ -7,9 +7,9 @@
 #' @param title Character. A default or user-defined name or of the title of scatterplot.
 #' @param label_x Character. A default or user-defined name of the x-aix of scatterplot.
 #' @param label_y Character. A default or user-defined name of the y-aix of scatterplot.
+#' @param abbreviation Logic input. If 'False' is indicated
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
-#' @param abbreviation Logic input. If 'False' is indicated
 #'
 #' @return A scatterplot between factor scores, and a residual plot.
 #'
@@ -34,13 +34,13 @@
 #' se = list(ind60 = 0.1213615, dem60 = 0.6756472))
 #' tspa_plot(tspa_fit)
 
-tspa_plot <- function (tspa_fit,
-                       ask = FALSE,
-                       title = NULL,
-                       label_x = NULL,
-                       label_y = NULL,
-                       abbreviation = TRUE,
-                       ...) {
+tspa_plot <- function(tspa_fit,
+                      ask = FALSE,
+                      title = NULL,
+                      label_x = NULL,
+                      label_y = NULL,
+                      abbreviation = TRUE,
+                      ...) {
 
   fit_data <- parameterestimates(tspa_fit)
   latent_scores <- lavInspect(tspa_fit, what = "data")
@@ -65,8 +65,8 @@ tspa_plot <- function (tspa_fit,
           invisible(readline(prompt = "Hit <Return> to see next plot: "))
         }
 
-        plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
-             latent_scores[[g]][ ,paste0("fs_", latent_dv[i])],
+        plot(latent_scores[[g]][ , paste0("fs_", latent_iv[i])],
+             latent_scores[[g]][ , paste0("fs_", latent_dv[i])],
              ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
                            ifelse(length(label_y) > 1, label_y[i], label_y)),
              xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
@@ -99,8 +99,8 @@ tspa_plot <- function (tspa_fit,
   } else {
     latent_names <- colnames(latent_scores)
     df_latent_scores <- data.frame(latent_scores)
-    latent_dv <- c(t(fit_data[which(fit_data$op == "~"),]["lhs"]))
-    latent_iv <- c(t(fit_data[which(fit_data$op == "~"),]["rhs"]))
+    latent_dv <- c(t(fit_data[which(fit_data$op == "~"), ]["lhs"]))
+    latent_iv <- c(t(fit_data[which(fit_data$op == "~"), ]["rhs"]))
 
     for (i in seq(length(latent_dv))) {
       latent_model <- lm(as.numeric(t(df_latent_scores[paste0("fs_", latent_dv[i])])) ~
@@ -111,8 +111,8 @@ tspa_plot <- function (tspa_fit,
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
 
-      plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
-           latent_scores[ ,paste0("fs_", latent_dv[i])],
+      plot(latent_scores[ , paste0("fs_", latent_iv[i])],
+           latent_scores[ , paste0("fs_", latent_dv[i])],
            ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
                          ifelse(length(label_y) > 1, label_y[i], label_y)),
            xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
