@@ -16,7 +16,7 @@
 #'
 #' @importFrom stats pnorm qnorm
 #' @importFrom utils tail
-#' @importFrom lavaan vcov inspect lav_func_jacobian_complex
+#' @importFrom lavaan vcov lavInspect lav_func_jacobian_complex
 #'
 #' @export
 #'
@@ -90,7 +90,7 @@ grandStardardizedSolution <- function(object, model_list = NULL,
   if (is.null(acov_par)) acov_par <- vcov(object)
   if (is.null(free_list)) free_list <- lavTech(object, what = "free")
 
-  partable <- subset(inspect(object, "list"), op == "~")
+  partable <- subset(lavInspect(object, what = "list"), op == "~")
   out <- partable[, c("lhs", "op", "rhs", "exo", "group",
                       "block", "label")]
   partable_beta <- lavTech(object, what = "partable", list.by.group = TRUE)
