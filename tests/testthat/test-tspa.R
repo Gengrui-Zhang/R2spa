@@ -24,8 +24,6 @@ fs_single1 <- get_fs(PoliticalDemocracy, cfa_single1)
 fs_single2 <- get_fs(PoliticalDemocracy, cfa_single2)
 fs_dat_single <- cbind(fs_single1, fs_single2)
 
-# HL: SE numbers changed with new get_fs()
-
 cfa_model_single <- '
                                  # latent variables (indicated by factor scores)
                                    ind60 =~ 1 * fs_ind60
@@ -59,15 +57,12 @@ se = c(ind60 = 0.1213615, dem60 = 0.6756472)
 # The tspa data should be composed of two parts: variable, and se
 test_that("test the number of columns in tspa data are multiples of the variable length",
           {
-            # HL: use x %% y == 0 to test whether x is a multiple of y
-            # JZ: Oh nice technique! Thanks!
             expect_gt(ncol(fs_dat_single), 1)
             expect_equal(ncol(fs_dat_single) %% var_len, 0)
           })
 
 test_that ("Test the data variable names should contain prefix (fs_)", {
-  fs_names <- colnames(fs_dat_single)  # HL: use small letters for variables
-  # HL: alternative to test all is TRUE
+  fs_names <- colnames(fs_dat_single)
   expect_true(all(grepl("fs_", fs_names)))
 })
 
@@ -75,22 +70,14 @@ test_that ("Test the data variable names should contain prefix (fs_)", {
 
 # Parameter estimates
 
-# HL: Do not override an output with the same name!
-# JZ: Thanks for the reminder!
-
 test_that("test if the regression coefficients of factors are the same for two methods",
           {
-            # HL: A more efficient way with `coef()`
             expect_equal(coef(cfa_single)["dem60~ind60"],
                          coef(tspa_single)["dem60~ind60"])
           })
 
 test_that("test if the se of regression coefficients are the same for two methods",
           {
-            # HL: Use `vcov()`
-            # JZ: I have one question here. Do equal vcov() results mean the standard error
-            #     and regression coefficients are equal for two methods? I believe this is because
-            #     regression coefficents and se are calculated from var/cov matrix?
             expect_equal(
               vcov(cfa_single)[c("dem60~ind60", "v1", "v2"),
                                c("dem60~ind60", "v1", "v2")],
@@ -101,9 +88,6 @@ test_that("test if the se of regression coefficients are the same for two method
           })
 
 # Fit measures
-
-# HL: Can test all with fitmeasures()
-# JZ: Thanks for letting me know!
 
 test_that("test if fit indices are the same for two methods", {
   expect_equal(fitmeasures(cfa_single), fitmeasures(tspa_single))
@@ -131,10 +115,6 @@ fs_3var1 <- get_fs(PoliticalDemocracy, cfa_3var1)
 fs_3var2 <- get_fs(PoliticalDemocracy, cfa_3var2)
 fs_3var3 <- get_fs(PoliticalDemocracy, cfa_3var3)
 fs_dat_3var <- cbind(fs_3var1, fs_3var2, fs_3var3)
-
-# HL: I replace the example with a true SEM to avoid repeating the 2-var
-# example. Also call it sem as it has structural paths and not really CFA
-# JZ: I see. Thanks for correcting the model.
 
 sem_model_3var <- '
                            # latent variables (indicated by factor scores)
@@ -168,7 +148,6 @@ sem_path_3var <- subset(standardizedSolution(sem_3var),
 tspa_path_3var <- subset(standardizedSolution(tspa_3var),
                          subset = op == "~")
 
-# HL: I used .05 as an arbitrary threshold
 test_that("test if the regression coefficients of factors are similar for two methods",
           {
             expect_lt(
@@ -263,7 +242,6 @@ tspa_path_multi <- subset(standardizedSolution(tspa_multi),
 
 test_that("test if the regression coefficients of factors are similar for two methods",
           {
-            # HL: The two models are the same; use expect_equal()
             expect_equal(
               sem_path_multi$est.std,
               tspa_path_multi$est.std
@@ -280,7 +258,6 @@ test_that("test if the se of regression coefficients are similar for two methods
 
 # Variance of factors
 
-# HL: Shouldn't they be `sem_multi` and `tspa_multi`?
 sem_var_multi <- subset(standardizedSolution(sem_multi),
                         subset = op == "~~" &
                           lhs %in% c("ind60", "dem60", "dem65"))
