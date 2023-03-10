@@ -27,7 +27,7 @@ For a CFA model with multiple latent factors, even when each indicator only load
 
 $$\tilde{\boldsymbol \eta} = \mathbf{A}(\mathbf{y} - \hat{\boldsymbol \mu}) + \boldsymbol{\alpha}$$
 
-where $\mathbf{A} = \boldsymbol{\Psi}\boldsymbol{\Lambda}^\top \hat{\boldsymbol{\Sigma}}^{-1}$ is a $q$ $\times$ $p$ matrix, $\hat{\boldsymbol \mu} = \boldsymbol{\nu} + \boldsymbol{\Lambda} \boldsymbol{\alpha}$ and $\boldsymbol{\Sigma}$ are the model-implied means and covariances of the indicators $\mathbf{y}$, and $\boldsymbol{\alpha}$ are the latent means. 
+where $\mathbf{A} = \boldsymbol{\Psi}\boldsymbol{\Lambda}^\top \hat{\boldsymbol{\Sigma}}^{-1}$ is a $q$ $\times$ $p$ matrix, $\hat{\boldsymbol \mu} = \boldsymbol{\nu} + \boldsymbol{\Lambda} \boldsymbol{\alpha}$ and $\boldsymbol{\Sigma} = \boldsymbol{\Lambda} \boldsymbol{\Psi}\boldsymbol{\Lambda}^\top + \boldsymbol{\Theta}$ are the model-implied means and covariances of the indicators $\mathbf{y}$, and $\boldsymbol{\alpha}$ and $\boldsymbol{\Psi}$ are the latent means and latent covariances. 
 
 Therefore, assuming that the model is correctly specified such that $\mathbf{y} = \boldsymbol{\nu} + \boldsymbol{\Lambda} \boldsymbol{\eta} + \boldsymbol{\varepsilon}$,
 
@@ -176,4 +176,21 @@ mod_2spa_3fac <- '
 '
 tspa_fit_3fac <- sem(model = mod_2spa_3fac, data = fs_3fac_dat)
 standardizedSolution(tspa_fit_3fac)
+```
+
+Compare to SEM:
+
+```{r}
+sem_3fac <- sem("
+# latent variables
+ind60 =~ x1 + x2 + x3
+dem60 =~ y1 + y2 + y3 + y4
+dem65 =~ y5 + y6 + y7 + y8
+# structural model
+dem60 ~ ind60
+dem65 ~ ind60 + dem60
+",
+  data = PoliticalDemocracy
+)
+standardizedSolution(sem_3fac)
 ```
