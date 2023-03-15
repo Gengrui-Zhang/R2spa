@@ -79,13 +79,13 @@ vc_ev_fs <- diag(c(v_ev_fs1, v_ev_fs2))
 
 ```{r}
 # 2S-PA
-tspa_fit <- tspa(model = "dem60 ~ ind60", 
-                 data = fs_dat, 
+tspa_fit <- tspa(model = "dem60 ~ ind60",
+                 data = fs_dat,
                  se = se_fs)
 # Estimate as function of constraints
 tspa_est <- function(se) {
-  coef(tspa(model = "dem60 ~ ind60", 
-            data = fs_dat, 
+  coef(tspa(model = "dem60 ~ ind60",
+            data = fs_dat,
             se = list(ind60 = se[1], dem60 = se[2])))
 }
 tspa_est(unlist(se_fs))
@@ -93,6 +93,32 @@ tspa_est(unlist(se_fs))
 jac <- jacobian(tspa_est, x = unlist(se_fs))
 # Corrected covariance matrix
 vcov(tspa_fit) + jac %*% vc_ev_fs %*% t(jac)
+```
+
+Standardized solution
+
+```{r}
+tspa_est_std <- function(se) {
+  tfit <- tspa(model = "dem60 ~ ind60",
+               data = fs_dat,
+               se = list(ind60 = se[1], dem60 = se[2]))
+  standardizedSolution(tfit)$est.std[5]
+}
+tspa_est_std(unlist(se_fs))
+# Jacobian
+jac_std <- jacobian(tspa_est_std, x = unlist(se_fs))
+# Corrected standard error
+sqrt(
+  standardizedSolution(tspa_fit)[5, "se"]^2 +
+    jac_std %*% vc_ev_fs %*% t(jac_std)
+)
+```
+
+Compare to joint model
+
+```{r}
+sem_fit <- sem(model, data = PoliticalDemocracy)
+standardizedSolution(sem_fit)[8, "se"]
 ```
 
 Bootstrap Standard Errors
