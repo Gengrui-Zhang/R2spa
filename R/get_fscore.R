@@ -125,7 +125,7 @@ augment_fs <- function(est, fs, fs_ev) {
                   t(as.matrix(fs_evs)))
   attr(fs_dat, "av_efs") <- fs_ev
   attr(fs_dat, "fsA") <- fsA
-  attr(fs_dat, "int_efs") <- attr(fs, "int_efs")
+  attr(fs_dat, "fsb") <- attr(fs, "fsb")
   fs_dat
 }
 
@@ -211,7 +211,6 @@ compute_fscore <- function(y, lambda, theta, psi,
     # fsv <- a_mat %*% covy %*% t(a_mat)
     # attr(fs, "av_efs") <- fsv - tv
     attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
-    attr(fs, "int_efs") <- a_mat %*% nu
   }
   fs
 }
