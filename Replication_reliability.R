@@ -150,10 +150,7 @@ GenData <- function (condition, fixed_objects = NULL) {
   evaluate_res <- function (condition, results, fixed_objects = NULL) {
 
     # Population parameter
-    pop_par <- ifelse(condition$beta3 == 0.75, fixed_objects$pop_loading$large,
-                      ifelse(condition$beta3 == 0.8, fixed_objects$pop_loading$medium,
-                             ifelse(condition$beta3 == 0.85, fixed_objects$pop_loading$small, NA)))
-
+    pop_par <- 0.3
 
     # Separate estimates and se
     results_est <- as.data.frame(results[colnames(results)[grepl("_est", colnames(results))]])
@@ -184,7 +181,7 @@ GenData <- function (condition, fixed_objects = NULL) {
       return(unlist(lapply(ci_est, ECR, parameter = pop)))
 
     }
-    browser()
+
     c(
       std_bias = bias(results_est,
                       parameter = pop_par,
@@ -200,7 +197,7 @@ GenData <- function (condition, fixed_objects = NULL) {
   }
 
   sim_hsiao <- runSimulation(design = DESIGNFACTOR,
-                             replications = 1,
+                             replications = 2000,
                              generate = GenData,
                              analyse = extract_res,
                              summarise = evaluate_res,
@@ -212,10 +209,9 @@ GenData <- function (condition, fixed_objects = NULL) {
                              ncores = min(4L, parallel::detectCores() - 1)
                              )
 
-
-
-
 # Summarizing results
+
+  hsiao21_replication <- reSummarise(evaluate_res, dir = '/Users/jimmy_z/R Projects/R2spa/SimDesign-results_Jimmys-MacBook-Pro-9.local')
 
   std_bias <- hsiao21_replication %>%
     group_by(N, rel, cor_xm) %>%
