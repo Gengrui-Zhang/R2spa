@@ -14,13 +14,13 @@ mod1 <- '
 '
 fit1 <- sem(model = mod1,
             data  = PoliticalDemocracy)
-s2_std_beta <- grandStardardizedSolution(fit1)
+s2_std_beta <- grandStandardizedSolution(fit1)
 
 ### lavaan::standardizedSolution()
 s2_std_beta_lav <- subset(standardizedSolution(fit1), op == "~")
 
 test_that("Test for single group warning message", {
-  expect_message(grandStardardizedSolution(fit1))
+  expect_message(grandStandardizedSolution(fit1))
 })
 
 test_that("Standardized beta in a model with single group, two factors",
@@ -41,7 +41,7 @@ mod2 <- '
 '
 fit2 <- sem(model = mod2,
             data  = PoliticalDemocracy)
-s3_std_beta <- grandStardardizedSolution(fit2)
+s3_std_beta <- grandStandardizedSolution(fit2)
 
 ### lavaan::standardizedSolution()
 s3_std_beta_lav <- subset(standardizedSolution(fit2), op == "~")
@@ -66,7 +66,7 @@ fit3 <- sem(mod3, data = HolzingerSwineford1939,
             group = "school",
             group.equal = c("loadings", "intercepts"))
 
-m2_std_beta <- grandStardardizedSolution(fit3)
+m2_std_beta <- grandStandardizedSolution(fit3)
 
 test_that("grand std est in the range of std estimates", code = {
   gp_std_est <- subset(standardizedSolution(fit3), subset = op == "~")$est
@@ -153,7 +153,7 @@ mod4 <- '
 fit4 <- sem(mod4, data = HolzingerSwineford1939,
             group = "school",
             group.equal = c("loadings", "intercepts"))
-m3_std_beta <- grandStardardizedSolution(fit4)
+m3_std_beta <- grandStandardizedSolution(fit4)
 
 ## Hand calculation
 ### std.est
