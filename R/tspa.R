@@ -76,7 +76,6 @@
 #'     visual =~ x1 + x2 + x3
 #'     textual =~ x4 + x5 + x6
 #'     speed =~ x7 + x8 + x9
-#'
 #' "
 #' fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
 #'                   group = "school")
