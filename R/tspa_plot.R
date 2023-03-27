@@ -2,20 +2,21 @@
 #'
 #' @param tspa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
-#' @param ask Logic input. If 'True' is indicated, the user will be asked before
+#' @param ask Logic input. If 'TRUE' is indicated, the user will be asked before
 #'            before each plot is generated. The default setting is 'False'.
-#' @param title Character. A default or user-defined name or of the title of scatterplot.
-#' @param label_x Character. A default or user-defined name of the x-aix of scatterplot.
-#' @param label_y Character. A default or user-defined name of the y-aix of scatterplot.
+#' @param title Character. Set the name of scatter plot. The default value is "Scatterplot".
+#' @param label_x Character. Set the  name of the x-axis. The default value is "fs_" followed by variable names.
+#' @param label_y Character. Set the  name of the y-axis. The default value is "fs_" followed by variable names.
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
-#' @param abbreviation Logic input. If 'False' is indicated
+#' @param abbreviation Logic input. If 'FALSE' is indicated
 #'
 #' @return A scatterplot between factor scores, and a residual plot.
 #'
 #' @export
 #'
 #' @examples
+#' library(lavaan)
 #' model <- '
 #' # latent variable definitions
 #' ind60 =~ x1 + x2 + x3
@@ -24,13 +25,13 @@
 #' dem60 ~ ind60
 #' '
 #' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-#' model = "ind60 =~ x1 + x2 + x3")
+#'                        model = "ind60 =~ x1 + x2 + x3")
 #' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
 #'                        model = "dem60 =~ y1 + y2 + y3 + y4")
 #' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 #'
 #' tspa_fit <- tspa(model = "dem60 ~ ind60",
-#' data = fs_dat,
+#'                  data = fs_dat,
 #' se = list(ind60 = 0.1213615, dem60 = 0.6756472))
 #' tspa_plot(tspa_fit)
 
@@ -42,11 +43,16 @@ tspa_plot <- function (tspa_fit,
                        abbreviation = TRUE,
                        ...) {
 
-  fit_data <- parameterestimates(tspa_fit)
+  # Check if the model input is a tspa fit
+  if (is.null(attributes(tspa_fit)$tspaModel)) {
+    stop("tspa_plot() function only supports outputs from tspa()")
+  }
+
+  fit_data <- lavaan::parameterestimates(tspa_fit)
   latent_scores <- lavInspect(tspa_fit, what = "data")
 
   if (is.list(latent_scores)) {
-    latent_names <- colnames(latent_scores[[1]])
+    # latent_names <- colnames(latent_scores[[1]])
     df_latent_scores <- lapply(latent_scores, data.frame)
     ifelse(abbreviation == TRUE,
            g_names <- abbreviate(names(df_latent_scores)),
@@ -97,7 +103,7 @@ tspa_plot <- function (tspa_fit,
     }
 
   } else {
-    latent_names <- colnames(latent_scores)
+    # latent_names <- colnames(latent_scores)
     df_latent_scores <- data.frame(latent_scores)
     latent_dv <- c(t(fit_data[which(fit_data$op == "~"),]["lhs"]))
     latent_iv <- c(t(fit_data[which(fit_data$op == "~"),]["rhs"]))

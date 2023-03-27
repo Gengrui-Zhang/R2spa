@@ -8,8 +8,8 @@ tspa_plot(
   tspa_fit,
   ask = FALSE,
   title = NULL,
-  xlab = NULL,
-  ylab = NULL,
+  label_x = NULL,
+  label_y = NULL,
   abbreviation = TRUE,
   ...
 )
@@ -18,16 +18,16 @@ tspa_plot(
 \item{tspa_fit}{An object of class \code{lavaan},
 representing the output generated from \code{tspa()} function.}
 
-\item{ask}{Logic input. If 'True' is indicated, the user will be asked before
+\item{ask}{Logic input. If 'TRUE' is indicated, the user will be asked before
 before each plot is generated. The default setting is 'False'.}
 
-\item{title}{Character. A default or user-defined name or of the title of scatterplot.}
+\item{title}{Character. Set the name of scatter plot. The default value is "Scatterplot".}
 
-\item{xlab}{Character. A default or user-defined name of the x-aix of scatterplot.}
+\item{label_x}{Character. Set the  name of the x-axis. The default value is "fs_" followed by variable names.}
 
-\item{ylab}{Character. A default or user-defined name of the y-aix of scatterplot.}
+\item{label_y}{Character. Set the  name of the y-axis. The default value is "fs_" followed by variable names.}
 
-\item{abbreviation}{Logic input. If 'False' is indicated}
+\item{abbreviation}{Logic input. If 'FALSE' is indicated}
 
 \item{...}{Additional arguments passed to \code{\link[graphics]{plot}}. See
 \code{\link[graphics]{plot}} for a list.}
@@ -39,6 +39,7 @@ A scatterplot between factor scores, and a residual plot.
 Diagnostic plots of fitted 2S-PA model
 }
 \examples{
+library(lavaan)
 model <- '
 # latent variable definitions
 ind60 =~ x1 + x2 + x3
@@ -47,13 +48,13 @@ dem60 =~ y1 + a*y2 + b*y3 + c*y4
 dem60 ~ ind60
 '
 fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
-model = "ind60 =~ x1 + x2 + x3")
+                       model = "ind60 =~ x1 + x2 + x3")
 fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
                        model = "dem60 =~ y1 + y2 + y3 + y4")
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 
 tspa_fit <- tspa(model = "dem60 ~ ind60",
-data = fs_dat,
+                 data = fs_dat,
 se = list(ind60 = 0.1213615, dem60 = 0.6756472))
 tspa_plot(tspa_fit)
 }

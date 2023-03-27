@@ -1,10 +1,14 @@
 ---
-title: "tspa-plot-vignette"
+title: "tspa-diagnostic-plot-vignette"
 author: "Jimmy Zhang"
-date: "2023-02-16"
-output:
-  html_document: default
-  pdf_document: default
+date: 'r Sys.Date()'
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{2spa_vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +22,6 @@ Load packages
 ```{r load-pkg, message = FALSE}
 library(lavaan)
 library(R2spa)
-library(semdplot)
 ```
 
 ## Single group, single predictor
@@ -47,6 +50,7 @@ tspa_fit_1 <- tspa(model = "dem60 ~ ind60",
 We recommend researchers to examine the diagnostic plot of factor scores in the model. They can use the function `tspa_plot()` to obtain two plots: (a) a scatter plot between factors, (b) a residual plot between factors.
 
 Features of `tspa_plot()`:
+
 - The function is able to pass arguments to the base R `plot()` function. 
 - Users can define title of the scatter plot and label names of axis.
 - Abbreviation argument allows users to choose whether using abbreviated group names.
@@ -60,12 +64,6 @@ tspa_plot(tspa_fit_1,
           cex.axis = 1,
           ask = TRUE)
 ```
-
-```{r example using casewise_residuals function}
-casewise_residuals(tspa_fit_1)
-```
-
-It seems that `casewise_residuals` function does not support tspa model fits because they have latent variables.
 
 ## Single group, multiple predictors
 
@@ -96,7 +94,7 @@ fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
                        model = "dem65 =~ y5 + y6 + y7 + y8")
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 
-tspa_3var_fit <- tspa(model = "dem60 ~ ind60
+tspa_fit_2 <- tspa(model = "dem60 ~ ind60
                           dem65 ~ ind60 + dem60", 
                       data = fs_dat, 
                       se = list(ind60 = 0.1213615, dem60 = 0.6756472, 
@@ -105,14 +103,14 @@ tspa_3var_fit <- tspa(model = "dem60 ~ ind60
 
 ```{r example_single_group_multiple_factors}
 # Title, xlab, and ylab each with same names.
-tspa_plot(tspa_3var_fit,
+tspa_plot(tspa_fit_2,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
           cex.axis = 1)
 
 # Title, xlab, and ylab each with separate names.
-tspa_plot(tspa_3var_fit,
+tspa_plot(tspa_fit_2,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
@@ -158,32 +156,18 @@ tspa_fit_3 <- tspa(model = "visual ~ speed",
 ```
 
 ```{r example_multiple_group_single_factor}
-par(mar = c(4,4,4,4))
 tspa_plot(tspa_fit_3,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
           cex.axis = 1)
 
-par(mar = c(4,4,4,4))
 tspa_plot(tspa_fit_3,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
           cex.axis = 1,
           abbreviation = FALSE)
-```
-
-```{r}
-fs_sem3 <- sem(model = "fs_visual ~ fs_speed",
-               data = fs_hs)
-
-fit_res3 <- casewise_residuals(fs_sem3)
-p <- plot(fit_res3,
-           x_names = c("fs_speed"),
-           y_names = c("fs_visual"))
-
-plot(p)
 ```
 
 
