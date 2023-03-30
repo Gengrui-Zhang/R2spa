@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,8 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/gr-std-coef.html">Grand Standardized Coefficients</a>
+    <a class="dropdown-item" href="../articles/multiple-factors.html">Multi-Factor Measurement Model</a>
     <a class="dropdown-item" href="../articles/tspa-vignette.html">Two-Stage Path Analysis (2S-PA) Model Examples</a>
   </div>
 </li>
@@ -45,11 +47,19 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2" id="r2spa-002">R2spa 0.0.2<a class="anchor" aria-label="anchor" href="#r2spa-002"></a></h2>
+<ul><li><p>Use <code>pkgdown</code> to create website, with GitHub action (#22)</p></li>
+<li><p><code><a href="../reference/get_fs.html">get_fs()</a></code> now returns a list with multi-group models (#29).</p></li>
+<li><p>New function <code><a href="../reference/grandStandardizedSolution.html">grandStandardizedSolution()</a></code> computes standardized solution based on grand mean and grand SD (#13).</p></li>
+<li><p><code><a href="../reference/tspa.html">tspa()</a></code> gains argument <code>vc</code> and <code>cross_loadings</code>, which is useful for factor scores obtained from multi-factor models (#7). See <code><a href="../articles/multiple-factors.html">vignette("multiple-factors")</a></code>.</p></li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.1" id="r2spa-001">R2spa 0.0.1<a class="anchor" aria-label="anchor" href="#r2spa-001"></a></h2>
 <ul><li><p><strong>Work-In-Progress!</strong></p></li>
 <li><p>0.0.1 version</p></li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,8 @@
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/gr-std-coef.html">Grand Standardized Coefficients</a>
+    <a class="dropdown-item" href="../articles/multiple-factors.html">Multi-Factor Measurement Model</a>
     <a class="dropdown-item" href="../articles/tspa-vignette.html">Two-Stage Path Analysis (2S-PA) Model Examples</a>
   </div>
 </li>
@@ -67,7 +69,7 @@
       <img src="" class="logo" alt=""><h1>Two-Stage Path Analysis (2S-PA) Model Examples</h1>
                         <h4 data-toc-skip class="author">Yixiao Li</h4>
             
-            <h4 data-toc-skip class="date">2023-03-01</h4>
+            <h4 data-toc-skip class="date">2023-03-30</h4>
       
       
       <div class="d-none name"><code>tspa-vignette.Rmd</code></div>
@@ -127,14 +129,11 @@ from the previous section.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attributes.html" class="external-link">attributes</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span><span class="op">$</span><span class="va">tspaModel</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">## ind60 =~ fs_ind60</span></span>
-<span><span class="co">## dem60 =~ fs_dem60</span></span>
+<span><span class="co">## ind60=~ c(1) * fs_ind60</span></span>
+<span><span class="co">## dem60=~ c(1) * fs_dem60</span></span>
 <span><span class="co">## # constrain the errors</span></span>
-<span><span class="co">## fs_ind60 ~~ 0.01472861368225 * fs_ind60</span></span>
-<span><span class="co">## fs_dem60 ~~ 0.45649913886784 * fs_dem60</span></span>
-<span><span class="co">## # latent variances</span></span>
-<span><span class="co">## ind60 ~~ v1 * ind60</span></span>
-<span><span class="co">## dem60 ~~ v2 * dem60</span></span>
+<span><span class="co">## fs_ind60~~ c(0.01472861368225) * fs_ind60</span></span>
+<span><span class="co">## fs_dem60~~ c(0.45649913886784) * fs_dem60</span></span>
 <span><span class="co">## # regressions</span></span>
 <span><span class="co">## dem60 ~ ind60</span></span></code></pre>
 </div>
@@ -192,17 +191,13 @@ standard errors.</p>
 <span>                                dem65 <span class="op">=</span> <span class="fl">0.5724405</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attributes.html" class="external-link">attributes</a></span><span class="op">(</span><span class="va">tspa_3var_fit</span><span class="op">)</span><span class="op">$</span><span class="va">tspaModel</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">## ind60 =~ fs_ind60</span></span>
-<span><span class="co">## dem60 =~ fs_dem60</span></span>
-<span><span class="co">## dem65 =~ fs_dem65</span></span>
+<span><span class="co">## ind60=~ c(1) * fs_ind60</span></span>
+<span><span class="co">## dem60=~ c(1) * fs_dem60</span></span>
+<span><span class="co">## dem65=~ c(1) * fs_dem65</span></span>
 <span><span class="co">## # constrain the errors</span></span>
-<span><span class="co">## fs_ind60 ~~ 0.01472861368225 * fs_ind60</span></span>
-<span><span class="co">## fs_dem60 ~~ 0.45649913886784 * fs_dem60</span></span>
-<span><span class="co">## fs_dem65 ~~ 0.32768812604025 * fs_dem65</span></span>
-<span><span class="co">## # latent variances</span></span>
-<span><span class="co">## ind60 ~~ v1 * ind60</span></span>
-<span><span class="co">## dem60 ~~ v2 * dem60</span></span>
-<span><span class="co">## dem65 ~~ v3 * dem65</span></span>
+<span><span class="co">## fs_ind60~~ c(0.01472861368225) * fs_ind60</span></span>
+<span><span class="co">## fs_dem60~~ c(0.45649913886784) * fs_dem60</span></span>
+<span><span class="co">## fs_dem65~~ c(0.32768812604025) * fs_dem65</span></span>
 <span><span class="co">## # regressions</span></span>
 <span><span class="co">## dem60 ~ ind60</span></span>
 <span><span class="co">##                           dem65 ~ ind60 + dem60</span></span></code></pre>
@@ -237,8 +232,9 @@ multigroup variables using <code><a href="https://rdrr.io/r/base/cbind.html" cla
 <span>                        group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span>
 <span><span class="va">fs_dat_speed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_fs.html">get_fs</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">HolzingerSwineford1939</span>, </span>
 <span>                       model <span class="op">=</span> <span class="st">"speed =~ x7 + x8 + x9"</span>, </span>
-<span>                        group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span>
-<span><span class="va">fs_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">fs_dat_visual</span>, <span class="va">fs_dat_speed</span><span class="op">)</span></span></code></pre></div>
+<span>                       group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span>
+<span><span class="va">fs_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">fs_dat_visual</span><span class="op">)</span>,</span>
+<span>               <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">fs_dat_speed</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>To build a Two-Stage Path Analysis model, simply call the
 <code><a href="../reference/tspa.html">tspa()</a></code> function with model = regression relation. Specify
 standard error as either a list or a data frame. Values for standard
@@ -263,9 +259,9 @@ interval for each multigroup regression relation.</p>
 <span>                 <span class="op">)</span></span>
 <span><span class="va">stdsol</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/standardizedSolution.html" class="external-link">standardizedsolution</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">stdsol</span>, subset <span class="op">=</span> <span class="va">op</span> <span class="op">==</span> <span class="st">"~"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##       lhs op   rhs group label est.std    se     z pvalue ci.lower ci.upper</span></span>
-<span><span class="co">## 7  visual  ~ speed     1         0.277 0.114 2.423  0.015    0.053    0.501</span></span>
-<span><span class="co">## 18 visual  ~ speed     2         0.439 0.095 4.627  0.000    0.253    0.625</span></span></code></pre>
+<pre><code><span><span class="co">##       lhs op   rhs group est.std    se     z pvalue ci.lower ci.upper</span></span>
+<span><span class="co">## 5  visual  ~ speed     1   0.277 0.114 2.423  0.015    0.053    0.501</span></span>
+<span><span class="co">## 16 visual  ~ speed     2   0.439 0.095 4.627  0.000    0.253    0.625</span></span></code></pre>
 <p>To view the Two-Stage Path Analysis model for multigroup, use
 <code>attributes([model name])$tspaModel</code>. Function
 <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code> can help tidy up the model output. In the output, the
@@ -274,15 +270,12 @@ from the previous section.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attributes.html" class="external-link">attributes</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span><span class="op">$</span><span class="va">tspaModel</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">## visual=~ c(1, 1) * fs_visual</span></span>
-<span><span class="co">## speed=~ c(1, 1) * fs_speed</span></span>
+<span><span class="co">## visual =~ fs_visual</span></span>
+<span><span class="co">## speed =~ fs_speed</span></span>
 <span><span class="co">## # constrain the errors</span></span>
-<span><span class="co">## fs_visual~~ c(c(0.11501092038276, 0.097236701584)) * fs_visual</span></span>
-<span><span class="co">## fs_speed~~ c(c(0.07766672265625, 0.07510378617049)) * fs_speed</span></span>
+<span><span class="co">## fs_visual ~~ c(0.11501092038276, 0.097236701584) * fs_visual</span></span>
+<span><span class="co">## fs_speed ~~ c(0.07766672265625, 0.07510378617049) * fs_speed</span></span>
 <span><span class="co">## # latent variances</span></span>
-<span><span class="co">## visual ~~ c(v11, v12) * visual</span></span>
-<span><span class="co">## speed ~~ c(v21, v22) * speed</span></span>
-<span><span class="co">## # regressions</span></span>
 <span><span class="co">## visual ~ speed</span></span></code></pre>
 </div>
 

@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,8 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/gr-std-coef.html">Grand Standardized Coefficients</a>
+    <a class="dropdown-item" href="../articles/multiple-factors.html">Multi-Factor Measurement Model</a>
     <a class="dropdown-item" href="../articles/tspa-vignette.html">Two-Stage Path Analysis (2S-PA) Model Examples</a>
   </div>
 </li>
@@ -51,7 +53,15 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tspa</span><span class="op">(</span><span class="va">model</span>, <span class="va">data</span>, reliability <span class="op">=</span> <span class="cn">NULL</span>, se <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tspa</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  reliability <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  se <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  vc <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cross_loadings <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -72,10 +82,26 @@ support the reliability argument. Please use <code>se</code>.</p></dd>
 
 
 <dt>se</dt>
-<dd><p>A numeric vector representing the standard errors of each latent
-factor for single-group 2S-PA. A list or data frame storing
-the standard errors of each group in each latent factor for
-multigroup 2S-PA.</p></dd>
+<dd><p>A numeric vector representing the standard errors of each factor
+score variable for single-group 2S-PA. A list or data frame
+storing the standard errors of each group in each latent factor
+for multigroup 2S-PA.</p></dd>
+
+
+<dt>vc</dt>
+<dd><p>An error variance-covariance matrix of the factor scores, which
+can be obtained from the output of <code><a href="get_fs.html">get_fs()</a></code> using
+<code><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr()</a></code> with the argument <code>which = "av_efs"</code>.</p></dd>
+
+
+<dt>cross_loadings</dt>
+<dd><p>A matrix of loadings and cross-loadings from the
+latent variables to the factor scores <code>fs</code>, which
+can be obtained from the output of <code><a href="get_fs.html">get_fs()</a></code>
+using <code><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr()</a></code> with the argument
+<code>which = "fsA"</code>.
+For details see the multiple-factors vignette:
+<code><a href="../articles/multiple-factors.html">vignette("multiple-factors", package = "R2spa")</a></code>.</p></dd>
 
 
 <dt>...</dt>
@@ -96,19 +122,19 @@ multigroup 2S-PA.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lavaan.ugent.be" class="external-link">lavaan</a></span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="co">### single-group example</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># single-group, two-factor example, factor scores obtained separately</span></span></span>
 <span class="r-in"><span><span class="co"># get factor scores</span></span></span>
 <span class="r-in"><span><span class="va">fs_dat_ind60</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">PoliticalDemocracy</span>,</span></span>
 <span class="r-in"><span>                       model <span class="op">=</span> <span class="st">"ind60 =~ x1 + x2 + x3"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fs_dat_dem60</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">PoliticalDemocracy</span>,</span></span>
 <span class="r-in"><span>                       model <span class="op">=</span> <span class="st">"dem60 =~ y1 + y2 + y3 + y4"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fs_dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">fs_dat_ind60</span>, <span class="va">fs_dat_dem60</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># tspa model</span></span></span>
 <span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"dem60 ~ ind60"</span>, data <span class="op">=</span> <span class="va">fs_dat</span>,</span></span>
-<span class="r-in"><span>     se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ind60 <span class="op">=</span> <span class="fl">0.1213615</span>, dem60 <span class="op">=</span> <span class="fl">0.6756472</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.14 ended normally after 17 iterations</span>
+<span class="r-in"><span>     se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ind60 <span class="op">=</span> <span class="va">fs_dat_ind60</span><span class="op">[</span><span class="fl">1</span>, <span class="st">"fs_ind60_se"</span><span class="op">]</span>,</span></span>
+<span class="r-in"><span>            dem60 <span class="op">=</span> <span class="va">fs_dat_dem60</span><span class="op">[</span><span class="fl">1</span>, <span class="st">"fs_dem60_se"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 17 iterations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
@@ -121,7 +147,96 @@ multigroup 2S-PA.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 0</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">### multigroup example</span></span></span>
+<span class="r-in"><span><span class="co"># single-group, three-factor example</span></span></span>
+<span class="r-in"><span><span class="va">mod2</span> <span class="op">&lt;-</span> <span class="st">"</span></span></span>
+<span class="r-in"><span><span class="st">  # latent variables</span></span></span>
+<span class="r-in"><span><span class="st">    ind60 =~ x1 + x2 + x3</span></span></span>
+<span class="r-in"><span><span class="st">    dem60 =~ y1 + y2 + y3 + y4</span></span></span>
+<span class="r-in"><span><span class="st">    dem65 =~ y5 + y6 + y7 + y8</span></span></span>
+<span class="r-in"><span><span class="st">"</span></span></span>
+<span class="r-in"><span><span class="va">fs_dat2</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span><span class="va">PoliticalDemocracy</span>, model <span class="op">=</span> <span class="va">mod2</span>, std.lv <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"dem60 ~ ind60</span></span></span>
+<span class="r-in"><span><span class="st">              dem65 ~ ind60 + dem60"</span>,</span></span>
+<span class="r-in"><span>     data <span class="op">=</span> <span class="va">fs_dat2</span>,</span></span>
+<span class="r-in"><span>     vc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat2</span>, <span class="st">"av_efs"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat2</span>, <span class="st">"fsA"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 21 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of model parameters                         6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of observations                            75</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Test User Model:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 0</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># multigroup, two-factor example</span></span></span>
+<span class="r-in"><span><span class="va">mod3</span> <span class="op">&lt;-</span> <span class="st">"</span></span></span>
+<span class="r-in"><span><span class="st">  # latent variables</span></span></span>
+<span class="r-in"><span><span class="st">    visual =~ x1 + x2 + x3</span></span></span>
+<span class="r-in"><span><span class="st">    speed =~ x7 + x8 + x9</span></span></span>
+<span class="r-in"><span><span class="st">"</span></span></span>
+<span class="r-in"><span><span class="va">fs_dat3</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span><span class="va">HolzingerSwineford1939</span>, model <span class="op">=</span> <span class="va">mod3</span>, std.lv <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                  group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"visual ~ speed"</span>,</span></span>
+<span class="r-in"><span>     data <span class="op">=</span> <span class="va">fs_dat3</span>,</span></span>
+<span class="r-in"><span>     vc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat3</span>, <span class="st">"av_efs"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat3</span>, <span class="st">"fsA"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 28 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of model parameters                        10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of observations per group:                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                        156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                    145</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Test User Model:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic for each group:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                      0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                  0.000</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># multigroup, three-factor example</span></span></span>
+<span class="r-in"><span><span class="va">mod4</span> <span class="op">&lt;-</span> <span class="st">"</span></span></span>
+<span class="r-in"><span><span class="st">  # latent variables</span></span></span>
+<span class="r-in"><span><span class="st">    visual =~ x1 + x2 + x3</span></span></span>
+<span class="r-in"><span><span class="st">    textual =~ x4 + x5 + x6</span></span></span>
+<span class="r-in"><span><span class="st">    speed =~ x7 + x8 + x9</span></span></span>
+<span class="r-in"><span><span class="st"></span></span></span>
+<span class="r-in"><span><span class="st">"</span></span></span>
+<span class="r-in"><span><span class="va">fs_dat4</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span><span class="va">HolzingerSwineford1939</span>, model <span class="op">=</span> <span class="va">mod4</span>, std.lv <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>                  group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"visual ~ speed</span></span></span>
+<span class="r-in"><span><span class="st">              textual ~ visual + speed"</span>,</span></span>
+<span class="r-in"><span>     data <span class="op">=</span> <span class="va">fs_dat4</span>,</span></span>
+<span class="r-in"><span>     vc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat4</span>, <span class="st">"av_efs"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat4</span>, <span class="st">"fsA"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>     group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 39 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of model parameters                        18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of observations per group:                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                        156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                    145</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Test User Model:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic for each group:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                      0.000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                  0.000</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># get factor scores</span></span></span>
 <span class="r-in"><span><span class="va">fs_dat_visual</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">HolzingerSwineford1939</span>,</span></span>
@@ -130,9 +245,9 @@ multigroup 2S-PA.</p></dd>
 <span class="r-in"><span><span class="va">fs_dat_speed</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_fs.html">get_fs</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">HolzingerSwineford1939</span>,</span></span>
 <span class="r-in"><span>                       model <span class="op">=</span> <span class="st">"speed =~ x7 + x8 + x9"</span>,</span></span>
 <span class="r-in"><span>                       group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">fs_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">fs_dat_visual</span>, <span class="va">fs_dat_speed</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fs_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">fs_dat_visual</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>               <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">fs_dat_speed</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span><span class="co"># tspa model</span></span></span>
 <span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"visual ~ speed"</span>,</span></span>
 <span class="r-in"><span>     data <span class="op">=</span> <span class="va">fs_hs</span>,</span></span>
@@ -140,6 +255,25 @@ multigroup 2S-PA.</p></dd>
 <span class="r-in"><span>                     speed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2786875</span>, <span class="fl">0.2740507</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>     group <span class="op">=</span> <span class="st">"school"</span>,</span></span>
 <span class="r-in"><span>     group.equal <span class="op">=</span> <span class="st">"regressions"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 19 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of model parameters                        10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of equality constraints                     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of observations per group:                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                        156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                    145</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Test User Model:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.014</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   P-value (Chi-square)                           0.907</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic for each group:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                      0.010</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                  0.003</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># manually adding equality constraints on the regression coefficients</span></span></span>
 <span class="r-in"><span><span class="fu">tspa</span><span class="op">(</span>model <span class="op">=</span> <span class="st">"visual ~ c(b1, b1) * speed"</span>,</span></span>
@@ -147,7 +281,25 @@ multigroup 2S-PA.</p></dd>
 <span class="r-in"><span>     se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>visual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.3391326</span>, <span class="fl">0.311828</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>               speed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2786875</span>, <span class="fl">0.2740507</span><span class="op">)</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>     group <span class="op">=</span> <span class="st">"school"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lavaan 0.6.15 ended normally after 19 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Estimator                                         ML</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Optimization method                           NLMINB</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of model parameters                        10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of equality constraints                     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Number of observations per group:                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                        156</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                    145</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Test User Model:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                                       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic                                 0.014</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Degrees of freedom                                 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   P-value (Chi-square)                           0.907</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Test statistic for each group:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Pasteur                                      0.010</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Grant-White                                  0.003</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
