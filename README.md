@@ -2,9 +2,11 @@
 # R2spa
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/Gengrui-Zhang/R2spa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Gengrui-Zhang/R2spa/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-`R2spa` is a free and open source R package that performs two-stage path
+`R2spa` is a free and open-source R package that performs two-stage path
 analysis (2S-PA). With 2S-PA, researchers can perform path analysis by
 first obtaining factor scores and then adjusting for measurement errors
 using estimates of observation-specific reliability or standard error of
