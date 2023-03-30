@@ -117,3 +117,93 @@ test_that("Test the length of output is equal", {
 test_that("Test the output is the same for fscore and lavaan funtion", {
   expect_equal(test_object_fscore, fs_lavaan, ignore_attr = TRUE)
 })
+
+# Check scoring matrices
+hs_model <- "
+  visual  =~ x1 + x2 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9
+  "
+fit <- cfa(hs_model,
+           data = HolzingerSwineford1939,
+           group = "school")
+est <- lavInspect(fit, what = "est")
+y <- lavInspect(fit, what = "data")
+
+test_that("Correct scoring matrix for regression scores", {
+  fs1_hand <- compute_fscore(y[[1]],
+                             lambda = est[[1]]$lambda,
+                             theta = est[[1]]$theta,
+                             psi = est[[1]]$psi,
+                             nu = est[[1]]$nu,
+                             alpha = est[[1]]$alpha,
+                             fs_matrices = TRUE)
+  a_mat1 <- est[[1]]$psi %*%
+    crossprod(est[[1]]$lambda, MASS::ginv(fit@implied$cov[[1]]))
+  fsA1 <- attr(fs1_hand, "fsA")
+  expect_equal(a_mat1 %*% est[[1]]$lambda, fsA1)
+  expect_equal(a_mat1 %*% cov(y[[1]]) %*% t(a_mat1),
+               expected = cov(fs1_hand))
+  implied_covfs1 <- a_mat1 %*% fit@implied$cov[[1]] %*% t(a_mat1)
+  expect_equal(attr(fs1_hand, "av_efs"),
+               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1))
+  fs2_hand <- compute_fscore(y[[2]],
+                             lambda = est[[2]]$lambda,
+                             theta = est[[2]]$theta,
+                             psi = est[[1]]$psi,
+                             nu = est[[2]]$nu,
+                             alpha = est[[1]]$alpha,
+                             fs_matrices = TRUE)
+  implied_cov2 <- est[[2]]$lambda %*% est[[1]]$psi %*% t(est[[2]]$lambda) +
+    est[[2]]$theta
+  a_mat2 <- est[[1]]$psi %*%
+    crossprod(est[[2]]$lambda, MASS::ginv(implied_cov2))
+  fsA2 <- attr(fs2_hand, "fsA")
+  expect_equal(a_mat2 %*% est[[2]]$lambda, fsA2)
+  expect_equal(a_mat2 %*% cov(y[[2]]) %*% t(a_mat2),
+               expected = cov(fs2_hand))
+  implied_covfs2 <- a_mat2 %*% fit@implied$cov[[2]] %*% t(a_mat2)
+  expect_equal(attr(fs2_hand, "av_efs"),
+               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2))
+})
+
+test_that("Correct scoring matrix for Bartlett scores", {
+  fs1_hand <- compute_fscore(y[[1]],
+                             lambda = est[[1]]$lambda,
+                             theta = est[[1]]$theta,
+                             psi = est[[1]]$psi,
+                             nu = est[[1]]$nu,
+                             alpha = est[[1]]$alpha,
+                             method = "Bartlett",
+                             fs_matrices = TRUE)
+  tlam_invth1 <- crossprod(est[[1]]$lambda,
+                           MASS::ginv(est[[1]]$theta))
+  a_mat1 <- solve(tlam_invth1 %*% est[[1]]$lambda, tlam_invth1)
+  fsA1 <- attr(fs1_hand, "fsA")
+  expect_equal(fsA1, diag(3), ignore_attr = TRUE)
+  expect_equal(a_mat1 %*% cov(y[[1]]) %*% t(a_mat1),
+               expected = cov(fs1_hand))
+  implied_covfs1 <- a_mat1 %*% fit@implied$cov[[1]] %*% t(a_mat1)
+  expect_equal(attr(fs1_hand, "av_efs"),
+               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1))
+  fs2_hand <- compute_fscore(y[[2]],
+                             lambda = est[[2]]$lambda,
+                             theta = est[[2]]$theta,
+                             psi = est[[1]]$psi,
+                             nu = est[[2]]$nu,
+                             alpha = est[[1]]$alpha,
+                             method = "Bartlett",
+                             fs_matrices = TRUE)
+  implied_cov2 <- est[[2]]$lambda %*% est[[1]]$psi %*% t(est[[2]]$lambda) +
+    est[[2]]$theta
+  tlam_invth2 <- crossprod(est[[2]]$lambda,
+                           MASS::ginv(est[[2]]$theta))
+  a_mat2 <- solve(tlam_invth2 %*% est[[2]]$lambda, tlam_invth2)
+  fsA2 <- attr(fs2_hand, "fsA")
+  expect_equal(fsA2, diag(3), ignore_attr = TRUE)
+  expect_equal(a_mat2 %*% cov(y[[2]]) %*% t(a_mat2),
+               expected = cov(fs2_hand))
+  implied_covfs2 <- a_mat2 %*% fit@implied$cov[[2]] %*% t(a_mat2)
+  expect_equal(attr(fs2_hand, "av_efs"),
+               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2))
+})

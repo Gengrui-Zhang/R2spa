@@ -16,6 +16,7 @@
 #'         the standard errors (with suffix "_se").
 #'
 #' @importFrom lavaan cfa sem lavInspect lavTech
+#' @importFrom stats setNames
 #'
 #' @export
 #'
@@ -52,8 +53,6 @@ get_fs <- function(data, model = NULL, group = NULL,
   }
   fit <- cfa(model, data = data, group = group, ...)
   est <- lavInspect(fit, what = "est")
-  # fscore <- lavPredict(fit, se = "standard")
-  # fscore_se <- attr(fscore, "se")[[1]]
   y <- lavInspect(fit, what = "data")
   prepare_fs_dat <- function(y, est) {
     fscore <- compute_fscore(y,
@@ -64,31 +63,57 @@ get_fs <- function(data, model = NULL, group = NULL,
                              alpha = est$alpha,
                              method = method,
                              fs_matrices = TRUE)
-    fscore_se <- sqrt(diag(attr(fscore, "av_efs")))
-    augment_fs(est, fscore, fscore_se)
+    augment_fs(est, fscore, attr(fscore, "av_efs"))
   }
   if (is.null(group)) {
     prepare_fs_dat(y, est)
   } else {
-    fs_list <- lapply(seq_along(est), function(i) {
-      fs_dat <- prepare_fs_dat(y[[i]], est[[i]])
-      fs_dat[[group]] <- names(est[i])
-      fs_dat
-    })
-    do.call(rbind, fs_list)
+    fs_lst <- av_efs_lst <- fsA_lst <- fsb_lst <-
+      setNames(vector("list", length = length(est)),
+               fit@Data@group.label)
+    for (i in seq_along(fs_lst)) {
+      fs_lst[[i]] <- prepare_fs_dat(y[[i]], est[[i]])
+      fs_lst[[i]][[group]] <- names(est[i])
+      av_efs_lst[[i]] <- attr(fs_lst[[i]], "av_efs")
+      fsA_lst[[i]] <- attr(fs_lst[[i]], "fsA")
+      fsb_lst[[i]] <- attr(fs_lst[[i]], "fsb")
+    }
+    attr(fs_lst, which = "av_efs") <- av_efs_lst
+    attr(fs_lst, which = "fsA") <- fsA_lst
+    attr(fs_lst, which = "fsb") <- fsb_lst
+    fs_lst
   }
 }
 
-augment_fs <- function(est, fs, fs_se) {
-  if (is.vector(fs_se) || nrow(fs_se) != 1) {
-    fs_se <- t(as.matrix(fs_se))
-  }
-  psi <- est$psi
-  # fs_rho <- 1 - fs_se^2 / diag(psi)
+augment_fs <- function(est, fs, fs_ev) {
+  fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   colnames(fs) <- paste0("fs_", colnames(fs))
   colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
-  # colnames(fs_rho) <- paste0("fs_", colnames(fs_rho), "_rel")
-  cbind(as.data.frame(fs), fs_se)
+  num_lvs <- ncol(fs_ev)
+  fs_evs <- rep(NA, num_lvs * (num_lvs + 1) / 2)
+  count <- 1
+  for (i in seq_len(num_lvs)) {
+    for (j in seq_len(i)) {
+      fs_evs[count] <- fs_ev[i, j]
+      names(fs_evs)[count] <- paste0("evfs_",
+                                     rownames(fs_ev)[i], "_",
+                                     colnames(fs_ev)[j])
+      count <- count + 1
+    }
+  }
+  fsA <- attr(fs, "fsA")
+  fs_names <- paste0("fs_", colnames(fsA))
+  fs_lds <- lapply(seq_len(ncol(fsA)), function(i) {
+    setNames(fsA[, i],
+             paste(colnames(fsA)[i], fs_names, sep = "_by_"))
+  })
+  fs_lds <- unlist(fs_lds)
+  fs_dat <- cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
+                  t(as.matrix(fs_evs)))
+  attr(fs_dat, "av_efs") <- fs_ev
+  attr(fs_dat, "fsA") <- fsA
+  attr(fs_dat, "fsb") <- attr(fs, "fsb")
+  fs_dat
 }
 
 #' Compute factor scores
