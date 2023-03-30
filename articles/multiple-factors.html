@@ -175,12 +175,12 @@ is generally not diagonal, as the following shows:</p>
 <span>                 cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat</span>, <span class="st">"fsA"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">tspa_fit</span>, <span class="st">"tspaModel"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">#&gt;  ind60 =~ 0.955385785456617 * fs_ind60 + 0.0581699407736295 * fs_dem60</span></span>
-<span><span class="co">#&gt;  dem60 =~ 0.0183411131911887 * fs_ind60 + 0.868888868390616 * fs_dem60</span></span>
+<span><span class="co">#&gt;  ind60 =~ 0.955385785456617 * fs_ind60 + 0.0581699407736298 * fs_dem60</span></span>
+<span><span class="co">#&gt;  dem60 =~ 0.0183411131911884 * fs_ind60 + 0.868888868390615 * fs_dem60</span></span>
 <span><span class="co">#&gt;  # constrain the errors</span></span>
-<span><span class="co">#&gt;  fs_ind60 ~~ 0.0345955179271981 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.00401738814566851 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.0907757082269278 * fs_dem60</span></span>
+<span><span class="co">#&gt;  fs_ind60 ~~ 0.034595517927198 * fs_ind60</span></span>
+<span><span class="co">#&gt;  fs_dem60 ~~ 0.00401738814566848 * fs_ind60</span></span>
+<span><span class="co">#&gt;  fs_dem60 ~~ 0.0907757082269275 * fs_dem60</span></span>
 <span><span class="co">#&gt;  # regressions</span></span>
 <span><span class="co">#&gt;  dem60 ~ ind60</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/parameterEstimates.html" class="external-link">parameterestimates</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span>
@@ -271,16 +271,16 @@ is generally not diagonal, as the following shows:</p>
 <span>              cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat_3fac</span>, <span class="st">"fsA"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">tspa_fit_3fac</span>, <span class="st">"tspaModel"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">#&gt;  ind60 =~ 0.950647742844847 * fs_ind60 + -0.0206972362902851 * fs_dem60 + 0.0986852834195767 * fs_dem65</span></span>
-<span><span class="co">#&gt;  dem60 =~ -0.00596712444175395 * fs_ind60 + 0.533020047181513 * fs_dem60 + 0.401095943690546 * fs_dem65</span></span>
-<span><span class="co">#&gt;  dem65 =~ 0.0295113941487134 * fs_ind60 + 0.416037872255944 * fs_dem60 + 0.491333767947424 * fs_dem65</span></span>
+<span><span class="co">#&gt;  ind60 =~ 0.950647742844845 * fs_ind60 + -0.0206972362902861 * fs_dem60 + 0.0986852834195757 * fs_dem65</span></span>
+<span><span class="co">#&gt;  dem60 =~ -0.00596712444175369 * fs_ind60 + 0.533020047181512 * fs_dem60 + 0.401095943690545 * fs_dem65</span></span>
+<span><span class="co">#&gt;  dem65 =~ 0.0295113941487127 * fs_ind60 + 0.416037872255944 * fs_dem60 + 0.491333767947424 * fs_dem65</span></span>
 <span><span class="co">#&gt;  # constrain the errors</span></span>
 <span><span class="co">#&gt;  fs_ind60 ~~ 0.0340104951546674 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.00038816407039879 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.00502602420598866 * fs_ind60</span></span>
+<span><span class="co">#&gt;  fs_dem60 ~~ 0.00038816407039874 * fs_ind60</span></span>
+<span><span class="co">#&gt;  fs_dem65 ~~ 0.00502602420598859 * fs_ind60</span></span>
 <span><span class="co">#&gt;  fs_dem60 ~~ 0.0586870313996517 * fs_dem60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.0533752457536215 * fs_dem60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.0515732993693881 * fs_dem65</span></span>
+<span><span class="co">#&gt;  fs_dem65 ~~ 0.0533752457536214 * fs_dem60</span></span>
+<span><span class="co">#&gt;  fs_dem65 ~~ 0.051573299369388 * fs_dem65</span></span>
 <span><span class="co">#&gt;  # regressions</span></span>
 <span><span class="co">#&gt;  dem60 ~ ind60</span></span>
 <span><span class="co">#&gt;               dem65 ~ ind60 + dem60</span></span>
