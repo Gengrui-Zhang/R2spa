@@ -144,5 +144,5 @@ R2spa:::veta_grand(ns, beta_list = lapply(reg_fit_est, `[[`, "beta"),
 The function `grandStandardizdSolution()` automates the computation of grand standardized coefficients, with the asymptotic standard error obtained using the delta method:
 
 ```{r}
-grandStardardizedSolution(reg_fit)
+grandStandardizedSolution(reg_fit)
 ```

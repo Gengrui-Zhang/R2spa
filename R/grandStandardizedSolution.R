@@ -16,7 +16,7 @@
 #'
 #' @importFrom stats pnorm qnorm
 #' @importFrom utils tail
-#' @importFrom lavaan vcov inspect lav_func_jacobian_complex
+#' @importFrom lavaan vcov lavInspect lav_func_jacobian_complex
 #'
 #' @export
 #'
@@ -33,7 +33,7 @@
 #' '
 #' fit1 <- sem(model = mod1,
 #'           data  = PoliticalDemocracy)
-#' grandStardardizedSolution(fit1)
+#' grandStandardizedSolution(fit1)
 #'
 #' ## A single-group, three-factor example
 #' mod2 <- '
@@ -47,7 +47,7 @@
 #' '
 #' fit2 <- sem(model = mod2,
 #'             data  = PoliticalDemocracy)
-#' grandStardardizedSolution(fit2)
+#' grandStandardizedSolution(fit2)
 #'
 #' ## A multigroup, two-factor example
 #' mod3 <- '
@@ -60,7 +60,7 @@
 #' fit3 <- sem(mod3, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStardardizedSolution(fit3)
+#' grandStandardizedSolution(fit3)
 #'
 #' ## A multigroup, three-factor example
 #' mod4 <- '
@@ -75,10 +75,10 @@
 #' fit4 <- sem(mod4, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStardardizedSolution(fit4)
+#' grandStandardizedSolution(fit4)
 
 
-grandStardardizedSolution <- function(object, model_list = NULL,
+grandStandardizedSolution <- function(object, model_list = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL, level = .95) {
   if (is.null(model_list)) model_list <- lavTech(object, what = "est")
@@ -90,7 +90,7 @@ grandStardardizedSolution <- function(object, model_list = NULL,
   if (is.null(acov_par)) acov_par <- vcov(object)
   if (is.null(free_list)) free_list <- lavTech(object, what = "free")
 
-  partable <- subset(inspect(object, "list"), op == "~")
+  partable <- subset(lavInspect(object, what = "list"), op == "~")
   out <- partable[, c("lhs", "op", "rhs", "exo", "group",
                       "block", "label")]
   partable_beta <- lavTech(object, what = "partable", list.by.group = TRUE)

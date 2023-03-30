@@ -2,10 +2,9 @@
 
 export(compute_fscore)
 export(get_fs)
-export(grandStardardizedSolution)
+export(grandStandardizedSolution)
 export(tspa)
 importFrom(lavaan,cfa)
-importFrom(lavaan,inspect)
 importFrom(lavaan,lavInspect)
 importFrom(lavaan,lavTech)
 importFrom(lavaan,lav_func_jacobian_complex)
