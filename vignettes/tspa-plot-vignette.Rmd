@@ -65,6 +65,26 @@ tspa_plot(tspa_fit_1,
           ask = TRUE)
 ```
 
+### Using estimates from `tspa()` function
+
+```{r}
+latent_estimates <- data.frame(lavPredict(tspa_fit_1))
+plot(latent_estimates$ind60, 
+     latent_estimates$dem60, 
+     main="Scatterplot", 
+     xlab="ind60", 
+     ylab="dem60", 
+     pch=16, 
+     ps=1.25, 
+     cex.lab=1.2, 
+     cex.axis=1.2)
+slope <- coef(tspa_fit_1)["dem60~ind60"]
+abline(a = 0, b = slope, lwd=2)
+
+parameterestimates(tspa_fit_1)
+```
+
+
 ## Single group, multiple predictors
 
 ```{r}
@@ -120,6 +140,24 @@ tspa_plot(tspa_fit_2,
           label_y = c("factor_a", "factor_b", "factor_c"))
 ```
 
+### Using estimates from `tspa()` function
+
+```{r}
+# dem60 and ind60
+latent_estimates <- data.frame(lavPredict(tspa_fit_2))
+plot(latent_estimates$ind60, 
+     latent_estimates$dem60, 
+     main="Scatterplot", 
+     xlab="ind60", 
+     ylab="dem60", 
+     pch=16, 
+     ps=1.25, 
+     cex.lab=1.2, 
+     cex.axis=1.2)
+slope <- coef(tspa_fit_2)["dem60~ind60"]
+abline(a = 0, b = slope, lwd=2)
+```
+
 ## Multigroup, single predictor
 
 ```{r}
@@ -143,7 +181,7 @@ fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
                         group = "school")
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
                        model = "speed =~ x7 + x8 + x9", 
-                        group = "school")
+                       group = "school")
 fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
 
 tspa_fit_3 <- tspa(model = "visual ~ speed",
