@@ -23,6 +23,7 @@ library(lavaan)
 library(semTools)
 library(R2spa)
 library(dplyr)
+library(nlsem)
 dat <- read.csv("https://osf.io/download/grwn2/")
 ```
 
@@ -311,6 +312,26 @@ tip ~ tvalue + sources + int
 fitinttspa <- sem(modinttspa, data = fs_dat)
 summary(fitinttspa, standardized = TRUE)
 ```
+
+# Latent Moderated Structural Equations (LMS)
+
+```{r}
+lms <- specify_sem(num.x = 9, num.y = 3, num.xi = 2, num.eta = 1, xi = "x1-x4,x5-x9",
+  eta = "y1-y3", interaction = "xi1:xi2")
+
+start <- runif(count_free_parameters(lms))
+
+dat_lms <- dat %>% 
+  select(-X) %>%
+  na.omit()
+
+colnames(dat_lms) <- c(paste0(rep("x", 9), 1:9), paste0(rep("y", 3), 1:3))
+
+res_lms <- em(lms, dat_lms, start, convergence = 0.1)
+summary(res_lms)
+plot(res_lms)
+```
+
 
 
 
