@@ -163,7 +163,7 @@ compute_fscore <- function(y, lambda, theta, psi,
                            fs_matrices = FALSE) {
   method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
-  if (is.null(alpha)) alpha <- rep(0, ncol(as.matrix(lambda)))
+  if (is.null(alpha)) alpha <- matrix(0, ncol = ncol(as.matrix(lambda)))
   covy <- lambda %*% psi %*% t(lambda) + theta
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
