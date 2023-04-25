@@ -68,7 +68,7 @@ get_fs <- function(data, model = NULL, group = NULL,
   if (is.null(group)) {
     prepare_fs_dat(y, est)
   } else {
-    fs_lst <- av_efs_lst <- fsA_lst <- fsb_lst <-
+    fs_lst <- av_efs_lst <- fsA_lst <- fsb_lst <- fsS_lst <-
       setNames(vector("list", length = length(est)),
                fit@Data@group.label)
     for (i in seq_along(fs_lst)) {
@@ -77,10 +77,12 @@ get_fs <- function(data, model = NULL, group = NULL,
       av_efs_lst[[i]] <- attr(fs_lst[[i]], "av_efs")
       fsA_lst[[i]] <- attr(fs_lst[[i]], "fsA")
       fsb_lst[[i]] <- attr(fs_lst[[i]], "fsb")
+      fsS_lst[[i]] <- attr(fs_lst[[i]], "scoring_matrix")
     }
     attr(fs_lst, which = "av_efs") <- av_efs_lst
     attr(fs_lst, which = "fsA") <- fsA_lst
     attr(fs_lst, which = "fsb") <- fsb_lst
+    attr(fs_lst, which = "scoring_matrix") <- fsS_lst
     fs_lst
   }
 }
@@ -113,6 +115,7 @@ augment_fs <- function(est, fs, fs_ev) {
   attr(fs_dat, "av_efs") <- fs_ev
   attr(fs_dat, "fsA") <- fsA
   attr(fs_dat, "fsb") <- attr(fs, "fsb")
+  attr(fs_dat, "scoring_matrix") <- attr(fs, "scoring_matrix")
   fs_dat
 }
 
@@ -163,7 +166,7 @@ compute_fscore <- function(y, lambda, theta, psi,
                            fs_matrices = FALSE) {
   method <- match.arg(method)
   if (is.null(nu)) nu <- colMeans(y)
-  if (is.null(alpha)) alpha <- matrix(0, ncol = ncol(as.matrix(lambda)))
+  if (is.null(alpha)) alpha <- matrix(0, nrow = ncol(as.matrix(lambda)))
   covy <- lambda %*% psi %*% t(lambda) + theta
   meany <- lambda %*% alpha + nu
   y1c <- t(as.matrix(y)) - as.vector(meany)
@@ -187,6 +190,7 @@ compute_fscore <- function(y, lambda, theta, psi,
       unclass(dir_minus * (psi - a_mat %*% covy %*% t(a_mat)))
   }
   if (fs_matrices) {
+    attr(fs, "scoring_matrix") <- a_mat
     fsA <- unclass(a_mat %*% lambda)
     attr(fs, "fsA") <- fsA
     attr(fs, "fsb") <- alpha - fsA %*% alpha
