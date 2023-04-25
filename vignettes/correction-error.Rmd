@@ -124,13 +124,123 @@ cfa_fit <- cfa("f =~ y1 + y2 + y3 + y4",
 # Jacobian
 R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
 jac_a <- lavaan::lav_func_jacobian_complex(
-  \(x) R2spa:::compute_a(x, lavobj = cfa_fit),
-  coef(cfa_fit)
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit),
+    coef(cfa_fit)
 )
 sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
-           jac_a %*% vcov(cfa_fit) %*% t(jac_a)))
+             jac_a %*% vcov(cfa_fit) %*% t(jac_a)))
 fsy <- R2spa::get_fs(y, std.lv = TRUE)
 attr(fsy, which = "av_efs")
 ```
 
 # Multidimensional Case
+
+```{r}
+#' Set seed
+set.seed(251329)
+
+#' Fixed conditions
+num_obs <- 100
+lambda <- Matrix::bdiag(list(c(.3, .5, .7, .9), c(.7, .6, .7))) |>
+    as.matrix()
+theta <- c(.5, .4, .5, .7, .7, .8, .5)
+psi <- matrix(c(1, -.4, -.4, 1), nrow = 2)
+
+#' Simulate true score (exact means and covariances)
+eta <- MASS::mvrnorm(num_obs, mu = rep(0, 2), Sigma = psi, empirical = TRUE)
+
+#' Function for simulating y
+simy <- function(eta, lambda) {
+    tcrossprod(eta, lambda) +
+        MASS::mvrnorm(num_obs, mu = rep(0, length(theta)), Sigma = diag(theta))
+}
+```
+
+```{r, eval = FALSE}
+#' Simulation
+nsim <- 2500
+tfsy_sim <- fsy_sim <- array(NA, dim = c(num_obs, ncol(lambda), nsim))
+# Also save the scoring matrix
+a_sim <- array(NA, dim = c(ncol(lambda), nrow(lambda), nsim))
+for (i in seq_len(nsim)) {
+    y <- simy(eta = eta, lambda = lambda)
+    tfsy_sim[, , i] <- R2spa::compute_fscore(
+      y, lambda = lambda, theta = diag(theta), psi = psi
+    )
+    fsy <- R2spa::get_fs(
+        data.frame(y) |> setNames(paste0("y", 1:7)),
+        model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+        std.lv = TRUE)
+    fsy_sim[, , i] <- as.matrix(fsy[, 1:2])
+    a_sim[, , i] <- attr(fsy, which = "scoring_matrix")
+}
+```
+
+```{r echo = FALSE, eval = FALSE}
+saveRDS(list(tfsy_sim, fsy_sim, a_sim), file = "sim_correction-error-multi.RDS")
+```
+
+```{r echo = FALSE, include = FALSE}
+tfsy_sim <- readRDS("sim_correction-error-multi.RDS")[[1]]
+fsy_sim <- readRDS("sim_correction-error-multi.RDS")[[2]]
+a_sim <- readRDS("sim_correction-error-multi.RDS")[[3]]
+```
+
+```{r}
+#' Average conditional variance
+# a known
+apply(tfsy_sim, MARGIN = 1, FUN = \(x) cov(t(x))) |> 
+    rowMeans() |> matrix(ncol = 2, nrow = 2)
+# compare to theoretical value
+true_a <- R2spa:::compute_a_reg(lambda, psi = psi, theta = diag(theta))
+true_a %*% diag(theta) %*% t(true_a)
+# a estimated
+apply(fsy_sim, MARGIN = 1, FUN = \(x) cov(t(x))) |> 
+    rowMeans() |> matrix(ncol = 2, nrow = 2)
+```
+
+```{r}
+correct_fac11 <- sum(diag(diag(theta) %*% cov(t(a_sim[1, , ]))))
+correct_fac22 <- sum(diag(diag(theta) %*% cov(t(a_sim[2, , ]))))
+correct_fac21 <- sum(diag(diag(theta) %*%
+                              cov(t(a_sim[2, , ]), t(a_sim[1, , ]))))
+correct_fac <- matrix(c(correct_fac11, correct_fac21,
+                        correct_fac21, correct_fac22), nrow = 2)
+true_a %*% diag(theta) %*% t(true_a) + correct_fac
+```
+
+The $i$, $j$ element of the correction matrix can be approximated by $\mathrm{tr}(\hat{\boldsymbol{\Theta}} \hat{\boldsymbol{V}}_{{\tilde{\boldsymbol{a}}_i}{\tilde{\boldsymbol{a}}_j}})$, with $\hat{\boldsymbol{V}}_{{\tilde{\boldsymbol{a}}_i}{\tilde{\boldsymbol{a}}_j}})$ obtained by
+
+$$\boldsymbol{J}_{\tilde{\boldsymbol{a}}_i}(\boldsymbol{\theta})^\top \hat{\boldsymbol{V}}_{\tilde{\boldsymbol{\theta}}} \boldsymbol{J}_{\tilde{\boldsymbol{a}}_j}(\boldsymbol{\theta}),$$
+
+```{r}
+y <- simy(eta = eta, lambda = lambda)
+cfa_fit <- cfa("f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+               data = setNames(data.frame(y), paste0("y", 1:7)),
+               std.lv = TRUE)
+# Jacobian
+R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
+jac_a1 <- lavaan::lav_func_jacobian_complex(
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[1, ],
+    coef(cfa_fit)
+)
+jac_a2 <- lavaan::lav_func_jacobian_complex(
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[2, ],
+    coef(cfa_fit)
+)
+# Correction[1, 1]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a1 %*% vcov(cfa_fit) %*% t(jac_a1)))
+# Correction[2, 2]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a2 %*% vcov(cfa_fit) %*% t(jac_a2)))
+# Correction[2, 1]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a2 %*% vcov(cfa_fit) %*% t(jac_a1)))
+fsy <- R2spa::get_fs(
+           data.frame(y) |> setNames(paste0("y", 1:7)),
+           model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+           std.lv = TRUE)
+attr(fsy, which = "av_efs")
+```
+
