@@ -172,14 +172,10 @@ compute_fscore <- function(y, lambda, theta, psi,
       stop("input of psi (latent covariance) is needed for regression scores")
     }
     # Regression score
-    ginvcovy <- MASS::ginv(covy)
-    tlam_invcov <- crossprod(lambda, ginvcovy)
-    a_mat <- psi %*% tlam_invcov
+    a_mat <- compute_a_reg(lambda, psi, theta)
   } else if (method == "Bartlett") {
     # Bartlett score
-    ginvth <- MASS::ginv(theta)
-    tlam_invth <- crossprod(lambda, ginvth)
-    a_mat <- solve(tlam_invth %*% lambda, tlam_invth)
+    a_mat <- compute_a_bartlett(lambda, psi, theta)
   }
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
@@ -200,4 +196,34 @@ compute_fscore <- function(y, lambda, theta, psi,
     attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
   }
   fs
+}
+
+compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
+  method = match.arg(method)
+  free <- lavInspect(lavobj, what = "free")
+  free_list <- lapply(free, FUN = \(x) x[which(x > 0)])
+  mat <- lavInspect(lavobj, what = "est")
+  for (l in seq_along(free_list)) {
+    for (i in free_list[[l]]) {
+      mat[[l]][which(free[[l]] == i)] <- par[i]
+    }
+  }
+  if (method == "regression") {
+    return(do.call(compute_a_reg, args = mat[c("lambda", "psi", "theta")]))
+  } else if (method == "Bartlett") {
+    return(do.call(compute_a_bartlett, args = mat[c("lambda", "psi", "theta")]))
+  }
+}
+
+compute_a_reg <- function(lambda, psi, theta) {
+  covy <- lambda %*% psi %*% t(lambda) + theta
+  ginvcovy <- MASS::ginv(covy)
+  tlam_invcov <- crossprod(lambda, ginvcovy)
+  psi %*% tlam_invcov
+}
+
+compute_a_bartlett <- function(lambda, psi, theta) {
+  ginvth <- MASS::ginv(theta)
+  tlam_invth <- crossprod(lambda, ginvth)
+  solve(tlam_invth %*% lambda, tlam_invth)
 }
