@@ -88,7 +88,7 @@ GenData <- function (condition, fixed_objects = NULL) {
 }
 
   DESIGNFACTOR <- createDesign(
-    N = c(25000, 50000),
+    N = c(250, 500),
     beta1 = 1,  # fixed
     beta2 = 0.9,  # fixed
     beta3 = c(0.75, 0.80, 0.85),  # three conditions

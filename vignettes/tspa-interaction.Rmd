@@ -322,6 +322,7 @@ lms <- specify_sem(num.x = 9, num.y = 3, num.xi = 2, num.eta = 1, xi = "x1-x4,x5
 start <- runif(count_free_parameters(lms))
 
 dat_lms <- dat %>% 
+  slice(1:1000) %>%
   select(-X) %>%
   na.omit()
 

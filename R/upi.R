@@ -1,6 +1,6 @@
 # Interaction-branch
 
-#' Unconstrained productor indicator method
+#' Unconstrained product indicator method
 #'
 #' @param model A string variable describing the structural path model with interaction term(s),
 #'              in \code{lavaan} syntax.
