@@ -44,7 +44,8 @@ fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 
 tspa_fit_1 <- tspa(model = "dem60 ~ ind60", 
                  data = fs_dat, 
-                 se = list(ind60 = 0.1213615, dem60 = 0.6756472))
+                 se = list(ind60 = 0.1213615, dem60 = 0.6756472),
+                 meanstructure = T)
 ```
 
 We recommend researchers to examine the diagnostic plot of factor scores in the model. They can use the function `tspa_plot()` to obtain two plots: (a) a scatter plot between factors, (b) a residual plot between factors.
@@ -71,17 +72,17 @@ tspa_plot(tspa_fit_1,
 latent_estimates <- data.frame(lavPredict(tspa_fit_1))
 plot(latent_estimates$ind60, 
      latent_estimates$dem60, 
-     main="Scatterplot", 
-     xlab="ind60", 
-     ylab="dem60", 
-     pch=16, 
-     ps=1.25, 
-     cex.lab=1.2, 
-     cex.axis=1.2)
+     main = "Scatterplot", 
+     xlab = "ind60", 
+     ylab = "dem60", 
+     pch = 16, 
+     ps = 1.25, 
+     cex.lab = 1.2, 
+     cex.axis = 1.2)
 slope <- coef(tspa_fit_1)["dem60~ind60"]
-abline(a = 0, b = slope, lwd=2)
-
-parameterestimates(tspa_fit_1)
+abline(a = unname(coef(tspa_fit_1)["fs_ind60~1"] - slope*coef(tspa_fit_1)["fs_dem60~1"]), 
+       b = slope, 
+       lwd = 2)
 ```
 
 
@@ -145,6 +146,10 @@ tspa_plot(tspa_fit_2,
 ```{r}
 # dem60 and ind60
 latent_estimates <- data.frame(lavPredict(tspa_fit_2))
+lavInspect(tspa_fit_2, what = "est")
+update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"), meanstructure = TRUE)
+# class(tspa_fit_2)
+
 plot(latent_estimates$ind60, 
      latent_estimates$dem60, 
      main="Scatterplot", 
@@ -154,6 +159,7 @@ plot(latent_estimates$ind60,
      ps=1.25, 
      cex.lab=1.2, 
      cex.axis=1.2)
+
 slope <- coef(tspa_fit_2)["dem60~ind60"]
 abline(a = 0, b = slope, lwd=2)
 ```

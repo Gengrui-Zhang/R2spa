@@ -54,7 +54,7 @@ tspa_plot <- function(tspa_fit,
     stop("tspa_plot() function only supports outputs from tspa()")
   }
 
-  fit_data <- lavaan::parameterestimates(tspa_fit)
+  fit_data <- parameterestimates(tspa_fit)
   latent_scores <- lavInspect(tspa_fit, what = "data")
 
   if (is.list(latent_scores)) {
