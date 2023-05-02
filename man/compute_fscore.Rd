@@ -8,10 +8,11 @@ compute_fscore(
   y,
   lambda,
   theta,
-  psi,
+  psi = NULL,
   nu = NULL,
   alpha = NULL,
   method = c("regression", "Bartlett"),
+  center_y = TRUE,
   acov = FALSE,
   fs_matrices = FALSE
 )
@@ -32,6 +33,9 @@ is only one observation, it should be a matrix of one row.}
 
 \item{method}{A character string indicating the method for computing factor
 scores. Currently, only "regression" is supported.}
+
+\item{center_y}{Logical indicating whether \code{y} should be mean-centered.
+Default to \code{TRUE}.}
 
 \item{acov}{Logical indicating whether the asymptotic covariance matrix
 of factor scores should be returned as an attribute.}
