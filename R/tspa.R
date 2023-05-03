@@ -22,6 +22,9 @@
 #'                       \code{which = "fsA"}.
 #'                       For details see the multiple-factors vignette:
 #'                       \code{vignette("multiple-factors", package = "R2spa")}.
+#' @param fsb A vector or list of vectors for the intercepts of factor scores,
+#'            which can be obtained from the output of \code{get_fs()} using
+#'            \code{attr()} with the argument \code{which = "fsb"}.
 #' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return An object of class \code{lavaan}, with an attribute \code{tspaModel}
@@ -54,7 +57,8 @@
 #'               dem65 ~ ind60 + dem60",
 #'      data = fs_dat2,
 #'      vc = attr(fs_dat2, "av_efs"),
-#'      cross_loadings = attr(fs_dat2, "fsA"))
+#'      cross_loadings = attr(fs_dat2, "fsA"),
+#'      fsb = attr(fs_dat2, "fsb"))
 #'
 #' # multigroup, two-factor example
 #' mod3 <- "
@@ -68,6 +72,7 @@
 #'      data = fs_dat3,
 #'      vc = attr(fs_dat3, "av_efs"),
 #'      cross_loadings = attr(fs_dat3, "fsA"),
+#'      fsb = attr(fs_dat3, "fsb"),
 #'      group = "school")
 #'
 #' # multigroup, three-factor example
@@ -84,6 +89,7 @@
 #'      data = fs_dat4,
 #'      vc = attr(fs_dat4, "av_efs"),
 #'      cross_loadings = attr(fs_dat4, "fsA"),
+#'      fsb = attr(fs_dat4, "fsb"),
 #'      group = "school")
 #'
 #' # get factor scores
@@ -127,14 +133,14 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
     if (is.null(vc)) { # SE
       tspaModel <- tspaMultipleGroupSe(model, data, se, fsb)
     } else { # covariance
-      tspaModel <- tspaMultipleGroupMF(model, data, vc, cross_loadings)
+      tspaModel <- tspaMultipleGroupMF(model, data, vc, cross_loadings, fsb)
       data <- do.call(rbind, data)
     }
   } else {
     if (is.null(vc)) { # SE
       tspaModel <- tspaSingleGroup(model, data, se, fsb)
     } else { # covariance
-      tspaModel <- tspaSingleGroupMF(model, data, vc, cross_loadings)
+      tspaModel <- tspaSingleGroupMF(model, data, vc, cross_loadings, fsb)
     }
   }
 
@@ -191,7 +197,8 @@ tspaSingleGroup <- function(model, data, se = NULL, fsb = NULL) {
   }
 }
 
-tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
+tspaSingleGroupMF <- function(model, data, vc, cross_loadings,
+                              fsb = NULL) {
   # ev <- se^2
   var <- colnames(vc)
   len <- nrow(vc)
@@ -208,22 +215,25 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
     paste0(x, collapse = " + ")
   })
   latent_var_str <- paste(var, "=~", loadings_c)
+  # intercepts
+  if (is.null(fsb)) {
+    intercept_str <- ""
+  } else {
+    intercept_str <- paste0("# constrain intercepts\n",
+                         paste0(fs, " ~ ", fsb, " * 1"))
+  }
   # error variances
   vc_in <- !upper.tri(vc)
   ev_rhs <- colnames(vc)[col(vc_in)[vc_in]]
   ev_lhs <- rownames(vc)[row(vc_in)[vc_in]]
-  error_constraint_str <- paste0(fs, " ~~ ", vc[vc_in], " * ", ev_rhs)
-
-  # # latent variances
-  # latent_variance_str <- paste(var, "~~", var)
+  error_constraint_str <- paste0(ev_lhs, " ~~ ", vc[vc_in], " * ", ev_rhs)
 
   tspaModel <- paste0(c(
     "# latent variables (indicated by factor scores)",
     latent_var_str,
+    intercept_str,
     "# constrain the errors",
     error_constraint_str,
-    # "# latent variances",
-    # latent_variance_str,
     "# regressions",
     model
   ),
@@ -232,7 +242,7 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   return(tspaModel)
 }
 
-tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
+tspaMultipleGroupMF <- function(model, data, vc, cross_loadings, fsb = NULL) {
   ngroup <- length(vc)
   var <- colnames(vc[[1]])
   nvar <- length(var)
@@ -253,6 +263,17 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
     paste0(x, collapse = " + ")
   })
   latent_var_str <- paste(var, "=~", loadings_c)
+  if (is.null(fsb)) {
+    intercept_constraint_str <- ""
+  } else {
+    # intercepts
+    intercepts_mat <- matrix(unlist(fsb), ncol = ngroup)
+    intercepts <- apply(intercepts_mat, 1, function(x) {
+      paste0("c(", paste0(x, collapse = ", "), ") * 1")
+    })
+    intercept_constraint_str <- paste0("# constrain intercepts\n",
+                                       fs, " ~ ", intercepts)
+  }
   # error variances
   vc_in <- !upper.tri(vc[[1]])
   ev_rhs <- paste0("fs_", colnames(vc[[1]])[col(vc_in)[vc_in]])
@@ -268,10 +289,9 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   tspaModel <- paste0(c(
     "# latent variables (indicated by factor scores)",
     latent_var_str,
+    intercept_constraint_str,
     "# constrain the errors",
     error_constraint_str,
-    # "# latent variances",
-    # latent_variance_str,
     "# regressions",
     model
   ),
