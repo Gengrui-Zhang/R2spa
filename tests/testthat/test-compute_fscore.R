@@ -207,3 +207,20 @@ test_that("Correct scoring matrix for Bartlett scores", {
   expect_equal(attr(fs2_hand, "av_efs"),
                expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2))
 })
+
+test_that("Correction factor shrinks to zero in large sample", {
+  cov1 <- lavInspect(fit, what = "implied")[[1]]$cov
+  fit_small <- cfa(" visual  =~ x1 + x2 + x3 ",
+                   sample.cov = cov1, sample.nobs = 50)
+  c1 <- correct_evfs(fit_small, method = "regression")
+  fit_medium <- cfa(" visual  =~ x1 + x2 + x3 ",
+                    sample.cov = cov1, sample.nobs = 60)
+  c2 <- correct_evfs(fit_medium, method = "regression")
+  fit_large <- cfa(" visual  =~ x1 + x2 + x3 ",
+                   sample.cov = cov1, sample.nobs = 1e6)
+  c3 <- correct_evfs(fit_large, method = "regression")
+  expect_lt(c2, c1)
+  expect_lt(c3, 1e-4)
+  c1b <- correct_evfs(fit_small, method = "Bartlett")
+  expect_gt(c1b, c1)
+})

@@ -10,6 +10,9 @@
 #'               "regression" to be consistent with
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
+#' @param corrected_av_efs Logical. Whether to correct for the the sampling
+#'                         error in the factor score weights when computing
+#'                         the error variance estimates of factor scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix "fs_") and
@@ -41,6 +44,7 @@
 
 get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
+                   corrected_av_efs = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -54,6 +58,11 @@ get_fs <- function(data, model = NULL, group = NULL,
   fit <- cfa(model, data = data, group = group, ...)
   est <- lavInspect(fit, what = "est")
   y <- lavInspect(fit, what = "data")
+  if (corrected_av_efs) {
+    add_to_evfs <- correct_evfs(fit, method = method)
+  } else {
+    add_to_evfs <- 0
+  }
   prepare_fs_dat <- function(y, est) {
     fscore <- compute_fscore(y,
                              lambda = est$lambda,
@@ -63,7 +72,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                              alpha = est$alpha,
                              method = method,
                              fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "av_efs"))
+    augment_fs(est, fscore, attr(fscore, "av_efs") + add_to_evfs)
   }
   if (is.null(group)) {
     prepare_fs_dat(y, est)
@@ -213,7 +222,7 @@ compute_fscore <- function(y, lambda, theta, psi = NULL,
 }
 
 compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
-  method = match.arg(method)
+  method <- match.arg(method)
   free <- lavInspect(lavobj, what = "free")
   free_list <- lapply(free, FUN = \(x) x[which(x > 0)])
   mat <- lavInspect(lavobj, what = "est")
@@ -240,4 +249,17 @@ compute_a_bartlett <- function(lambda, theta) {
   ginvth <- MASS::ginv(theta)
   tlam_invth <- crossprod(lambda, ginvth)
   solve(tlam_invth %*% lambda, tlam_invth)
+}
+
+correct_evfs <- function(fit, method = c("regression", "Bartlett")) {
+  jac_a <- lavaan::lav_func_jacobian_complex(
+    function(x, fit, method) {
+      compute_a(x, lavobj = fit, method = method)
+    },
+    coef(fit),
+    fit = fit,
+    method = method
+  )
+  sum(diag(lavInspect(fit, what = "est")$theta %*%
+    jac_a %*% vcov(fit) %*% t(jac_a)))
 }
