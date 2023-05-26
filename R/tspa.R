@@ -182,11 +182,11 @@ tspaSingleGroup <- function(model, data, se = NULL) {
 
 tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   # ev <- se^2
-  var <- colnames(vc)
-  len <- nrow(vc)
+  var <- colnames(cross_loadings)
+  len <- nrow(cross_loadings)
 
   col <- colnames(data)
-  fs <- paste0("fs_", var)
+  fs <- rownames(cross_loadings)
   colnames(vc) <- rownames(vc) <- fs
 
   # latent variables
@@ -222,11 +222,11 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
 
 tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   ngroup <- length(vc)
-  var <- colnames(vc[[1]])
+  var <- colnames(cross_loadings[[1]])
   nvar <- length(var)
 
   col <- colnames(data[[1]])
-  fs <- paste0("fs_", var)
+  fs <- rownames(cross_loadings[[1]])
   # colnames(vc) <- rownames(vc) <- fs
 
   # latent variables
