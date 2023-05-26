@@ -26,6 +26,24 @@
 tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
   str_name <- mx_model$name
   p <- ncol(mat_vc)
+  if (!isTRUE(attr(class(mat_ld), which = "package") == "OpenMx")) {
+    fs_name <- mx_model$manifestVars
+    ld_ind <- match(fs_name, table = rownames(mat_ld))
+    if (any(is.na(ld_ind))) {
+      stop("`rownames(mat_ld)` must match the names of the",
+           "factor score variables.")
+    }
+    mat_ld <- make_mx_ld(mat_ld[ld_ind, ld_ind])
+  }
+  if (!isTRUE(attr(class(mat_vc), which = "package") == "OpenMx")) {
+    fs_name <- mx_model$manifestVars
+    vc_ind <- match(fs_name, table = rownames(mat_vc))
+    if (any(is.na(vc_ind))) {
+      stop("`rownames(mat_vc)` must match the names of the",
+           "factor score variables.")
+    }
+    mat_vc <- make_mx_vc(mat_vc[vc_ind, vc_ind])
+  }
   mxModel(
     "2SPAD",
     mxData(observed = data, type = "raw"),
@@ -40,5 +58,23 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
       covariance = "expCov", means = "expMean",
       dimnames = mx_model$manifestVars),
     mxFitFunctionML()
+  )
+}
+
+make_mx_ld <- function(ld_mat) {
+  mxMatrix(
+    type = "Full", nrow = nrow(ld_mat), ncol = nrow(ld_mat),
+    free = FALSE,
+    values = ld_mat,
+    name = "L"
+  )
+}
+
+make_mx_vc <- function(vc_mat) {
+  mxMatrix(
+    type = "Symm", nrow = nrow(vc_mat), ncol = nrow(vc_mat),
+    free = FALSE,
+    values = vc_mat,
+    name = "E"
   )
 }
