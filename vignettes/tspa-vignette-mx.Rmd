@@ -1,0 +1,175 @@
+---
+title: "Multi-Factor Measurement Model (OpenMx)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tspa-vignette-mx}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message = FALSE}
+library(lavaan)
+library(R2spa)
+library(OpenMx)
+library(umx)
+library(mirt)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+```{r}
+# CFA
+my_cfa <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+"
+(fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE)) |> head()
+```
+
+```{r}
+tspa_fit <- tspa(model = "dem60 ~ ind60", data = fs_dat,
+                 vc = attr(fs_dat, "av_efs"),
+                 cross_loadings = attr(fs_dat, "fsA"))
+parameterestimates(tspa_fit)
+```
+
+Using OpenMx
+
+1. Create OpenMx model without latent variables
+
+```{r}
+fsreg_umx <- umxLav2RAM(
+    "
+    fs_dem60 ~ fs_ind60
+    fs_dem60 + fs_ind60 ~ 1
+    ",
+    printTab = FALSE)
+```
+
+- Create loading and error covariance matrices (need reordering)
+
+```{r}
+# Loading
+matL <- mxMatrix(
+    type = "Full", nrow = 2, ncol = 2,
+    free = FALSE,
+    values = attr(fs_dat, "fsA")[2:1, 2:1],
+    name = "L"
+)
+# Error
+matE <- mxMatrix(
+    type = "Symm", nrow = 2, ncol = 2,
+    free = FALSE,
+    values = attr(fs_dat, "av_efs")[2:1, 2:1],
+    name = "E"
+)
+```
+
+- Run 2S-PA
+
+```{r}
+tspa_mx <-
+    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
+                          mat_ld = matL, mat_vc = matE)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results (takes 20 seconds or so)
+summary(tspa_mx_fit)
+# Standardize coefficients (not for interaction)
+mxStandardizeRAMpaths(tspa_mx_fit)
+```
+
+```{r, eval = FALSE}
+tspa_mx <-
+    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
+                          mat_ld = attr(fs_dat, "fsA"),
+                          mat_vc = attr(fs_dat, "av_efs"))
+```
+
+# Combined with IRT
+
+Example from Lai & Hsiao (2021, Psychological Methods)
+
+```{r}
+# Simulate data with mirt
+set.seed(1234)
+num_obs <- 1000
+# Simulate theta
+eta <- MASS::mvrnorm(num_obs, mu = c(0, 0), Sigma = diag(c(1, 1 - 0.5^2)),
+                     empirical = TRUE)
+th1 <- eta[, 1]
+th2 <- -1 + 0.5 * th1 + eta[, 2]
+# items and response data
+a1 <- matrix(1, 10)
+d1 <- matrix(rnorm(10))
+a2 <- matrix(runif(10, min = 0.5, max = 1.5))
+d2 <- matrix(rnorm(10))
+dat1 <- simdata(a = a1, d = d1, N = num_obs, itemtype = "2PL", Theta = th1)
+dat2 <- simdata(a = a2, d = d2, N = num_obs, itemtype = "2PL", Theta = th2)
+# Factor scores
+mod1 <- mirt(dat1, model = 1, itemtype = "Rasch")
+mod2 <- mirt(dat2, model = 1, itemtype = "2PL")
+fs1 <- fscores(mod1, full.scores.SE = TRUE)
+fs2 <- fscores(mod2, full.scores.SE = TRUE)
+lm(fs2[, 1] ~ fs1[, 1])  # attenuated coefficient
+```
+
+Using `tspa_mx_model()`
+
+```{r}
+# Combine into data set
+fs_dat <- cbind(fs1, fs2) |>
+    as.data.frame() |>
+    setNames(c("fs1", "se_fs1", "fs2", "se_fs2")) |>
+    # Compute reliability and error variances
+    within(expr = {
+        rel_fs1 <- 1 - se_fs1^2
+        rel_fs2 <- 1 - se_fs2^2
+        ev_fs1 <- se_fs1^2 * (1 - se_fs1^2)
+        ev_fs2 <- se_fs2^2 * (1 - se_fs2^2)
+    })
+```
+
+```{r}
+# Loading
+matL <- mxMatrix(
+    type = "Diag", nrow = 2, ncol = 2,
+    free = FALSE,
+    labels = c("data.rel_fs2", "data.rel_fs1"),
+    name = "L"
+)
+# Error
+matE <- mxMatrix(
+    type = "Diag", nrow = 2, ncol = 2,
+    free = FALSE,
+    labels = c("data.ev_fs2", "data.ev_fs1"),
+    name = "E"
+)
+```
+
+```{r}
+fsreg_umx <- umxLav2RAM(
+    "
+      fs2 ~ fs1
+      fs2 + fs1 ~ 1
+    ",
+    printTab = FALSE)
+```
+
+```{r}
+tspa_mx <-
+    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
+                          mat_ld = matL, mat_vc = matE)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results
+summary(tspa_mx_fit)
+```
