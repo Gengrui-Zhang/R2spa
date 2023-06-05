@@ -36,12 +36,17 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.2
 Imports: 
     lavaan,
-    MASS
+    MASS,
+    OpenMx
 Suggests: 
+    DiagrammeR,
     knitr,
     magrittr,
+    Matrix,
+    mirt,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    umx
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 URL: https://gengrui-zhang.github.io/R2spa/

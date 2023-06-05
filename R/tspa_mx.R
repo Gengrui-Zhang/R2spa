@@ -2,9 +2,9 @@
 #'
 #' Fit a two-stage path analysis (2S-PA) model.
 #'
-#' @param mxModel A model object of class [OpenMx::MxRAMModel-class], created by
-#'                [OpenMx::mxModel()] or the [umx] package. This
-#'                is the structural model part.
+#' @param mx_model A model object of class [OpenMx::MxRAMModel-class], created
+#'                 by [OpenMx::mxModel()] or the `umx` package. This
+#'                 is the structural model part.
 #' @param data A data frame containing factor scores.
 #' @param mat_ld A \eqn{p \times p} matrix indicating the loadings of the
 #'               factor scores on the latent variables. The *i*th row indicate
@@ -23,6 +23,9 @@
 #' @param ... Additional arguments passed to [OpenMx::mxModel()].
 #' @return An object of class [OpenMx::MxModel-class]. Note that the
 #'         model has not been run.
+#' 
+#' @importFrom OpenMx mxData mxMatrix mxAlgebraFromString mxExpectationNormal
+#'             mxModel mxFitFunctionML
 tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
   str_name <- mx_model$name
   p <- ncol(mat_vc)

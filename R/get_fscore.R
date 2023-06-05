@@ -18,7 +18,7 @@
 #' @return A data frame containing the factor scores (with prefix "fs_") and
 #'         the standard errors (with suffix "_se").
 #'
-#' @importFrom lavaan cfa sem lavInspect lavTech
+#' @importFrom lavaan cfa sem lavInspect lavTech coef
 #' @importFrom stats setNames
 #'
 #' @export
