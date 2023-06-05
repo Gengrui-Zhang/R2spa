@@ -62,19 +62,41 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
 }
 
 make_mx_ld <- function(ld_mat) {
+  if (is.numeric(ld_mat)) {
+    val <- ld_mat
+    lab <- NA
+  } else if (is.character(ld_mat)) {
+    lab <- ld_mat
+    lab[!is.na(lab)] <- paste0("data.", lab[!is.na(lab)])
+    val <- NA
+  } else {
+    stop("`ld_mat` must be either a numeric matrix or a character matrix.")
+  }
   mxMatrix(
     type = "Full", nrow = nrow(ld_mat), ncol = nrow(ld_mat),
     free = FALSE,
-    values = ld_mat,
+    values = val,
+    labels = lab,
     name = "L"
   )
 }
 
 make_mx_vc <- function(vc_mat) {
+  if (is.numeric(vc_mat)) {
+    val <- vc_mat
+    lab <- NA
+  } else if (is.character(vc_mat)) {
+    lab <- vc_mat
+    lab[!is.na(lab)] <- paste0("data.", lab[!is.na(lab)])
+    val <- NA
+  } else {
+    stop("`vc_mat` must be either a numeric matrix or a character matrix.")
+  }
   mxMatrix(
     type = "Symm", nrow = nrow(vc_mat), ncol = nrow(vc_mat),
     free = FALSE,
-    values = vc_mat,
+    values = val,
+    labels = lab,
     name = "E"
   )
 }
