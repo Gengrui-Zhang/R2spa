@@ -99,7 +99,7 @@ get_fs <- function(data, model = NULL, group = NULL,
 augment_fs <- function(est, fs, fs_ev) {
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   colnames(fs) <- paste0("fs_", colnames(fs))
-  colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
+  colnames(fs_se) <- paste0(colnames(fs_se), "_se")
   num_lvs <- ncol(fs_ev)
   fs_evs <- rep(NA, num_lvs * (num_lvs + 1) / 2)
   count <- 1

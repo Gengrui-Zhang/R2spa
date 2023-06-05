@@ -54,10 +54,12 @@ test_that("ACOV = Var(e.fs) for Bartlett scores", {
                              method = "Bartlett",
                              fs_matrices = TRUE)
   expect_equal(fs_lavaan2, fs_hand2, ignore_attr = TRUE)
-  expect_equal(attr(fs_lavaan2, "acov")[[1]],
-               attr(fs_hand2, "acov"))
-  expect_equal(attr(fs_lavaan2, "acov")[[1]],
-               attr(fs_hand2, "av_efs"))
+  expect_equal(attr(fs_hand2, "acov"), attr(fs_lavaan2, "acov")[[1]])
+  expect_equal(attr(fs_hand2, "av_efs"), attr(fs_lavaan2, "acov")[[1]],
+               ignore_attr = TRUE)
+  # From Issue 56
+  expect_equal(rownames(attr(fs_hand2, "av_efs")),
+               paste0("fs_", rownames(attr(fs_lavaan2, "acov")[[1]])))
 })
 
 test_that("Same factor scores with same priors", {
@@ -141,12 +143,16 @@ test_that("Correct scoring matrix for regression scores", {
   a_mat1 <- est[[1]]$psi %*%
     crossprod(est[[1]]$lambda, MASS::ginv(fit@implied$cov[[1]]))
   fsA1 <- attr(fs1_hand, "fsA")
-  expect_equal(a_mat1 %*% est[[1]]$lambda, fsA1)
+  expect_equal(a_mat1 %*% est[[1]]$lambda, fsA1, ignore_attr = TRUE)
+  # Issue 56
+  expect_equal(colnames(fsA1), rownames(a_mat1))
+  expect_equal(rownames(fsA1), paste0("fs_", colnames(fsA1)))
   expect_equal(a_mat1 %*% cov(y[[1]]) %*% t(a_mat1),
                expected = cov(fs1_hand))
   implied_covfs1 <- a_mat1 %*% fit@implied$cov[[1]] %*% t(a_mat1)
   expect_equal(attr(fs1_hand, "av_efs"),
-               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1))
+               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1),
+               ignore_attr = TRUE)
   fs2_hand <- compute_fscore(y[[2]],
                              lambda = est[[2]]$lambda,
                              theta = est[[2]]$theta,
@@ -159,12 +165,13 @@ test_that("Correct scoring matrix for regression scores", {
   a_mat2 <- est[[1]]$psi %*%
     crossprod(est[[2]]$lambda, MASS::ginv(implied_cov2))
   fsA2 <- attr(fs2_hand, "fsA")
-  expect_equal(a_mat2 %*% est[[2]]$lambda, fsA2)
+  expect_equal(a_mat2 %*% est[[2]]$lambda, fsA2, ignore_attr = TRUE)
   expect_equal(a_mat2 %*% cov(y[[2]]) %*% t(a_mat2),
                expected = cov(fs2_hand))
   implied_covfs2 <- a_mat2 %*% fit@implied$cov[[2]] %*% t(a_mat2)
   expect_equal(attr(fs2_hand, "av_efs"),
-               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2))
+               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2),
+               ignore_attr = TRUE)
 })
 
 test_that("Correct scoring matrix for Bartlett scores", {
@@ -182,10 +189,12 @@ test_that("Correct scoring matrix for Bartlett scores", {
   fsA1 <- attr(fs1_hand, "fsA")
   expect_equal(fsA1, diag(3), ignore_attr = TRUE)
   expect_equal(a_mat1 %*% cov(y[[1]]) %*% t(a_mat1),
-               expected = cov(fs1_hand))
+               expected = cov(fs1_hand),
+               ignore_attr = TRUE)
   implied_covfs1 <- a_mat1 %*% fit@implied$cov[[1]] %*% t(a_mat1)
   expect_equal(attr(fs1_hand, "av_efs"),
-               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1))
+               expected = implied_covfs1 - fsA1 %*% est[[1]]$psi %*% t(fsA1),
+               ignore_attr = TRUE)
   fs2_hand <- compute_fscore(y[[2]],
                              lambda = est[[2]]$lambda,
                              theta = est[[2]]$theta,
@@ -202,10 +211,11 @@ test_that("Correct scoring matrix for Bartlett scores", {
   fsA2 <- attr(fs2_hand, "fsA")
   expect_equal(fsA2, diag(3), ignore_attr = TRUE)
   expect_equal(a_mat2 %*% cov(y[[2]]) %*% t(a_mat2),
-               expected = cov(fs2_hand))
+               expected = cov(fs2_hand), ignore_attr = TRUE)
   implied_covfs2 <- a_mat2 %*% fit@implied$cov[[2]] %*% t(a_mat2)
   expect_equal(attr(fs2_hand, "av_efs"),
-               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2))
+               expected = implied_covfs2 - fsA2 %*% est[[2]]$psi %*% t(fsA2),
+               ignore_attr = TRUE)
 })
 
 test_that("Correction factor shrinks to zero in large sample", {

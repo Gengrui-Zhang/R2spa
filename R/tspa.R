@@ -225,7 +225,7 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   var <- colnames(cross_loadings[[1]])
   nvar <- length(var)
 
-  col <- colnames(data[[1]])
+  # col <- colnames(data[[1]])  # suppress as it is not used
   fs <- rownames(cross_loadings[[1]])
   # colnames(vc) <- rownames(vc) <- fs
 
@@ -243,8 +243,8 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   latent_var_str <- paste(var, "=~", loadings_c)
   # error variances
   vc_in <- !upper.tri(vc[[1]])
-  ev_rhs <- paste0("fs_", colnames(vc[[1]])[col(vc_in)[vc_in]])
-  ev_lhs <- paste0("fs_", rownames(vc[[1]])[row(vc_in)[vc_in]])
+  ev_rhs <- colnames(vc[[1]])[col(vc_in)[vc_in]]
+  ev_lhs <- rownames(vc[[1]])[row(vc_in)[vc_in]]
   errors_mat <- matrix(unlist(vc), ncol = ngroup)[as.vector(vc_in), ]
   errors <- apply(errors_mat, 1, function(x) {
     paste0("c(", paste0(x, collapse = ", "), ")")
