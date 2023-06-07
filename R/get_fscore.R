@@ -106,9 +106,13 @@ augment_fs <- function(est, fs, fs_ev) {
   for (i in seq_len(num_lvs)) {
     for (j in seq_len(i)) {
       fs_evs[count] <- fs_ev[i, j]
-      names(fs_evs)[count] <- paste0("evfs_",
-                                     rownames(fs_ev)[i], "_",
-                                     colnames(fs_ev)[j])
+      if (i == j) {
+        names(fs_evs)[count] <- paste0("ev_", rownames(fs_ev)[i])
+      } else {
+        names(fs_evs)[count] <- paste0("ecov_",
+                                       rownames(fs_ev)[i], "_",
+                                       colnames(fs_ev)[j])
+      }
       count <- count + 1
     }
   }

@@ -196,9 +196,9 @@ tspa_mx2 <- tspa_mx_model(model_umx,
 )
 tspa_mx_fit2 <- mxRun(tspa_mx2)
 # Use column names for VC
-err_cov <- matrix(c("evfs_fs_ind60_fs_ind60", NA, NA,
-                    NA, "evfs_fs_dem60_fs_dem60", NA,
-                    NA, NA, "evfs_fs_dem65_fs_dem65"), nrow = 3) |>
+err_cov <- matrix(c("ev_fs_ind60", NA, NA,
+                    NA, "ev_fs_dem60", NA,
+                    NA, NA, "ev_fs_dem65"), nrow = 3) |>
     `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 tspa_mx3 <- tspa_mx_model(model_umx, data = fs_dat_3var,
   mat_ld = matL, mat_vc = err_cov)
