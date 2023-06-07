@@ -40,3 +40,63 @@ model has not been run.
 \description{
 Fit a two-stage path analysis (2S-PA) model.
 }
+\examples{
+library(mirt)
+library(umx)
+library(OpenMx)
+# Simulate data with mirt
+set.seed(1324)
+num_obs <- 100
+# Simulate theta
+eta <- MASS::mvrnorm(num_obs, mu = c(0, 0), Sigma = diag(c(1, 1 - 0.5^2)),
+                     empirical = TRUE)
+th1 <- eta[, 1]
+th2 <- -1 + 0.5 * th1 + eta[, 2]
+# items and response data
+a1 <- matrix(1, 10)
+d1 <- matrix(rnorm(10))
+a2 <- matrix(runif(10, min = 0.5, max = 1.5))
+d2 <- matrix(rnorm(10))
+dat1 <- mirt::simdata(a = a1, d = d1,
+                      N = num_obs, itemtype = "2PL", Theta = th1)
+dat2 <- mirt::simdata(a = a2, d = d2, N = num_obs,
+                      itemtype = "2PL", Theta = th2)
+# Factor scores
+mod1 <- mirt(dat1, model = 1, itemtype = "Rasch", verbose = FALSE)
+mod2 <- mirt(dat2, model = 1, itemtype = "2PL", verbose = FALSE)
+fs1 <- fscores(mod1, full.scores.SE = TRUE)
+fs2 <- fscores(mod2, full.scores.SE = TRUE)
+# Combine factor scores and standard errors into data set
+fs_dat <- as.data.frame(cbind(fs1, fs2))
+names(fs_dat) <- c("fs1", "se_fs1", "fs2", "se_fs2")
+# Compute reliability and error variances
+fs_dat <- within(fs_dat, expr = {
+  rel_fs1 <- 1 - se_fs1^2
+  rel_fs2 <- 1 - se_fs2^2
+  ev_fs1 <- se_fs1^2 * (1 - se_fs1^2)
+  ev_fs2 <- se_fs2^2 * (1 - se_fs2^2)
+})
+# OpenMx model (from umx so that lavaan syntax can be used)
+fsreg_umx <- umxLav2RAM(
+  "
+    fs2 ~ fs1
+    fs2 + fs1 ~ 1
+  ",
+  printTab = FALSE)
+# Prepare loading and error covariance matrices
+cross_load <- matrix(c("rel_fs2", NA, NA, "rel_fs1"), nrow = 2) |>
+  `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
+err_cov <- matrix(c("ev_fs2", NA, NA, "ev_fs1"), nrow = 2) |>
+  `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
+# Create 2S-PA model (with definition variables)
+tspa_mx <-
+  tspa_mx_model(fsreg_umx,
+    data = fs_dat,
+    mat_ld = cross_load,
+    mat_vc = err_cov
+  )
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results
+summary(tspa_mx_fit)
+}
