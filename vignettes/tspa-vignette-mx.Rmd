@@ -76,9 +76,8 @@ matE <- mxMatrix(
 - Run 2S-PA
 
 ```{r}
-tspa_mx <-
-    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
-                          mat_ld = matL, mat_vc = matE)
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = matL, mat_vc = matE)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results (takes 20 seconds or so)
@@ -88,10 +87,10 @@ mxStandardizeRAMpaths(tspa_mx_fit)
 ```
 
 ```{r, eval = FALSE}
-tspa_mx <-
-    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
-                          mat_ld = attr(fs_dat, "fsA"),
-                          mat_vc = attr(fs_dat, "av_efs"))
+# Alternative specification
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = attr(fs_dat, "fsA"),
+                         mat_vc = attr(fs_dat, "av_efs"))
 ```
 
 # Combined with IRT
@@ -120,6 +119,19 @@ mod2 <- mirt(dat2, model = 1, itemtype = "2PL", verbose = FALSE)
 fs1 <- fscores(mod1, full.scores.SE = TRUE)
 fs2 <- fscores(mod2, full.scores.SE = TRUE)
 lm(fs2[, 1] ~ fs1[, 1])  # attenuated coefficient
+```
+
+Joint model
+
+```{r}
+dat <- cbind(dat1, dat2)
+colnames(dat) <- paste0("i", 1:20)
+wls_fit <- sem("
+f1 =~ i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10
+f2 =~ i11 + i12 + i13 + i14 + i15 + i16 + i17 + i18 + i19 + i20
+f2 ~ f1
+", data = dat, ordered = TRUE, std.lv = TRUE)
+coef(wls_fit)["f2~f1"]
 ```
 
 Using `tspa_mx_model()`
@@ -165,9 +177,8 @@ fsreg_umx <- umxLav2RAM(
 ```
 
 ```{r}
-tspa_mx <-
-    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
-                          mat_ld = matL, mat_vc = matE)
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = matL, mat_vc = matE)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results
@@ -181,14 +192,44 @@ cross_load <- matrix(c("rel_fs2", NA, NA, "rel_fs1"), nrow = 2) |>
     `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
 err_cov <- matrix(c("ev_fs2", NA, NA, "ev_fs1"), nrow = 2) |>
     `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
-tspa_mx <-
-    R2spa:::tspa_mx_model(fsreg_umx,
-        data = fs_dat,
-        mat_ld = cross_load,
-        mat_vc = err_cov
-    )
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = cross_load, mat_vc = err_cov)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results
 summary(tspa_mx_fit)
 ```
+
+<!-- ## Multidimensional Example
+
+```{r, eval = FALSE, include = FALSE}
+# Simulate data with mirt
+set.seed(1234)
+num_obs <- 1000
+true_b <- 0
+# Simulate theta
+eta <- MASS::mvrnorm(num_obs, mu = c(0, 0), Sigma = diag(c(1, 1 - true_b^2)),
+                     empirical = TRUE)
+th1 <- eta[, 1]
+th2 <- -1 + true_b * th1 + eta[, 2]
+# items and response data
+a1 <- matrix(1, 10)
+d1 <- matrix(rnorm(10))
+a2 <- matrix(runif(10, min = 0.5, max = 1.5))
+d2 <- matrix(rnorm(10))
+dat <- simdata(a = cbind(c(a1, rep(0, 10)), c(rep(0, 10), a2)), d = c(d1, d2),
+               N = num_obs, itemtype = "2PL", Theta = cbind(th1, th2))
+# Multidimensional IRT
+mod <- "
+F1 = 1-10
+F2 = 11-20
+COV = F1*F2
+CONSTRAIN = (1-10, a1)
+"
+mfit <- mirt(dat, model = mod, itemtype = "2PL", verbose = FALSE)
+# Factor scores
+fs <- fscores(mfit, return.acov = TRUE)
+# TODO: Find the formula for ACOV, and see how to figure out
+#       the cross-loadings
+```
+-->
