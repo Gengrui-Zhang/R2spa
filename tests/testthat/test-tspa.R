@@ -279,38 +279,38 @@ test_that("test if the se of variance is similar for two methods", {
   )
 })
 
-# Test tspaSingleGroupMF()
-cfa_3fac <-  '
-  # latent variables
-  ind60 =~ x1 + x2 + x3
-  dem60 =~ y1 + y2 + y3 + y4
-  dem65 =~ y5 + y6 + y7 + y8
-'
-fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
-path_mod <- '
-dem60 ~ ind60
-dem65 ~ ind60 + dem60
-'
-tspa_mod_s <- tspaSingleGroupMF(
-  model = path_mod,
-  data = fs_dat_3fac,
-  vc = attr(fs_dat_3fac, "av_efs"),
-  cross_loadings = attr(fs_dat_3fac, "fsA")
-)
-
-factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
-loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
-
-test_that("The order of factors in the model from tspaSingleGroupMF()", {
-  expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
-  expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
-})
-test_that("The order of loadings in the model from tspaSingleGroupMF()", {
-  expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
-               loadings_order_s$lhs)
-  expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
-               loadings_order_s$rhs)
-})
+# # Test tspaSingleGroupMF()
+# cfa_3fac <-  '
+#   # latent variables
+#   ind60 =~ x1 + x2 + x3
+#   dem60 =~ y1 + y2 + y3 + y4
+#   dem65 =~ y5 + y6 + y7 + y8
+# '
+# fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
+# path_mod <- '
+# dem60 ~ ind60
+# dem65 ~ ind60 + dem60
+# '
+# tspa_mod_s <- tspaSingleGroupMF(
+#   model = path_mod,
+#   data = fs_dat_3fac,
+#   vc = attr(fs_dat_3fac, "av_efs"),
+#   cross_loadings = attr(fs_dat_3fac, "fsA")
+# )
+#
+# factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
+# loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
+#
+# test_that("The order of factors in the model from tspaSingleGroupMF()", {
+#   expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
+#   expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
+# })
+# test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+#   expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
+#                loadings_order_s$lhs)
+#   expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
+#                loadings_order_s$rhs)
+# })
 
 
 # Test tspaMultipleGroupMF()
