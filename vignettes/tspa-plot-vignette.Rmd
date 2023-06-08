@@ -52,15 +52,15 @@ We recommend researchers to examine the diagnostic plot of factor scores in the 
 
 Features of `tspa_plot()`:
 
-- The function is able to pass arguments to the base R `plot()` function. 
-- Users can define title of the scatter plot and label names of axis.
-- Abbreviation argument allows users to choose whether using abbreviated group names.
-- Users can choose whether generating the plot one by one by hitting the <return> on the keyboard.
+-   The function is able to pass arguments to the base R `plot()` function.
+-   Users can define the title of the scatter plot and label names of axis.
+-   Abbreviation argument allows users to choose whether using abbreviated group names.
+-   Users can choose whether generating the plot one by one by hitting the <return> on the keyboard.
 
 ```{r example_single_group_single_factor}
 # par(mar = c(2,2,3,2))
 tspa_plot(tspa_fit_1,
-          col = "darkgray",
+          col = "grey",
           cex.lab = 1.2,
           cex.axis = 1,
           ask = TRUE)
@@ -83,8 +83,11 @@ slope <- coef(tspa_fit_1)["dem60~ind60"]
 abline(a = unname(coef(tspa_fit_1)["fs_ind60~1"] - slope*coef(tspa_fit_1)["fs_dem60~1"]), 
        b = slope, 
        lwd = 2)
-```
 
+# Residual Plot
+resid_tspa1 <- as.data.frame(resid(tspa_fit_1, "obs"))
+plot(resid_tspa1$fs_dem60, fs_dat$fs_ind60, main = "Residual Plot")
+```
 
 ## Single group, multiple predictors
 
@@ -147,7 +150,7 @@ tspa_plot(tspa_fit_2,
 # dem60 and ind60
 latent_estimates <- data.frame(lavPredict(tspa_fit_2))
 lavInspect(tspa_fit_2, what = "est")
-update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"), meanstructure = TRUE)
+update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"))
 # class(tspa_fit_2)
 
 plot(latent_estimates$ind60, 
@@ -162,6 +165,16 @@ plot(latent_estimates$ind60,
 
 slope <- coef(tspa_fit_2)["dem60~ind60"]
 abline(a = 0, b = slope, lwd=2)
+
+# Residual Plot
+resid_tspa2 <- as.data.frame(resid(tspa_fit_2, "obs"))
+plot(resid_tspa2$fs_dem60, fs_dat$fs_ind60)
+plot(resid_tspa2$fs_dem65, fs_dat$fs_ind60)
+plot(resid_tspa2$fs_dem65, fs_dat$fs_dem60)
+
+# Partial Plot
+plot(resid_tspa2$fs_ind60, resid_tspa2$fs_dem65)
+plot(resid_tspa2$fs_dem60, resid_tspa2$fs_dem65)
 ```
 
 ## Multigroup, single predictor
@@ -213,9 +226,3 @@ tspa_plot(tspa_fit_3,
           cex.axis = 1,
           abbreviation = FALSE)
 ```
-
-
-
-
-
-

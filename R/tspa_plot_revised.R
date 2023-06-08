@@ -8,11 +8,12 @@ tspa_plot <- function(tspa_fit,
                       ...) {
 
   fit_pars <- lavaan::parameterestimates(tspa_fit) # parameter estimates
-  regression_fit <- fit_pars[which(fit_pars$op == "~"),]
+  regression_fit <- fit_pars[which(fit_pars$op == "~"),] # path coefficients
   latent_dv <- unique(c(unname(t(regression_fit["lhs"])))) # Extract DV
   latent_iv <- unique(c(unname(t(regression_fit["rhs"])))) # Extract IV
   fscores_func <- lavaan::lavInspect(tspa_fit, what = "data") # factor scores from `get_fs`
   fscores_est <- lavaan::lavPredict(tspa_fit) # factor scores from estimation using `lavPredict`
+  resid_data <- resid(tspa_fit, "obs") # residual data from tspa fit model
 
     # Type of scatterplot
     if (is.null(fscore_type)) {
@@ -24,7 +25,8 @@ tspa_plot <- function(tspa_fit,
     # Helper function for scatter plot
     # Comment: put it outside the main function
     plot_scatter <- function (fscores_df, iv, dv,
-                              ab_slope, ab_intercept, g_num = NULL, g_name = NULL, ...) {
+                              ab_slope, ab_intercept,
+                              g_num = NULL, g_name = NULL, ...) {
 
       if (!is.null(g_name)) {
         iv_data <- as.data.frame(unname(fscores_df))[ ,iv]
@@ -47,7 +49,8 @@ tspa_plot <- function(tspa_fit,
                          ifelse(is.null(title),
                                 paste0("Scatterplot"),
                                 ifelse(length(title) > 1, title[i], title))),
-           pch = 16)
+           pch = 16,
+           ...)
       abline(a = ab_intercept, b = ab_slope, lwd = 2)
     }
 
@@ -55,10 +58,11 @@ tspa_plot <- function(tspa_fit,
     if (is.list(fscores)) {
 
       # Ask for abbreviation
+      g_names <- NULL
       if (abbreviation == TRUE) {
-          g_names <- abbreviate(names(df_latent_scores))
+          g_names <- abbreviate(names(fscores))
         } else {
-          g_names <- names(df_latent_scores)
+          g_names <- names(fscores)
         }
 
       # Prepare for abline
@@ -73,23 +77,21 @@ tspa_plot <- function(tspa_fit,
       # Scatterplots
       for (g in seq_len(length(g_names))) {
         plot_scatter(fscores_df = df_latent_scores[g],
-                     latent_iv,
-                     latent_dv,
-                     slope[g],
-                     intercept[g],
+                     iv = latent_iv,
+                     dv = latent_dv,
+                     ab_slope = slope[g],
+                     ab_intercept = intercept[g],
                      g_num = g,
-                     g_names[g])
+                     g_name = g_names[g],
+                     ...)
       }
-
-
 
     } else {
 
       # Prepare for abline
-      df_latent_scores <- fscores
       slope <- coef(tspa_fit)[names(coef(tspa_fit)) %in%
-                                apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse="~")]
-      fs_means <- apply(df_latent_scores, 2, mean, na.rm = T)
+                                apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse ="~")]
+      fs_means <- apply(fscores, 2, mean, na.rm = T)
       intercept <- c()
       for(i in seq_len(length(slope))) {
         slope_dv <- unlist(strsplit(names(slope[i]), split = "~"))[1]
@@ -100,24 +102,13 @@ tspa_plot <- function(tspa_fit,
 
       # Scatterplots
       for (i in seq_len(length(slope))) {
-        plot_scatter(fscores_df = df_latent_scores,
+        plot_scatter(fscores_df = fscores,
                      iv = unlist(strsplit(names(slope[i]), split = "~"))[2],
                      dv = unlist(strsplit(names(slope[i]), split = "~"))[1],
                      ab_slope = slope[i],
                      ab_intercept = intercept[i],
-                     g_num = i)
+                     g_num = i,
+                     ...)
       }
-
     }
-
-
-
-
-
-
-
-
-
-
-
 }
