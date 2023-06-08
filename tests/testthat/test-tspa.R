@@ -319,7 +319,6 @@ mod4 <- "
     visual =~ x1 + x2 + x3
     textual =~ x4 + x5 + x6
     speed =~ x7 + x8 + x9
-
 "
 fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
                   group = "school")
@@ -381,3 +380,76 @@ test_that("Multiple-group multiple-factor example", code = {
   expect_equal(sct$se[sct$op == "~"], expected = scs$se[scs$op == "~"],
                tolerance = 0.0001)
 })
+
+# Test growth model
+pop_growth_mod <- "
+eta1 =~ .8 * x1 + .6 * y1 + .4 * z1
+eta2 =~ .85 * x2 + .65 * y2 + .45 * z2
+eta3 =~ .9 * x3 + .7 * y3 + .5 * z3
+eta4 =~ .95 * x4 + .75 * y4 + .55 * z4
+
+eta1 ~ 0 * 1
+eta2 ~ 0 * 1
+eta3 ~ 0 * 1
+eta4 ~ 0 * 1
+
+# covariances
+x1 ~~ .8 * x2 + .6 * x3 + .4 * x4
+x2 ~~ .8 * x3 + .6 * x4
+x3 ~~ .8 * x4
+y1 ~~ .8 * y2 + .6 * y3 + .4 * y4
+y2 ~~ .8 * y3 + .6 * y4
+y3 ~~ .8 * y4
+z1 ~~ .8 * z2 + .6 * z3 + .4 * z4
+z2 ~~ .8 * z3 + .6 * z4
+z3 ~~ .8 * z4
+
+i =~ 1 * eta1 + 1 * eta2 + 1 * eta3 + 1 * eta4
+s =~ 0 * eta1 + 1 * eta2 + 2 * eta3 + 3 * eta4
+
+i ~~ 1 * i
+s ~~ 1 * s
+i ~~ .3 * s
+i ~ 0 * 1
+s ~ 0 * 1
+"
+set.seed(1234)
+growth_dat <- simulateData(pop_growth_mod, sample.nobs = 1000)
+
+mod5 <- "
+eta1 =~ x1 + y1 + z1
+eta2 =~ x2 + y2 + z2
+eta3 =~ x3 + y3 + z3
+eta4 =~ x4 + y4 + z4
+
+# covariances
+x1 ~~ x2 + x3 + x4
+x2 ~~ x3 + x4
+x3 ~~ x4
+y1 ~~ y2 + y3 + y4
+y2 ~~ y3 + y4
+y3 ~~ y4
+z1 ~~ z2 + z3 + z4
+z2 ~~ z3 + z4
+z3 ~~ z4
+"
+fs_dat5 <- get_fs(growth_dat, model = mod5, std.lv = TRUE)
+growth_mod <- "
+i =~ 1 * eta1 + 1 * eta2 + 1 * eta3 + 1 * eta4
+s =~ 0 * eta1 + 1 * eta2 + 2 * eta3 + 3 * eta4
+
+i ~~ i
+s ~~ s
+i ~~ s
+i ~ 1
+s ~ 1
+
+eta1 ~ 0 * 1
+eta2 ~ 0 * 1
+eta3 ~ 0 * 1
+eta4 ~ 0 * 1
+"
+growth_fit <- tspa(growth_mod, fs_dat5,
+                   vc = attr(fs_dat5, "av_efs"),
+                   cross_loadings = attr(fs_dat5, "fsA"),
+                   fsb = attr(fs_dat5, "fsb"))
