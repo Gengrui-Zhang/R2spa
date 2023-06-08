@@ -131,6 +131,9 @@ sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
              jac_a %*% vcov(cfa_fit) %*% t(jac_a)))
 fsy <- R2spa::get_fs(y, std.lv = TRUE)
 attr(fsy, which = "av_efs")
+# Using `get_fs(..., corrected_av_efs = TRUE)
+fsy2 <- R2spa::get_fs(y, std.lv = TRUE, corrected_av_efs = TRUE)
+attr(fsy2, which = "av_efs")
 ```
 
 # Multidimensional Case
@@ -238,9 +241,16 @@ sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
 sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
              jac_a2 %*% vcov(cfa_fit) %*% t(jac_a1)))
 fsy <- R2spa::get_fs(
-           data.frame(y) |> setNames(paste0("y", 1:7)),
-           model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
-           std.lv = TRUE)
+    data.frame(y) |> setNames(paste0("y", 1:7)),
+    model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+    std.lv = TRUE)
 attr(fsy, which = "av_efs")
+# Using `get_fs(..., corrected_av_efs = TRUE)
+fsy2 <- R2spa::get_fs(
+    data.frame(y) |> setNames(paste0("y", 1:7)),
+    model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+    std.lv = TRUE,
+    corrected_av_efs = TRUE)
+attr(fsy2, which = "av_efs")
 ```
 

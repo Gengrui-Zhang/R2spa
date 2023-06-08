@@ -9,6 +9,7 @@ get_fs(
   model = NULL,
   group = NULL,
   method = c("regression", "Bartlett"),
+  corrected_av_efs = FALSE,
   ...
 )
 }
@@ -27,6 +28,10 @@ analysis, which is passed to \code{\link[lavaan]{cfa}}.}
 "regression" to be consistent with
 \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 more desirable properties and may be preferred for 2S-PA.}
+
+\item{corrected_av_efs}{Logical. Whether to correct for the the sampling
+error in the factor score weights when computing
+the error variance estimates of factor scores.}
 
 \item{...}{additional arguments passed to \code{\link[lavaan]{cfa}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
