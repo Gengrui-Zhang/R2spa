@@ -2,15 +2,18 @@
 #'
 #' @param tspa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
-#' @param ask Logic input. If 'TRUE' is indicated, the user will be asked before
-#'            before each plot is generated. The default setting is 'False'.
 #' @param title Character. Set the name of scatter plot. The default value is "Scatterplot".
-#' @param label_x Character. Set the  name of the x-axis. The default value is "fs_" followed by variable names.
-#' @param label_y Character. Set the  name of the y-axis. The default value is "fs_" followed by variable names.
+#' @param label_x Character. Set the name of the x-axis. The default value is "fs_" followed by variable names.
+#' @param label_y Character. Set the name of the y-axis. The default value is "fs_" followed by variable names.
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
 #' @param abbreviation Logic input. If 'FALSE' is indicated, the group name will be shown in full.
 #'                     The default setting is 'True'.
+#' @param ask Logic input. If 'TRUE' is indicated, the user will be asked before
+#'            before each plot is generated. The default setting is 'False'.
+#' @param fscore_type Character. Set the type of factor score for input.
+#'                    The default setting is using factor score from observed data (i.e., output from 'get_fs').
+#'                    If 'fscore_type = "est"', then it will use output from 'lavPredict'
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
 #'
