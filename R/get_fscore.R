@@ -262,14 +262,29 @@ compute_a_bartlett <- function(lambda, theta) {
 }
 
 correct_evfs <- function(fit, method = c("regression", "Bartlett")) {
-  jac_a <- lavaan::lav_func_jacobian_complex(
-    function(x, fit, method) {
-      compute_a(x, lavobj = fit, method = method)
-    },
-    coef(fit),
-    fit = fit,
-    method = method
-  )
-  sum(diag(lavInspect(fit, what = "est")$theta %*%
-    jac_a %*% vcov(fit) %*% t(jac_a)))
+  est_fit <- lavInspect(fit, what = "est")
+  p <- nrow(est_fit$psi)
+  jac_a <- vector("list", length = p)
+  for (i in seq_len(p)) {
+    jac_a[[i]] <- lavaan::lav_func_jacobian_complex(
+      function(x, fit, method) {
+        compute_a(x, lavobj = fit, method = method)[i, ]
+      },
+      coef(fit),
+      fit = fit,
+      method = method
+    )
+  }
+  out <- matrix(nrow = p, ncol = p)
+  th <- est_fit$theta
+  vc_fit <- vcov(fit)
+  for (j in seq_len(p)) {
+    for (i in j:p) {
+      out[i, j] <- sum(diag(th %*% jac_a[[i]] %*% vc_fit %*% t(jac_a[[j]])))
+      if (i > j) {
+        out[j, i] <- out[i, j]
+      }
+    }
+  }
+  out
 }
