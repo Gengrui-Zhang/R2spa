@@ -2,18 +2,18 @@
 #'
 #' @param tspa_fit An object of class \code{lavaan},
 #'                 representing the output generated from `tspa()` function.
-#' @param ask Logic input. If 'TRUE' is indicated, the user will be asked before
-#'            before each plot is generated. The default setting is 'False'.
 #' @param title Character. Set the name of scatter plot. The default value is "Scatterplot".
-#' @param label_x Character. Set the  name of the x-axis. The default value is "fs_" followed by variable names.
-#' @param label_y Character. Set the  name of the y-axis. The default value is "fs_" followed by variable names.
+#' @param label_x Character. Set the name of the x-axis. The default value is "fs_" followed by variable names.
+#' @param label_y Character. Set the name of the y-axis. The default value is "fs_" followed by variable names.
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
-#' @param abbreviation Logic input. If 'FALSE' is indicated
-#' @param title Character. A default or user-defined name or of the title of scatterplot.
-#' @param label_x Character. A default or user-defined name of the x-aix of scatterplot.
-#' @param label_y Character. A default or user-defined name of the y-aix of scatterplot.
-#' @param abbreviation Logic input. If 'False' is indicated
+#' @param abbreviation Logic input. If 'FALSE' is indicated, the group name will be shown in full.
+#'                     The default setting is 'True'.
+#' @param ask Logic input. If 'TRUE' is indicated, the user will be asked before
+#'            before each plot is generated. The default setting is 'False'.
+#' @param fscore_type Character. Set the type of factor score for input.
+#'                    The default setting is using factor score from observed data (i.e., output from 'get_fs').
+#'                    If 'fscore_type = "est"', then it will use output from 'lavPredict'
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
 #'
@@ -42,120 +42,170 @@
 #' tspa_plot(tspa_fit)
 
 tspa_plot <- function(tspa_fit,
-                      ask = FALSE,
                       title = NULL,
                       label_x = NULL,
                       label_y = NULL,
                       abbreviation = TRUE,
+                      fscore_type = NULL,
+                      ask = FALSE,
                       ...) {
 
-  # Check if the model input is a tspa fit
-  if (is.null(attributes(tspa_fit)$tspaModel)) {
-    stop("tspa_plot() function only supports outputs from tspa()")
-  }
+  fit_pars <- lavaan::parameterestimates(tspa_fit) # parameter estimates
+  regression_fit <- fit_pars[which(fit_pars$op == "~"),] # path coefficients
+  latent_dv <- unique(c(unname(t(regression_fit["lhs"])))) # Extract DV
+  latent_iv <- unique(c(unname(t(regression_fit["rhs"])))) # Extract IV
+  fscores_func <- lavaan::lavInspect(tspa_fit, what = "data") # factor scores from `get_fs`
+  fscores_est <- lavaan::lavPredict(tspa_fit) # factor scores from estimation using `lavPredict`
 
-  fit_data <- parameterestimates(tspa_fit)
-  latent_scores <- lavInspect(tspa_fit, what = "data")
-
-  if (is.list(latent_scores)) {
-    # latent_names <- colnames(latent_scores[[1]])
-    df_latent_scores <- lapply(latent_scores, data.frame)
-    ifelse(abbreviation == TRUE,
-           g_names <- abbreviate(names(df_latent_scores)),
-           g_names <- names(df_latent_scores))
-    latent_dv <- c(t(na.omit(fit_data[1:(nrow(fit_data)/length(latent_scores)), ][which(fit_data$op == "~"),]["lhs"])))
-    latent_iv <- c(t(na.omit(fit_data[1:(nrow(fit_data)/length(latent_scores)), ][which(fit_data$op == "~"),]["rhs"])))
-    latent_model <- list()
-
-    for (g in seq(length(df_latent_scores))) {
-      for (i in seq(length(latent_dv))) {
-        latent_model[[g]] <- lm(as.numeric(t(df_latent_scores[[g]][paste0("fs_", latent_dv[i])])) ~
-                             as.numeric(t(df_latent_scores[[g]][paste0("fs_", latent_iv[i])])),
-                           data = df_latent_scores[[g]])
-
-        if (ask == TRUE) {
-          invisible(readline(prompt = "Hit <Return> to see next plot: "))
-        }
-
-        plot(latent_scores[[g]][ , paste0("fs_", latent_iv[i])],
-             latent_scores[[g]][ , paste0("fs_", latent_dv[i])],
-             ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
-                           ifelse(length(label_y) > 1, label_y[i], label_y)),
-             xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
-                           ifelse(length(label_x) > 1, label_x[i], label_x)),
-             main = ifelse(is.null(title),
-                           paste0("Scatterplot", " (Group ", g, ": ", g_names[g], ")"),
-                           ifelse(length(title) > 1, title[i], title)),
-             pch = 16,
-             ...)
-        abline(latent_model[[g]])
-
-        if (ask == TRUE) {
-          invisible(readline(prompt = "Hit <Return> to see next plot: "))
-        }
-        df_latent_scores[[g]]$residuals <- latent_model[[g]]$residuals
-        plot(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])],
-             df_latent_scores[[g]]$residuals,
-             ylab = "Residuals",
-             xlab = "Fitted values",
-             main = paste0("Residual Plot", " (Group ", g, ": ", g_names[g], ")"),
-             pch = 18,
-             ...)
-        abline(0, 0,
-               lty = 3)
-        lines(lowess(latent_scores[[g]][ ,paste0("fs_", latent_iv[i])], df_latent_scores[[g]]$residuals),
-              col = "red")
-      }
+    # Type of scatterplot
+    if (is.null(fscore_type)) {
+      fscores <- fscores_func
+    } else {
+      fscores <- fscore_est
     }
 
-  } else {
-    # latent_names <- colnames(latent_scores)
-    df_latent_scores <- data.frame(latent_scores)
-    latent_dv <- c(t(fit_data[which(fit_data$op == "~"), ]["lhs"]))
-    latent_iv <- c(t(fit_data[which(fit_data$op == "~"), ]["rhs"]))
+    # Helper function for scatter plot
+    # Comment: put it outside the main function
+    plot_scatter <- function (fscores_df, iv, dv,
+                              # ab_slope, ab_intercept,
+                              g_num = NULL, g_name = NULL, ...) {
 
-    for (i in seq(length(latent_dv))) {
-      latent_model <- lm(as.numeric(t(df_latent_scores[paste0("fs_", latent_dv[i])])) ~
-                           as.numeric(t(df_latent_scores[paste0("fs_", latent_iv[i])])),
-                         data = df_latent_scores)
-
+      # Ask for next plot
       if (ask == TRUE) {
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
 
-      plot(latent_scores[ , paste0("fs_", latent_iv[i])],
-           latent_scores[ , paste0("fs_", latent_dv[i])],
-           ylab = ifelse(is.null(label_y), paste0("fs_", latent_dv[i]),
+      if (!is.null(g_name)) {
+        iv_data <- as.data.frame(unname(fscores_df))[ ,paste0("fs_", iv)]
+        dv_data <- as.data.frame(unname(fscores_df))[ ,paste0("fs_", dv)]
+      } else {
+        iv_data <- fscores_df[ ,paste0("fs_", iv)]
+        dv_data <- fscores_df[ ,paste0("fs_", dv)]
+      }
+
+      plot(iv_data,
+           dv_data,
+           ylab = ifelse(is.null(label_y), paste0("fs_", dv),
                          ifelse(length(label_y) > 1, label_y[i], label_y)),
-           xlab = ifelse(is.null(label_x), paste0("fs_", latent_iv[i]),
+           xlab = ifelse(is.null(label_x), paste0("fs_", iv),
                          ifelse(length(label_x) > 1, label_x[i], label_x)),
-           main = ifelse(is.null(title),
-                         paste0("Scatterplot"),
-                         ifelse(length(title) > 1, title[i], title)),
+           main = ifelse(!is.null(g_name),
+                         ifelse(is.null(title),
+                                paste0("Scatterplot", " (Group ", g_num, ": ", g_name, ")"),
+                                ifelse(length(title) > 1, title[i], title)),
+                         ifelse(is.null(title),
+                                paste0("Scatterplot"),
+                                ifelse(length(title) > 1, title[i], title))),
            pch = 16,
            ...)
-      abline(latent_model)
+      # abline(a = ab_intercept, b = ab_slope, lwd = 2)
+    }
 
+    plot_residual <- function (fscores_df, iv, dv,
+                               g_num = NULL, g_name = NULL, ...) {
+
+      # Ask for next plot
       if (ask == TRUE) {
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
-      df_latent_scores$residuals <- latent_model$residuals
-      plot(latent_scores[ ,paste0("fs_", latent_iv[i])],
-           df_latent_scores$residuals,
-           ylab = "Residuals",
-           xlab = "Fitted values",
-           main = "Residual Plot",
+
+      if (!is.null(g_name)) {
+        iv_data <- as.data.frame(unname(fscores_df))[ ,paste0("fs_", iv)]
+        dv_data <- as.data.frame(unname(fscores_df))[ ,paste0("fs_", dv)]
+      } else {
+        iv_data <- fscores_df[ ,paste0("fs_", iv)]
+        dv_data <- fscores_df[ ,paste0("fs_", dv)]
+      }
+
+      predicted_y <- lavaan::lavPredictY(tspa_fit, ynames = paste0("fs_", dv), xnames = paste0("fs_", iv))
+      if (!is.null(g_name)) {
+        resid <- dv_data -  predicted_y[which(names(fscores_df) == predicted_y[ ,2]), ][,1]
+      } else {
+        resid <- dv_data -  predicted_y
+      }
+
+      plot(iv_data,
+           resid,
+           ylab = paste0("Residuals: ", dv),
+           xlab = paste0("Fitted values: ", iv),
+           main = ifelse(!is.null(g_name),
+                         paste0("Residual Plot: ", " (Group ", g_num, ": ", g_name, ")"),
+                         paste0("Residual Plot")),
            pch = 18,
            ...)
-      abline(0, 0,
-             lty = 3)
-      lines(lowess(latent_scores[ ,paste0("fs_", latent_iv[i])], df_latent_scores$residuals),
-            col = "red")
     }
 
-  }
+    # Examine multi-group sample
+    if (is.list(fscores)) {
 
+      # Ask for abbreviation
+      g_names <- NULL
+      if (abbreviation == TRUE) {
+          g_names <- abbreviate(names(fscores))
+        } else {
+          g_names <- names(fscores)
+        }
+
+      # Prepare for abline
+      df_latent_scores <- lapply(fscores, data.frame)
+      # slope <- coef(tspa_fit)[grepl(apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse="~"),
+      #                               names(coef(tspa_fit)))]
+      # fs_means <- matrix(unlist(lapply(df_latent_scores, apply, 2, mean, na.rm = T)),
+      #                    nrow = length(slope),
+      #                    byrow = T)
+      # intercept <- fs_means[,2] - fs_means[,1]*slope
+
+      for (g in seq_len(length(g_names))) {
+
+        # Scatterplots
+        plot_scatter(fscores_df = df_latent_scores[g],
+                     iv = latent_iv,
+                     dv = latent_dv,
+                     # ab_slope = slope[g],
+                     # ab_intercept = intercept[g],
+                     g_num = g,
+                     g_name = g_names[g],
+                     ...)
+
+        # Residual Plots
+        plot_residual(fscores_df = df_latent_scores[g],
+                       iv = latent_iv,
+                       dv = latent_dv,
+                       g_num = g,
+                       g_name = g_names[g],
+                       ...)
+      }
+    } else {
+
+      # Prepare for abline
+      # slope <- coef(tspa_fit)[names(coef(tspa_fit)) %in%
+      #                           apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse ="~")]
+      # fs_means <- apply(fscores, 2, mean, na.rm = T)
+      # intercept <- c()
+      # for(i in seq_len(length(slope))) {
+      #   slope_dv <- unlist(strsplit(names(slope[i]), split = "~"))[1]
+      #   slope_iv <- unlist(strsplit(names(slope[i]), split = "~"))[2]
+      #   intercept[i] <- fs_means[slope_dv] - fs_means[slope_iv]*slope[i]
+      # }
+      # names(intercept) <- names(slope)
+
+      reg_pairs <- coef(tspa_fit)[names(coef(tspa_fit)) %in%
+                                   apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse ="~")]
+
+      for (i in seq_len(length(reg_pairs))) {
+
+        # Scatterplots
+        plot_scatter(fscores_df = fscores,
+                     iv = unlist(strsplit(names(reg_pairs[i]), split = "~"))[2],
+                     dv = unlist(strsplit(names(reg_pairs[i]), split = "~"))[1],
+                     # ab_slope = slope[i],
+                     # ab_intercept = intercept[i],
+                     g_num = i)
+
+        # Resiudal Plots
+        plot_residual(fscores_df = fscores,
+                      iv = unlist(strsplit(names(reg_pairs[i]), split = "~"))[2],
+                      dv = unlist(strsplit(names(reg_pairs[i]), split = "~"))[1])
+      }
+    }
 }
-
-
-
