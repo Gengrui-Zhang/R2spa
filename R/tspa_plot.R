@@ -10,7 +10,7 @@
 #' @param label_y Character. Set the name of the y-axis. The default value is
 #'                "fs_" followed by variable names.
 #' @param abbreviation Logic input. If `FALSE` is indicated, the group name
-#'                     will be shown in full. The default setting is 'True'.
+#'                     will be shown in full. The default setting is `TRUE`.
 #' @param ask Logic input. If `TRUE` is indicated, the user will be asked before
 #'            before each plot is generated. The default setting is 'False'.
 #' @param fscore_type Character. Set the type of factor score for input.
@@ -59,109 +59,69 @@ tspa_plot <- function(tspa_fit,
                       ask = FALSE,
                       ...) {
   fit_pars <- lavaan::parameterestimates(tspa_fit) # parameter estimates
+  # HL Note: this may not be the most reliable in extracting exo and
+  # endo variables.
   regression_fit <- fit_pars[which(fit_pars$op == "~"), ] # path coefficients
-  latent_dv <- unique(c(unname(t(regression_fit["lhs"])))) # Extract DV
-  latent_iv <- unique(c(unname(t(regression_fit["rhs"])))) # Extract IV
+  # latent_dv <- unique(c(unname(t(regression_fit["lhs"])))) # Extract DV
+  # latent_iv <- unique(c(unname(t(regression_fit["rhs"])))) # Extract IV
   fscores_type <- match.arg(fscores_type) # Specify the type of factor scores
 
-  reg_pairs <- names(coef(tspa_fit)[names(coef(tspa_fit)) %in%
-    apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse = "~")])
+  # reg_pairs <- names(coef(tspa_fit)[names(coef(tspa_fit)) %in%
+  #   apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse = "~")])
+  # HL: Perhaps an easier way
+  reg_pairs <- paste(regression_fit[["lhs"]], regression_fit[["rhs"]],
+                     sep = "~")
 
   # Type of scatterplot
   if (fscores_type == "original") {
-    fscores <- lavaan::lavInspect(tspa_fit, what = "data") # factor scores from `get_fs`
+    # factor scores from `get_fs`
+    fscores <- lavaan::lavInspect(tspa_fit, what = "data")
   } else {
-    fscores <- lavaan::lavPredict(tspa_fit) # factor scores from estimation using `lavPredict`
+    # factor scores from estimation using `lavPredict`
+    fscores <- lavaan::lavPredict(tspa_fit)
   }
 
   # Determine multi-group sample
-  if (is.list(fscores)) {
-    # Ask for abbreviation
-    g_names <- NULL
-    if (abbreviation == TRUE) {
-      g_names <- abbreviate(names(fscores))
-    } else {
-      g_names <- names(fscores)
-    }
-
-    # Prepare for abline
-    fscores <- lapply(fscores, data.frame)
-    # slope <- coef(tspa_fit)[grepl(apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse="~"),
-    #                               names(coef(tspa_fit)))]
-    # fs_means <- matrix(unlist(lapply(df_latent_scores, apply, 2, mean, na.rm = T)),
-    #                    nrow = length(slope),
-    #                    byrow = T)
-    # intercept <- fs_means[,2] - fs_means[,1]*slope
-
-    for (g in seq_len(length(g_names))) {
-      for (i in seq_len(length(reg_pairs))) {
-        # Ask for next plot
-        if (ask == TRUE) {
-          invisible(readline(prompt = "Hit <Return> to see next plot: "))
-        }
-
-        # Scatterplot
-        plot_scatter(
-          fscores_df = fscores[g],
-          iv = unlist(strsplit(reg_pairs[i], split = "~"))[2],
-          dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
-          # ab_slope = slope[g],
-          # ab_intercept = intercept[g],
-          g_num. = g,
-          g_name. = g_names[g],
-          title. = title[i],
-          label_x. = label_x[i],
-          label_y. = label_y[i],
-          ...
-        )
-
-        # Ask for next plot
-        if (ask == TRUE) {
-          invisible(readline(prompt = "Hit <Return> to see next plot: "))
-        }
-
-        # Residual Plot
-        plot_residual(
-          fscores_df = fscores[g],
-          iv = unlist(strsplit(reg_pairs[i], split = "~"))[2],
-          dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
-          tspa_fit. = tspa_fit,
-          g_num = g,
-          g_name = g_names[g],
-          ...
-        )
-      }
-    }
-
-    # Examine single-group example
+  # HL: To simplify the code, just convert fscores to a list for single groups,
+  #     and the for loop can apply equally.
+  if (!is.list(fscores)) {
+    fscores <- list(fscores)
+    g_nums <- list(NULL)
   } else {
-    # Prepare for abline
-    # slope <- coef(tspa_fit)[names(coef(tspa_fit)) %in%
-    #                           apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse ="~")]
-    # fs_means <- apply(fscores, 2, mean, na.rm = T)
-    # intercept <- c()
-    # for(i in seq_len(length(slope))) {
-    #   slope_dv <- unlist(strsplit(names(slope[i]), split = "~"))[1]
-    #   slope_iv <- unlist(strsplit(names(slope[i]), split = "~"))[2]
-    #   intercept[i] <- fs_means[slope_dv] - fs_means[slope_iv]*slope[i]
-    # }
-    # names(intercept) <- names(slope)
+    g_nums <- as.list(seq_along(fscores))
+  }
+  # Ask for abbreviation
+  g_names <- names(fscores)
+  if (!is.null(g_names) && abbreviation == TRUE) {
+    g_names <- abbreviate(g_names)
+  }
 
-    for (i in seq_len(length(reg_pairs))) {
+  # Prepare for abline
+  fscores <- lapply(fscores, as.data.frame)
+  # slope <- coef(tspa_fit)[grepl(apply(expand.grid(latent_dv, latent_iv), 1, paste, collapse="~"),
+  #                               names(coef(tspa_fit)))]
+  # fs_means <- matrix(unlist(lapply(df_latent_scores, apply, 2, mean, na.rm = T)),
+  #                    nrow = length(slope),
+  #                    byrow = T)
+  # intercept <- fs_means[,2] - fs_means[,1]*slope
+
+  for (g in seq_along(g_nums)) {
+    for (i in seq_along(reg_pairs)) {
       # Ask for next plot
       if (ask == TRUE) {
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
 
-      # Scatterplots
+      # Scatterplot
       plot_scatter(
-        fscores_df = fscores,
+        # Note: Use `[[` for list
+        fscores_df = fscores[[g]],
         iv = unlist(strsplit(reg_pairs[i], split = "~"))[2],
         dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
-        # ab_slope = slope[i],
-        # ab_intercept = intercept[i],
-        g_num. = NULL,
-        g_name. = NULL,
+        # ab_slope = slope[g],
+        # ab_intercept = intercept[g],
+        g_num. = g_nums[[g]],
+        g_name. = g_names[g],
         title. = title[i],
         label_x. = label_x[i],
         label_y. = label_y[i],
@@ -173,14 +133,14 @@ tspa_plot <- function(tspa_fit,
         invisible(readline(prompt = "Hit <Return> to see next plot: "))
       }
 
-      # Resiudal Plots
+      # Residual Plot
       plot_residual(
-        fscores_df = fscores,
+        fscores_df = fscores[[g]],
         iv = unlist(strsplit(reg_pairs[i], split = "~"))[2],
         dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
         tspa_fit. = tspa_fit,
-        g_num = NULL,
-        g_name = NULL,
+        g_num = g_nums[[g]],
+        g_name = g_names[g],
         ...
       )
     }
@@ -194,13 +154,10 @@ plot_scatter <- function(fscores_df, iv, dv,
                          title., label_x., label_y.,
                          ...) {
   # Group name for multiple-group case
-  if (!is.null(g_name.)) {
-    iv_data <- as.data.frame(unname(fscores_df))[, paste0("fs_", iv)]
-    dv_data <- as.data.frame(unname(fscores_df))[, paste0("fs_", dv)]
-  } else {
-    iv_data <- fscores_df[, paste0("fs_", iv)]
-    dv_data <- fscores_df[, paste0("fs_", dv)]
-  }
+  # HL: The function exists to handle single-group. Make input
+  #     consistent to avoid extra conditional statements.
+  iv_data <- fscores_df[, paste0("fs_", iv)]
+  dv_data <- fscores_df[, paste0("fs_", dv)]
 
   # ylab
   ylab <- c()
@@ -220,13 +177,13 @@ plot_scatter <- function(fscores_df, iv, dv,
 
   # title
   title <- c()
-  if (is.null(title.) & is.null(g_name.)) {
+  if (is.null(title.) && is.null(g_name.)) {
     title <- paste0("Scatterplot")
-  } else if (is.null(title.) & !is.null(g_name.)) {
+  } else if (is.null(title.) && !is.null(g_name.)) {
     title <- paste0("Scatterplot", " (Group ", g_num., ": ", g_name., ")")
-  } else if (!is.null(title.) & is.null(g_name.)) {
+  } else if (!is.null(title.) && is.null(g_name.)) {
     title <- paste0(title.)
-  } else if (!is.null(title.) & !is.null(g_name.)) {
+  } else if (!is.null(title.) && !is.null(g_name.)) {
     title <- paste0(title., " (Group ", g_num., ": ", g_name., ")")
   }
 
@@ -246,29 +203,25 @@ plot_residual <- function(fscores_df, iv, dv,
                           tspa_fit. = tspa_fit,
                           g_num. = g_num, g_name. = g_name,
                           ...) {
-  if (!is.null(g_name.)) {
-    iv_data <- as.data.frame(unname(fscores_df))[, paste0("fs_", iv)]
-    dv_data <- as.data.frame(unname(fscores_df))[, paste0("fs_", dv)]
-  } else {
-    iv_data <- fscores_df[, paste0("fs_", iv)]
-    dv_data <- fscores_df[, paste0("fs_", dv)]
-  }
+  # HL: The function exists to handle single-group. Make input
+  #     consistent to avoid extra conditional statements.
+  iv_data <- fscores_df[, paste0("fs_", iv)]
+  dv_data <- fscores_df[, paste0("fs_", dv)]
 
-  predicted_y <- lavaan::lavPredictY(tspa_fit., ynames = paste0("fs_", dv), xnames = paste0("fs_", iv))
+  predicted_y <- lavaan::lavPredictY(tspa_fit.,
+    ynames = paste0("fs_", dv), xnames = paste0("fs_", iv),
+    assemble = FALSE
+  )
 
   if (!is.null(g_name.)) {
-    resid <- dv_data - predicted_y[which(names(fscores_df) == predicted_y[, 2]), ][, 1]
-  } else {
-    resid <- dv_data - predicted_y
-  }
-
-  # title
-  title <- c()
-  if (!is.null(g_name.)) {
+    predicted_y <- predicted_y[[g_num.]]
+    # title
     title <- paste0("Residual Plot", " (Group ", g_num., ": ", g_name., ")")
   } else {
     title <- paste0("Residual Plot")
   }
+
+  resid <- dv_data - predicted_y
 
   plot(iv_data,
     resid,
