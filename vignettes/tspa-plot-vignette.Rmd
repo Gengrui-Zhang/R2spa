@@ -1,7 +1,7 @@
 ---
 title: "tspa-diagnostic-plot-vignette"
 author: "Jimmy Zhang"
-date: 'r Sys.Date()'
+date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_vignette:
     toc: true
