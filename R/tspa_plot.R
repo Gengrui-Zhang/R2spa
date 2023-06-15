@@ -120,11 +120,11 @@ tspa_plot <- function(tspa_fit,
         dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
         # ab_slope = slope[g],
         # ab_intercept = intercept[g],
-        g_num. = g_nums[[g]],
-        g_name. = g_names[g],
-        title. = title[i],
-        label_x. = label_x[i],
-        label_y. = label_y[i],
+        g_num = g_nums[[g]],
+        g_name = g_names[g],
+        title = title[i],
+        label_x = label_x[i],
+        label_y = label_y[i],
         ...
       )
 
@@ -138,7 +138,7 @@ tspa_plot <- function(tspa_fit,
         fscores_df = fscores[[g]],
         iv = unlist(strsplit(reg_pairs[i], split = "~"))[2],
         dv = unlist(strsplit(reg_pairs[i], split = "~"))[1],
-        tspa_fit. = tspa_fit,
+        tspa_fit = tspa_fit,
         g_num = g_nums[[g]],
         g_name = g_names[g],
         ...
@@ -150,8 +150,8 @@ tspa_plot <- function(tspa_fit,
 # Helper function for the scatter plot
 plot_scatter <- function(fscores_df, iv, dv,
                          # ab_slope, ab_intercept,
-                         g_num., g_name.,
-                         title., label_x., label_y.,
+                         g_num, g_name,
+                         title, label_x, label_y,
                          ...) {
   # Group name for multiple-group case
   # HL: The function exists to handle single-group. Make input
@@ -161,30 +161,30 @@ plot_scatter <- function(fscores_df, iv, dv,
 
   # ylab
   ylab <- c()
-  if (is.null(label_y.)) {
+  if (is.null(label_y)) {
     ylab <- paste0("fs_", dv)
   } else {
-    ylab <- label_y.
+    ylab <- label_y
   }
 
   # ylab
   xlab <- c()
-  if (is.null(label_x.)) {
+  if (is.null(label_x)) {
     xlab <- paste0("fs_", iv)
   } else {
-    xlab <- label_x.
+    xlab <- label_x
   }
 
   # title
   title <- c()
-  if (is.null(title.) && is.null(g_name.)) {
+  if (is.null(title) && is.null(g_name)) {
     title <- paste0("Scatterplot")
-  } else if (is.null(title.) && !is.null(g_name.)) {
-    title <- paste0("Scatterplot", " (Group ", g_num., ": ", g_name., ")")
-  } else if (!is.null(title.) && is.null(g_name.)) {
-    title <- paste0(title.)
-  } else if (!is.null(title.) && !is.null(g_name.)) {
-    title <- paste0(title., " (Group ", g_num., ": ", g_name., ")")
+  } else if (is.null(title) && !is.null(g_name)) {
+    title <- paste0("Scatterplot", " (Group ", g_num, ": ", g_name, ")")
+  } else if (!is.null(title) && is.null(g_name)) {
+    title <- paste0(title)
+  } else if (!is.null(title) && !is.null(g_name)) {
+    title <- paste0(title, " (Group ", g_num, ": ", g_name, ")")
   }
 
   plot(iv_data,
@@ -199,24 +199,26 @@ plot_scatter <- function(fscores_df, iv, dv,
 }
 
 # Helper function for the residual plot
+# HL: Incorrect to say `g_num = g_num`, as one cannot assume there
+#     `g_num` exists in the parent environment.
 plot_residual <- function(fscores_df, iv, dv,
-                          tspa_fit. = tspa_fit,
-                          g_num. = g_num, g_name. = g_name,
+                          tspa_fit,
+                          g_num, g_name,
                           ...) {
   # HL: The function exists to handle single-group. Make input
   #     consistent to avoid extra conditional statements.
   iv_data <- fscores_df[, paste0("fs_", iv)]
   dv_data <- fscores_df[, paste0("fs_", dv)]
 
-  predicted_y <- lavaan::lavPredictY(tspa_fit.,
+  predicted_y <- lavaan::lavPredictY(tspa_fit,
     ynames = paste0("fs_", dv), xnames = paste0("fs_", iv),
     assemble = FALSE
   )
 
-  if (!is.null(g_name.)) {
-    predicted_y <- predicted_y[[g_num.]]
+  if (!is.null(g_name)) {
+    predicted_y <- predicted_y[[g_num]]
     # title
-    title <- paste0("Residual Plot", " (Group ", g_num., ": ", g_name., ")")
+    title <- paste0("Residual Plot", " (Group ", g_num, ": ", g_name, ")")
   } else {
     title <- paste0("Residual Plot")
   }
