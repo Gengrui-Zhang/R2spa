@@ -125,7 +125,7 @@ tspa_fit_2 <- tspa(model = "dem60 ~ ind60
 # Title, xlab, and ylab each with same names.
 tspa_plot(tspa_fit_2,
           ps = 10,
-          col = "darkgray",
+          col = "blue",
           cex.lab = 1.2,
           cex.axis = 1)
 
@@ -203,7 +203,7 @@ tspa_plot(tspa_fit_3,
           ps = 10,
           col = "darkgray",
           cex.lab = 1.2,
-          ask = TRUE,
+          ask = FALSE,
           cex.axis = 1)
 
 tspa_plot(tspa_fit_3,
