@@ -176,14 +176,11 @@ plot_scatter <- function(fscores_df, iv, dv,
   }
 
   # title
-  title <- c()
-  if (is.null(title) && is.null(g_name)) {
+  # HL: Simplify to two conditionals
+  if (is.null(title)) {
     title <- paste0("Scatterplot")
-  } else if (is.null(title) && !is.null(g_name)) {
-    title <- paste0("Scatterplot", " (Group ", g_num, ": ", g_name, ")")
-  } else if (!is.null(title) && is.null(g_name)) {
-    title <- paste0(title)
-  } else if (!is.null(title) && !is.null(g_name)) {
+  }
+  if (!is.null(g_name)) {
     title <- paste0(title, " (Group ", g_num, ": ", g_name, ")")
   }
 
