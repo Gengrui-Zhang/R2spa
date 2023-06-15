@@ -13,11 +13,11 @@
 #'                     will be shown in full. The default setting is `TRUE`.
 #' @param ask Logic input. If `TRUE` is indicated, the user will be asked before
 #'            before each plot is generated. The default setting is 'False'.
-#' @param fscore_type Character. Set the type of factor score for input.
-#'                    The default setting is using factor score from observed
-#'                    data (i.e., output from [get_fs()]). If
-#'                    `fscore_type = "est"`, then it will use output from
-#'                    [lavaan::lavPredict()].
+#' @param fscores_type Character. Set the type of factor score for input.
+#'                     The default setting is using factor score from observed
+#'                     data (i.e., output from [get_fs()]). If
+#'                     `fscore_type = "est"`, then it will use output from
+#'                     [lavaan::lavPredict()].
 #' @param ... Additional arguments passed to \code{\link[graphics]{plot}}. See
 #'            \code{\link[graphics]{plot}} for a list.
 #'
