@@ -92,7 +92,7 @@ tspa_plot <- function(tspa_fit,
   }
   # Ask for abbreviation
   g_names <- names(fscores)
-  if (!is.null(g_names) && abbreviation == TRUE) {
+  if (!is.null(g_names) && abbreviation) {
     g_names <- abbreviate(g_names)
   }
 
@@ -105,12 +105,14 @@ tspa_plot <- function(tspa_fit,
   #                    byrow = T)
   # intercept <- fs_means[,2] - fs_means[,1]*slope
 
+  # Ask for next plot
+  if (ask) {
+    oask <- devAskNewPage(TRUE)
+    on.exit(devAskNewPage(oask))
+  }
+
   for (g in seq_along(g_nums)) {
     for (i in seq_along(reg_pairs)) {
-      # Ask for next plot
-      if (ask == TRUE) {
-        invisible(readline(prompt = "Hit <Return> to see next plot: "))
-      }
 
       # Scatterplot
       plot_scatter(
@@ -127,11 +129,6 @@ tspa_plot <- function(tspa_fit,
         label_y = label_y[i],
         ...
       )
-
-      # Ask for next plot
-      if (ask == TRUE) {
-        invisible(readline(prompt = "Hit <Return> to see next plot: "))
-      }
 
       # Residual Plot
       plot_residual(
