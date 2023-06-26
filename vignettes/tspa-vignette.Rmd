@@ -15,7 +15,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The example is from <https://lavaan.ugent.be/tutorial/sem.html>.
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
 
 Load packages
 
@@ -24,9 +24,8 @@ library(lavaan)
 library(R2spa)
 ```
 
-## Single group, single predictor[^1]
 
-[^1]: In the model, `a`, `b`, and `c` are coefficients where variables `y1`, `y2`, `y3`, and `y4` are indicators of the latent variable `dem60`.
+## Single group, single predictor^[In the model, `a`, `b`, and `c` are coefficients where variables `y1`, `y2`, `y3`, and `y4` are indicators of the latent variable `dem60`.]
 
 ```{r}
 model <- ' 
@@ -97,9 +96,7 @@ fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 ```
 
-To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard errors as either a list or a data frame. Values for standard errors can be found at column named `fs_[variable name]_se`.[^2] For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame. In the output model, the values of error constraints are computed by squaring standard errors.
-
-[^2]: The text inside `[]` should be replaced with actual variable and model name.
+To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regressions (for all predictors), data = the factor score data frame created by combining results from `get_fs()`, and specify standard errors as either a list or a data frame. Values for standard errors can be found at column named `fs_[variable name]_se`.^[The text inside `[]` should be replaced with actual variable and model name.] For example, the standard error of latent variable ind60 can be found at column `fs_ind60_se` in the `fs_dat` data frame. In the output model, the values of error constraints are computed by squaring standard errors.
 
 ```{r}
 tspa_3var_fit <- tspa(model = "dem60 ~ ind60
@@ -137,8 +134,9 @@ fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
                         group = "school")
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
                        model = "speed =~ x7 + x8 + x9", 
-                        group = "school")
-fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+                       group = "school")
+fs_hs <- cbind(do.call(rbind, fs_dat_visual),
+               do.call(rbind, fs_dat_speed))
 ```
 
 To build a Two-Stage Path Analysis model, simply call the `tspa()` function with model = regression relation. Specify standard error as either a list or a data frame. Values for standard error can be found at column named `fs_[variable name]_se`. For example, the standard error of the multigroup variable visual can be found at column `fs_visual_se` in the `fs_hs` data frame. To get the standard errors for each group faster, `unique()` can be called upon the standard error column. For example, in this case, `unique(fs_hs$fs_visual_se)` can be called to get the standard errors for multigroup variable visual.
