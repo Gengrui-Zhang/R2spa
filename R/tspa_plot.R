@@ -23,6 +23,8 @@
 #'
 #' @return A scatterplot between factor scores, and a residual plot.
 #'
+#' @importFrom grDevices devAskNewPage
+#'
 #' @export
 #'
 #' @examples
