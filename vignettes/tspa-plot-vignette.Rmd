@@ -152,16 +152,16 @@ update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"))
 
 plot(latent_estimates$ind60, 
      latent_estimates$dem60, 
-     main="Scatterplot", 
-     xlab="ind60", 
-     ylab="dem60", 
-     pch=16, 
-     ps=1.25, 
-     cex.lab=1.2, 
-     cex.axis=1.2)
+     main = "Scatterplot", 
+     xlab = "ind60", 
+     ylab = "dem60", 
+     pch = 16, 
+     ps = 1.25, 
+     cex.lab = 1.2, 
+     cex.axis = 1.2)
 
 slope <- coef(tspa_fit_2)["dem60~ind60"]
-abline(a = 0, b = slope, lwd=2)
+abline(a = 0, b = slope, lwd = 2)
 ```
 
 ## Multigroup, single predictor
@@ -180,19 +180,19 @@ model <- '
 fs_dat_visual <- get_fs(model = "visual =~ x1 + x2 + x3",
                         data = HolzingerSwineford1939, 
                         group = "school")
-fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
-                       model = "speed =~ x7 + x8 + x9", 
+fs_dat_speed <- get_fs(model = "speed =~ x7 + x8 + x9", 
+                       data = HolzingerSwineford1939, 
                        group = "school")
 fs_hs <- cbind(do.call(rbind, fs_dat_visual),
                do.call(rbind, fs_dat_speed))
 
 tspa_fit_3 <- tspa(model = "visual ~ speed",
-                 data = fs_hs,
-                 se = data.frame(visual = c(0.3391326, 0.311828),
-                                 speed = c(0.2786875, 0.2740507)),
-                 group = "school"
-                 # group.equal = "regressions"
-                 )
+                   data = fs_hs,
+                   se = data.frame(visual = c(0.3391326, 0.311828),
+                                   speed = c(0.2786875, 0.2740507)),
+                   group = "school"
+                   # group.equal = "regressions"
+                   )
 ```
 
 ```{r example_multiple_group_single_factor}
