@@ -60,9 +60,10 @@ Features of `tspa_plot()`:
 ```{r example_single_group_single_factor}
 # par(mar = c(2,2,3,2))
 tspa_plot(tspa_fit_1,
-          col = "red",
+          col = "blue",
           cex.lab = 1.2,
           cex.axis = 1,
+          fscores_type = "original",
           ask = TRUE)
 ```
 
@@ -175,19 +176,15 @@ model <- '
     visual ~ speed
 '
 
-hs_mod <- '
-visual =~ x1 + x2 + x3
-speed =~ x7 + x8 + x9
-'
-
 # get factor scores
-fs_dat_visual <- get_fs(data = HolzingerSwineford1939, 
-                        model = "visual =~ x1 + x2 + x3", 
+fs_dat_visual <- get_fs(model = "visual =~ x1 + x2 + x3",
+                        data = HolzingerSwineford1939, 
                         group = "school")
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939, 
                        model = "speed =~ x7 + x8 + x9", 
                        group = "school")
-fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+fs_hs <- cbind(do.call(rbind, fs_dat_visual),
+               do.call(rbind, fs_dat_speed))
 
 tspa_fit_3 <- tspa(model = "visual ~ speed",
                  data = fs_hs,
