@@ -1,3 +1,9 @@
+# R2spa 0.0.3
+
+- Add function `tspa_plot()` for bivariate and residual plots (#23)
+
+- `get_fs()` gains argument `corrected_av_efs` for computing corrected error estimates (#50)
+
 # R2spa 0.0.2
 
 - Use `pkgdown` to create website, with GitHub action (#22)
