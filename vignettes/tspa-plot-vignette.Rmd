@@ -1,5 +1,5 @@
 ---
-title: "tspa-diagnostic-plot-vignette"
+title: "Diagnostic plots for `tspa` models"
 author: "Jimmy Zhang"
 date: "`r Sys.Date()`"
 output: 
