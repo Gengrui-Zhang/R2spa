@@ -22,7 +22,6 @@ This vignette demonstrates how to use the `compute_fscore()` function to calcula
 library(psych)
 data(bfi, package = "psych")
 library(lavaan)
-library(dplyr)
 ```
 
 ## Example: Big Five Inventory
@@ -43,20 +42,20 @@ fa_target_bfi <- psych::fa(
     rotate = "targetQ", Target = target_mat_bfi,
     scores = "Bartlett")
 # Factor correlations
-fa_target_bfi$Phi %>%
-    `[`(paste0("MR", 1:5), paste0("MR", 1:5)) |>
+fa_target_bfi$Phi |>
+    (`[`)(paste0("MR", 1:5), paste0("MR", 1:5)) |>
     knitr::kable(digits = 2, caption = "EFA Factor Correlation")
 ```
 
 ```{r}
 # Correlation with sum scores
 bfi |>
-    mutate(A = (7 - A1) + A2 + A3 + A4 + A5,
+    transform(A = (7 - A1) + A2 + A3 + A4 + A5,
            C = C1 + C2 + C3 + (7 - C4) + (7 - C5),
            E = (7 - E1) + (7 - E2) + E3 + E4 + E5,
            N = N1 + N2 + N3 + N4 + N5,
            O = O1 + (7 - O2) + O3 + O4 + (7 - O5)) |>
-    select(A:O) |>
+    subset(select = A:O) |>
     cor(use = "complete") |>
     knitr::kable(digits = 2, caption = "Sum scores")
 ```
@@ -78,8 +77,8 @@ bscores$scores[1, ]
 
 ```{r}
 # Covariance of Bartlett scores
-cov(bscores$scores, use = "complete") %>%
-    `[`(paste0("MR", 1:5), paste0("MR", 1:5)) |>
+cov(bscores$scores, use = "complete") |>
+    (`[`)(paste0("MR", 1:5), paste0("MR", 1:5)) |>
     knitr::kable(digits = 2, caption = "With Bartlett scores")
 ```
 
@@ -119,8 +118,8 @@ ts_fit <- tspa("",
                    setNames(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O")),
                vc = attr(bfi_fs, which = "av_efs"),
                cross_loadings = diag(5))
-lavInspect(ts_fit, what = "cor.lv") %>%
-    `[`(c("A", "C", "E", "N", "O"), c("A", "C", "E", "N", "O")) |>
+lavInspect(ts_fit, what = "cor.lv") |>
+    (`[`)(c("A", "C", "E", "N", "O"), c("A", "C", "E", "N", "O")) |>
     knitr::kable(digits = 2, caption = "With Bartlett scores and 2S-PA")
 ```
 

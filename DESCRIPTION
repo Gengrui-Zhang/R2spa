@@ -42,6 +42,7 @@ Suggests:
     magrittr,
     Matrix,
     rmarkdown,
+    psych,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
