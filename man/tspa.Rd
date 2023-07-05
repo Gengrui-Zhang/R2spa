@@ -24,17 +24,17 @@ in \code{lavaan} syntax.}
 of each latent factor. Currently \code{tspa()} does not
 support the reliability argument. Please use \code{se}.}
 
-\item{se}{A numeric vector representing the standard errors of each latent
-factor for single-group 2S-PA. A list or data frame storing
-the standard errors of each group in each latent factor for
-multigroup 2S-PA.}
+\item{se}{A numeric vector representing the standard errors of each factor
+score variable for single-group 2S-PA. A list or data frame
+storing the standard errors of each group in each latent factor
+for multigroup 2S-PA.}
 
-\item{vc}{A variance-covariance matrix of the latent variables, which can
-be obtained from the output of \code{get_fs()} using \code{attr()}
-with the argument \code{which = "av_efs"}.}
+\item{vc}{An error variance-covariance matrix of the factor scores, which
+can be obtained from the output of \code{get_fs()} using
+\code{attr()} with the argument \code{which = "av_efs"}.}
 
 \item{cross_loadings}{A matrix of loadings and cross-loadings from the
-factor scores \code{fs} to the latent variables, which
+latent variables to the factor scores \code{fs}, which
 can be obtained from the output of \code{get_fs()}
 using \code{attr()} with the argument
 \code{which = "fsA"}.
@@ -54,15 +54,17 @@ Fit a two-stage path analysis (2S-PA) model.
 \examples{
 library(lavaan)
 
-# single-group, two-factor example
-mod1 <- "
-   # latent variables
-     ind60 =~ x1 + x2 + x3
-     dem60 =~ y1 + y2 + y3 + y4
-"
-fs_dat1 <- get_fs(PoliticalDemocracy, model = mod1, std.lv = TRUE)
-tspa(model = "dem60 ~ ind60", data = fs_dat1,
-     vc = attr(fs_dat1, "av_efs"), cross_loadings = attr(fs_dat1, "fsA"))
+# single-group, two-factor example, factor scores obtained separately
+# get factor scores
+fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
+                       model = "ind60 =~ x1 + x2 + x3")
+fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
+                       model = "dem60 =~ y1 + y2 + y3 + y4")
+fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
+# tspa model
+tspa(model = "dem60 ~ ind60", data = fs_dat,
+     se = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
+            dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
 
 # single-group, three-factor example
 mod2 <- "
@@ -98,7 +100,6 @@ mod4 <- "
     visual =~ x1 + x2 + x3
     textual =~ x4 + x5 + x6
     speed =~ x7 + x8 + x9
-
 "
 fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
                   group = "school")

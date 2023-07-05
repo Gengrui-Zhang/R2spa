@@ -6,9 +6,6 @@ library(lavaan)
 ########## Single-group example ##########
 
 # Prepare test objects
-# HL: The model should be a CFA model; may give a warning for non-CFA results
-#     in future versions
-# JZ: Thanks for correcting the model!
 single_model <- '
                  # latent variables
                    ind60 =~ x1 + x2 + x3
@@ -56,10 +53,7 @@ test_that("Test that the number of rows is the same as the original data", {
 # Test standard error
 
 test_that("Test that standard errors for each observation are the same", {
-  fs_names <- colnames(test_object_fs)  # HL: use small letter
-  # HL: streamline the inner loop; use `seq_len(n)` instead of `1:n`
-  # HL: use variables for things to be used many times
-  # JZ: I like the idea of streamlining the inner loop. Thanks!
+  fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
       expect_identical(var(test_object_fs[[j]]), 0)
@@ -70,7 +64,6 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-    # HL: `expect_` functions do not return logical values
     expect_gt(min(test_object_fs[[j]]), 0)
     expect_lt(max(test_object_fs[[j]]), 1)
   }

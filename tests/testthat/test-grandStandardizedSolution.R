@@ -1,12 +1,9 @@
 library(lavaan)
-# - [ ] add unit tests for std_beta_est()
-
-# Test grandStardardizedSolution -----------------------------------------------
 
 ## Maximum expected error of estimates
 err <- .0001
 
-## Single-group, two-factor
+# Single-group, two-factor -----------------------------------------------------
 
 mod1 <- '
    # latent variables
@@ -17,13 +14,13 @@ mod1 <- '
 '
 fit1 <- sem(model = mod1,
             data  = PoliticalDemocracy)
-s2_std_beta <- grandStardardizedSolution(fit1)
+s2_std_beta <- grandStandardizedSolution(fit1)
 
 ### lavaan::standardizedSolution()
 s2_std_beta_lav <- subset(standardizedSolution(fit1), op == "~")
 
 test_that("Test for single group warning message", {
-  expect_message(grandStardardizedSolution(fit1))
+  expect_message(grandStandardizedSolution(fit1))
 })
 
 test_that("Standardized beta in a model with single group, two factors",
@@ -31,7 +28,7 @@ test_that("Standardized beta in a model with single group, two factors",
 test_that("SE of standardized beta in a model with single group, two-factors",
           { expect_equal(s2_std_beta$se,  s2_std_beta_lav$se) })
 
-## Single-group, three-factor
+# Single-group, three-factor ---------------------------------------------------
 
 mod2 <- '
     # latent variables
@@ -44,27 +41,19 @@ mod2 <- '
 '
 fit2 <- sem(model = mod2,
             data  = PoliticalDemocracy)
-s3_std_beta <- grandStardardizedSolution(fit2)
+s3_std_beta <- grandStandardizedSolution(fit2)
 
 ### lavaan::standardizedSolution()
 s3_std_beta_lav <- subset(standardizedSolution(fit2), op == "~")
 
-apply(rbind(s3_std_beta_lav$est.std, s3_std_beta$est.std), 2,
-      function(x) {
-        test_that(
-          "Standardized beta in a model with single group, three factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
-apply(rbind(s3_std_beta_lav$se, s3_std_beta$se), 2,
-      function(x) {
-        test_that(
-          "SE of standardized beta in a model with single group, three factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
+test_that("Standardized beta in a model with single group, three factors", {
+  expect_equal(s3_std_beta_lav$est.std, s3_std_beta$est.std)
+})
+test_that("SE of standardized beta in a model with single group, three factors", {
+  expect_equal(s3_std_beta_lav$se, s3_std_beta$se)
+})
 
-# Multigroup, two-factor
+# Multigroup, two-factor -------------------------------------------------------
 
 mod3 <- '
   # latent variable definitions
@@ -77,7 +66,7 @@ fit3 <- sem(mod3, data = HolzingerSwineford1939,
             group = "school",
             group.equal = c("loadings", "intercepts"))
 
-m2_std_beta <- grandStardardizedSolution(fit3)
+m2_std_beta <- grandStandardizedSolution(fit3)
 
 test_that("grand std est in the range of std estimates", code = {
   gp_std_est <- subset(standardizedSolution(fit3), subset = op == "~")$est
@@ -141,22 +130,16 @@ test_that("veta_grand() gives expected results", code = {
   expect_equal(v_eta, v_eta_hand, ignore_attr = TRUE)
 })
 
-apply(rbind(m2_std_betas_h, m2_std_beta$est.std), 2,
-      function(x) {
-        test_that(
-          "Standardized beta in a model with multiple groups, two factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
-apply(rbind(m2_std_se_h, m2_std_beta$se), 2,
-      function(x) {
-        test_that(
-          "SE of standardized beta in a model with multiple groups, two factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
+test_that("Standardized beta in a model with multiple groups, two factors", {
+  expect_equal(m2_std_betas_h, m2_std_beta$est.std,
+                ignore_attr = TRUE)
+})
+test_that("SE of standardized beta in a model with multiple groups, two factors", {
+  expect_equal(m2_std_se_h, m2_std_beta$se)
+})
 
-# Multigroup, three-factor
+
+# Multigroup, three-factor -----------------------------------------------------
 
 mod4 <- '
   # latent variable definitions
@@ -170,7 +153,7 @@ mod4 <- '
 fit4 <- sem(mod4, data = HolzingerSwineford1939,
             group = "school",
             group.equal = c("loadings", "intercepts"))
-m3_std_beta <- grandStardardizedSolution(fit4)
+m3_std_beta <- grandStandardizedSolution(fit4)
 
 ## Hand calculation
 ### std.est
@@ -206,17 +189,10 @@ acov_beta_psi_alpha <- acov_par[pos_beta_psi_alpha, pos_beta_psi_alpha]
 std_se <- jac %*% acov_beta_psi_alpha %*% t(jac)
 m3_std_se_h <- sqrt(diag(std_se[c(4, 7, 13, 16), c(4, 7, 13, 16)]))
 
-apply(rbind(m3_std_betas_h, m3_std_beta$est.std), 2,
-      function(x) {
-        test_that(
-          "Standardized beta in a model with multiple groups, three factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
-apply(rbind(m3_std_se_h, m3_std_beta$se), 2,
-      function(x) {
-        test_that(
-          "SE of standardized beta in a model with multiple groups, three factors",
-          { expect_lt(abs(diff(x)), err)}
-        )
-      })
+test_that("Standardized beta in a model with multiple groups, three factors", {
+  expect_equal(m3_std_betas_h, m3_std_beta$est.std, ignore_attr = TRUE)
+})
+
+test_that("SE of standardized beta in a model with multiple groups, three factors", {
+  expect_equal(m3_std_se_h, m3_std_beta$se, ignore_attr = TRUE)
+})
