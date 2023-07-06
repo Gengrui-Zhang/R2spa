@@ -182,11 +182,11 @@ tspaSingleGroup <- function(model, data, se = NULL) {
 
 tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   # ev <- se^2
-  var <- colnames(vc)
-  len <- nrow(vc)
+  var <- colnames(cross_loadings)
+  len <- nrow(cross_loadings)
 
   col <- colnames(data)
-  fs <- paste0("fs_", var)
+  fs <- rownames(cross_loadings)
   colnames(vc) <- rownames(vc) <- fs
 
   # latent variables
@@ -222,11 +222,11 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
 
 tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   ngroup <- length(vc)
-  var <- colnames(vc[[1]])
+  var <- colnames(cross_loadings[[1]])
   nvar <- length(var)
 
-  col <- colnames(data[[1]])
-  fs <- paste0("fs_", var)
+  # col <- colnames(data[[1]])  # suppress as it is not used
+  fs <- rownames(cross_loadings[[1]])
   # colnames(vc) <- rownames(vc) <- fs
 
   # latent variables
@@ -243,8 +243,8 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   latent_var_str <- paste(var, "=~", loadings_c)
   # error variances
   vc_in <- !upper.tri(vc[[1]])
-  ev_rhs <- paste0("fs_", colnames(vc[[1]])[col(vc_in)[vc_in]])
-  ev_lhs <- paste0("fs_", rownames(vc[[1]])[row(vc_in)[vc_in]])
+  ev_rhs <- colnames(vc[[1]])[col(vc_in)[vc_in]]
+  ev_lhs <- rownames(vc[[1]])[row(vc_in)[vc_in]]
   errors_mat <- matrix(unlist(vc), ncol = ngroup)[as.vector(vc_in), ]
   errors <- apply(errors_mat, 1, function(x) {
     paste0("c(", paste0(x, collapse = ", "), ")")

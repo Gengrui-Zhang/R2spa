@@ -99,16 +99,20 @@ get_fs <- function(data, model = NULL, group = NULL,
 augment_fs <- function(est, fs, fs_ev) {
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   colnames(fs) <- paste0("fs_", colnames(fs))
-  colnames(fs_se) <- paste0("fs_", colnames(fs_se), "_se")
+  colnames(fs_se) <- paste0(colnames(fs_se), "_se")
   num_lvs <- ncol(fs_ev)
   fs_evs <- rep(NA, num_lvs * (num_lvs + 1) / 2)
   count <- 1
   for (i in seq_len(num_lvs)) {
     for (j in seq_len(i)) {
       fs_evs[count] <- fs_ev[i, j]
-      names(fs_evs)[count] <- paste0("evfs_",
-                                     rownames(fs_ev)[i], "_",
-                                     colnames(fs_ev)[j])
+      if (i == j) {
+        names(fs_evs)[count] <- paste0("ev_", rownames(fs_ev)[i])
+      } else {
+        names(fs_evs)[count] <- paste0("ecov_",
+                                       rownames(fs_ev)[i], "_",
+                                       colnames(fs_ev)[j])
+      }
       count <- count + 1
     }
   }
@@ -211,12 +215,18 @@ compute_fscore <- function(y, lambda, theta, psi = NULL,
   if (fs_matrices) {
     attr(fs, "scoring_matrix") <- a_mat
     fsA <- unclass(a_mat %*% lambda)
+    fs_names <- paste0("fs_", colnames(fsA))
+    rownames(fsA) <- fs_names
     attr(fs, "fsA") <- fsA
-    attr(fs, "fsb") <- alpha - fsA %*% alpha
+    fsb <- as.numeric(alpha - fsA %*% alpha)
+    names(fsb) <- fs_names
+    attr(fs, "fsb") <- fsb
     # tv <- fsA %*% psi %*% t(fsA)
     # fsv <- a_mat %*% covy %*% t(a_mat)
     # attr(fs, "av_efs") <- fsv - tv
-    attr(fs, "av_efs") <- a_mat %*% theta %*% t(a_mat)
+    av_efs <- a_mat %*% theta %*% t(a_mat)
+    rownames(av_efs) <- colnames(av_efs) <- fs_names
+    attr(fs, "av_efs") <- av_efs
   }
   fs
 }
