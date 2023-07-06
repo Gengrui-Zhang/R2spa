@@ -279,38 +279,39 @@ test_that("test if the se of variance is similar for two methods", {
   )
 })
 
-# # Test tspaSingleGroupMF()
-# cfa_3fac <-  '
-#   # latent variables
-#   ind60 =~ x1 + x2 + x3
-#   dem60 =~ y1 + y2 + y3 + y4
-#   dem65 =~ y5 + y6 + y7 + y8
-# '
-# fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
-# path_mod <- '
-# dem60 ~ ind60
-# dem65 ~ ind60 + dem60
-# '
-# tspa_mod_s <- tspaSingleGroupMF(
-#   model = path_mod,
-#   data = fs_dat_3fac,
-#   vc = attr(fs_dat_3fac, "av_efs"),
-#   cross_loadings = attr(fs_dat_3fac, "fsA")
-# )
-#
-# factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
-# loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
-#
-# test_that("The order of factors in the model from tspaSingleGroupMF()", {
-#   expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
-#   expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
-# })
-# test_that("The order of loadings in the model from tspaSingleGroupMF()", {
-#   expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
-#                loadings_order_s$lhs)
-#   expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
-#                loadings_order_s$rhs)
-# })
+# Test tspaSingleGroupMF()
+cfa_3fac <-  '
+  # latent variables
+  ind60 =~ x1 + x2 + x3
+  dem60 =~ y1 + y2 + y3 + y4
+  dem65 =~ y5 + y6 + y7 + y8
+'
+fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
+path_mod <- '
+dem60 ~ ind60
+dem65 ~ ind60 + dem60
+'
+tspa_mod_s <- tspaMultipleGroupMF(
+  model = path_mod,
+  data = fs_dat_3fac,
+  vc = attr(fs_dat_3fac, "av_efs"),
+  cross_loadings = attr(fs_dat_3fac, "fsA"),
+  fsb = attr(fs_dat_3fac, "fsb")
+)
+
+factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
+loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
+
+test_that("The order of factors in the model from tspaSingleGroupMF()", {
+  expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
+  expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
+})
+test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+  expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
+               loadings_order_s$lhs)
+  expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
+               loadings_order_s$rhs)
+})
 
 
 # Test tspaMultipleGroupMF()
@@ -327,7 +328,8 @@ tspa_mod_m <- tspaMultipleGroupMF(
            textual ~ visual + speed",
   data = fs_dat4,
   vc = attr(fs_dat4, "av_efs"),
-  cross_loadings = attr(fs_dat4, "fsA")
+  cross_loadings = attr(fs_dat4, "fsA"),
+  fsb = attr(fs_dat4, "fsb")
 )
 
 factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
@@ -355,7 +357,8 @@ tspa_fit_m <- tspa(
   data = fs_dat4,
   group = "school",
   vc = attr(fs_dat4, "av_efs"),
-  cross_loadings = attr(fs_dat4, "fsA")
+  cross_loadings = attr(fs_dat4, "fsA"),
+  fsb = attr(fs_dat4, "fsb")
 )
 fs_dat4b <- get_fs(HolzingerSwineford1939, model = mod4,
                    group = "school", method = "Bartlett")
@@ -381,75 +384,65 @@ test_that("Multiple-group multiple-factor example", code = {
                tolerance = 0.0001)
 })
 
-# Test growth model
-pop_growth_mod <- "
-eta1 =~ .8 * x1 + .6 * y1 + .4 * z1
-eta2 =~ .85 * x2 + .65 * y2 + .45 * z2
-eta3 =~ .9 * x3 + .7 * y3 + .5 * z3
-eta4 =~ .95 * x4 + .75 * y4 + .55 * z4
-
-eta1 ~ 0 * 1
-eta2 ~ 0 * 1
-eta3 ~ 0 * 1
-eta4 ~ 0 * 1
-
-# covariances
-x1 ~~ .8 * x2 + .6 * x3 + .4 * x4
-x2 ~~ .8 * x3 + .6 * x4
-x3 ~~ .8 * x4
-y1 ~~ .8 * y2 + .6 * y3 + .4 * y4
-y2 ~~ .8 * y3 + .6 * y4
-y3 ~~ .8 * y4
-z1 ~~ .8 * z2 + .6 * z3 + .4 * z4
-z2 ~~ .8 * z3 + .6 * z4
-z3 ~~ .8 * z4
-
-i =~ 1 * eta1 + 1 * eta2 + 1 * eta3 + 1 * eta4
-s =~ 0 * eta1 + 1 * eta2 + 2 * eta3 + 3 * eta4
-
-i ~~ 1 * i
-s ~~ 1 * s
-i ~~ .3 * s
-i ~ 0 * 1
-s ~ 0 * 1
-"
-set.seed(1234)
-growth_dat <- simulateData(pop_growth_mod, sample.nobs = 1000)
+# An example from Chapter 14 of Grimm et al. (2016)
+# https://quantdev.ssri.psu.edu/tutorials/growth-modeling-chapter-14-modeling-change-latent-variables-measured-continuous
 
 mod5 <- "
-eta1 =~ x1 + y1 + z1
-eta2 =~ x2 + y2 + z2
-eta3 =~ x3 + y3 + z3
-eta4 =~ x4 + y4 + z4
+eta1 =~ l1 * s_g3 + l2 * r_g3 + l3 * m_g3
+eta2 =~ l1 * s_g5 + l2 * r_g5 + L3 * m_g5
+eta3 =~ l1 * s_g8 + l2 * r_g8 + L3 * m_g8
 
-# covariances
-x1 ~~ x2 + x3 + x4
-x2 ~~ x3 + x4
-x3 ~~ x4
-y1 ~~ y2 + y3 + y4
-y2 ~~ y3 + y4
-y3 ~~ y4
-z1 ~~ z2 + z3 + z4
-z2 ~~ z3 + z4
-z3 ~~ z4
-"
-fs_dat5 <- get_fs(growth_dat, model = mod5, std.lv = TRUE)
-growth_mod <- "
-i =~ 1 * eta1 + 1 * eta2 + 1 * eta3 + 1 * eta4
-s =~ 0 * eta1 + 1 * eta2 + 2 * eta3 + 3 * eta4
+# latent variable variances/covariances
+eta1 ~~ 1 * eta1 + eta2 + eta3
+eta2 ~~ eta2 + eta3
+eta3 ~~ eta3
 
-i ~~ i
-s ~~ s
-i ~~ s
-i ~ 1
-s ~ 1
+# unique variances/covariances
+s_g3 ~~ u1 * s_g3 + s_g5 + s_g8
+s_g5 ~~ u1 * s_g5 + s_g8
+s_g8 ~~ u1 * s_g8
+r_g3 ~~ u2 * r_g3 + r_g5 + r_g8
+r_g5 ~~ u2 * r_g5 + r_g8
+r_g8 ~~ u2 * r_g8
+m_g3 ~~ u3 * m_g3 + m_g5 + m_g8
+m_g5 ~~ u3 * m_g5 + m_g8
+m_g8 ~~ u3 * m_g8
 
+# latent variable intercepts
 eta1 ~ 0 * 1
-eta2 ~ 0 * 1
-eta3 ~ 0 * 1
-eta4 ~ 0 * 1
+eta2 ~ 1
+eta3 ~ 1
+
+# observed variable intercepts
+s_g3 ~ i1 * 1
+s_g5 ~ i1 * 1
+s_g8 ~ i1 * 1
+r_g3 ~ i2 * 1
+r_g5 ~ i2 * 1
+r_g8 ~ i2 * 1
+m_g3 ~ i3 * 1
+m_g5 ~ i3 * 1
+m_g8 ~ i3 * 1
+"
+eclsk <- read.csv(
+  "https://quantdev.ssri.psu.edu/sites/qdev/files/ECLS_Science.csv",
+  header = TRUE
+)
+fs_dat5 <- get_fs(eclsk, model = mod5, std.lv = TRUE)
+
+growth_mod <- "
+i =~ 1 * eta1 + 1 * eta2 + 1 * eta3
+s =~ 0 * eta1 + start(.5) * eta2 + 1 * eta3
+
+i ~~ start(.8) * i
+s ~~ start(.5) * s
+i ~~ start(0) * s
+
+i ~ 0 * 1
+s ~ 1
 "
 growth_fit <- tspa(growth_mod, fs_dat5,
                    vc = attr(fs_dat5, "av_efs"),
                    cross_loadings = attr(fs_dat5, "fsA"),
-                   fsb = attr(fs_dat5, "fsb"))
+                   fsb = attr(fs_dat5, "fsb"),
+                   missing = "fiml")

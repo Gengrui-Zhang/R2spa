@@ -116,7 +116,7 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL,
-                 vc = NULL, cross_loadings = NULL, fsb = NULL, ...) {
+                 vc = NULL, cross_loadings = NULL, fsb, ...) {
   if (!is.null(reliability)) {
     stop("tspa() currently does not support reliability model")
   }
@@ -265,13 +265,14 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings, fsb) {
   # error variances
   ev_rhs <- paste0("fs_", col_var[col(vc_in)[vc_in]])
   ev_lhs <- paste0("fs_", row_var[row(vc_in)[vc_in]])
-  errors_mat <- matrix(matrix(unlist(vc), ncol = ngroup)[as.vector(vc_in), ])
-  errors <- apply(errors_mat, 1, function(x) {
-    paste0("c(", paste0(x, collapse = ", "), ")")
-  })
+  errors_mat <- matrix(unlist(vc), ncol = ngroup)[as.vector(vc_in), ] |>
+    matrix(ncol = ngroup)
+  errors <- split(errors_mat, rep(1:nrow(errors_mat), ngroup))
   error_constraint_str <- paste0(ev_lhs, " ~~ ", errors, " * ", ev_rhs)
   # intercepts
-  intercept_constraint <- paste0(fs, " ~ ", fsb, " * 1")
+  intercepts_mat <- matrix(unlist(fsb), ncol = ngroup)
+  intercepts <- split(intercepts_mat, rep(1:nrow(intercepts_mat), ngroup))
+  intercept_constraint <- paste0(fs, " ~ ", intercepts, " * 1")
   # # latent variances
   # latent_variance_str <- paste(var, "~~", var)
 
