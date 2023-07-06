@@ -10,6 +10,7 @@ get_fs(
   group = NULL,
   method = c("regression", "Bartlett"),
   corrected_av_efs = FALSE,
+  vcov_AT = FALSE,
   ...
 )
 }
@@ -37,8 +38,15 @@ the error variance estimates of factor scores.}
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
 \value{
-A data frame containing the factor scores (with prefix "fs_") and
-the standard errors (with suffix "_se").
+A data frame containing the factor scores (with prefix \code{"fs_"}),
+the standard errors (with suffix \code{"_se"}), the implied loadings
+of factor \code{"_by_"} factor scores, and the error variance-covariance
+of the factor scores (with prefix \code{"evfs_"}). The following are
+also returned as attributes:
+* \code{av_efs}: error covariance of factor scores
+* \code{fsA}: loading matrix of factor scores
+* \code{fsb}: intercepts of factor scores
+* \code{scoring_matrix}: weights for computing factor scores from items
 }
 \description{
 Get Factor Scores and the Corresponding Standard Error of Measurement
