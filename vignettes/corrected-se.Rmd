@@ -42,7 +42,7 @@ model <- '
 cfa_ind60 <- cfa("ind60 =~ x1 + x2 + x3", data = PoliticalDemocracy,
                  std.lv = TRUE)
 vc1 <- vcov(cfa_ind60)
-# Function for error variance of factor score
+# Function for gradient of error variance of factor score
 compute_ev_fs <- function(x, lam_idx, th_idx) {
   lam <- x[lam_idx]
   th <- diag(x[th_idx])
@@ -53,8 +53,9 @@ compute_ev_fs <- function(x, lam_idx, th_idx) {
 }
 # compute_ev_fs(coef(cfa_ind60))
 coef_ind60 <- coef(cfa_ind60)
-g_ev_fs1 <- grad(compute_ev_fs, coef(cfa_ind60),
-                 lam_idx = 1:3, th_idx = 4:6)  # gradient
+# g_ev_fs1 <- grad(compute_ev_fs, coef(cfa_ind60),
+#                  lam_idx = 1:3, th_idx = 4:6)  # gradient
+g_ev_fs1 <- R2spa:::compute_grad_evfs(cfa_ind60)
 # Delta method variance
 v_ev_fs1 <- crossprod(g_ev_fs1, vcov(cfa_ind60)) %*% g_ev_fs1
 
@@ -62,8 +63,9 @@ cfa_dem60 <- cfa("dem60 =~ y1 + y2 + y3 + y4",
                  data = PoliticalDemocracy, std.lv = TRUE)
 vc2 <- vcov(cfa_dem60)
 # compute_ev_fs(coef(cfa_ind60))
-g_ev_fs2 <- grad(compute_ev_fs, coef(cfa_dem60),
-                 lam_idx = 1:4, th_idx = 5:8)  # gradient
+# g_ev_fs2 <- grad(compute_ev_fs, coef(cfa_dem60),
+#                  lam_idx = 1:4, th_idx = 5:8)  # gradient
+g_ev_fs2 <- R2spa:::compute_grad_evfs(cfa_dem60)
 # Delta method variance
 v_ev_fs2 <- crossprod(g_ev_fs2, vcov(cfa_dem60)) %*% g_ev_fs2
 fs_dat <- data.frame(
@@ -162,9 +164,11 @@ compute_pars_joint <- function(x) {
 }
 # Measurement parameters
 pars_joint <- compute_pars_joint(coef(cfa_joint))
-g_joint <- jacobian(compute_pars_joint, coef(cfa_joint))
+# g_joint <- jacobian(compute_pars_joint, coef(cfa_joint))
+g_joint <- R2spa:::compute_grad_ld_evfs(cfa_joint)
 # Delta method variance
-v_pars_joint <- g_joint %*% vcov(cfa_joint) %*% t(g_joint)
+# v_pars_joint <- g_joint %*% vcov(cfa_joint) %*% t(g_joint)
+v_pars_joint <- R2spa:::vcov_ld_evfs(cfa_joint)
 # Factor score
 fs_joint <- get_fs(PoliticalDemocracy,
                    model = "ind60 =~ x1 + x2 + x3

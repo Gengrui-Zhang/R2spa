@@ -15,8 +15,15 @@
 #'                         the error variance estimates of factor scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
-#' @return A data frame containing the factor scores (with prefix "fs_") and
-#'         the standard errors (with suffix "_se").
+#' @return A data frame containing the factor scores (with prefix `"fs_"`),
+#'         the standard errors (with suffix `"_se"`), the implied loadings
+#'         of factor `"_by_"` factor scores, and the error variance-covariance
+#'         of the factor scores (with prefix `"evfs_"`). The following are
+#'         also returned as attributes:
+#'         * `av_efs`: error covariance of factor scores
+#'         * `fsA`: loading matrix of factor scores
+#'         * `fsb`: intercepts of factor scores
+#'         * `scoring_matrix`: weights for computing factor scores from items
 #'
 #' @importFrom lavaan cfa sem lavInspect lavTech coef
 #' @importFrom stats setNames
@@ -45,6 +52,7 @@
 get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
                    corrected_av_efs = FALSE,
+                   vcov_AT = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -77,21 +85,28 @@ get_fs <- function(data, model = NULL, group = NULL,
   if (is.null(group)) {
     prepare_fs_dat(y, est)
   } else {
-    fs_lst <- av_efs_lst <- fsA_lst <- fsb_lst <- fsS_lst <-
-      setNames(vector("list", length = length(est)),
-               fit@Data@group.label)
+    fs_lst <- setNames(
+      vector("list", length = length(est)),
+      fit@Data@group.label
+    )
     for (i in seq_along(fs_lst)) {
       fs_lst[[i]] <- prepare_fs_dat(y[[i]], est[[i]])
       fs_lst[[i]][[group]] <- names(est[i])
-      av_efs_lst[[i]] <- attr(fs_lst[[i]], "av_efs")
-      fsA_lst[[i]] <- attr(fs_lst[[i]], "fsA")
-      fsb_lst[[i]] <- attr(fs_lst[[i]], "fsb")
-      fsS_lst[[i]] <- attr(fs_lst[[i]], "scoring_matrix")
     }
-    attr(fs_lst, which = "av_efs") <- av_efs_lst
-    attr(fs_lst, which = "fsA") <- fsA_lst
-    attr(fs_lst, which = "fsb") <- fsb_lst
-    attr(fs_lst, which = "scoring_matrix") <- fsS_lst
+    attr_names <- setdiff(names(attributes(fs_lst[[i]])),
+                          c("names", "class", "row.names", "col.names"))
+    attr_lst <- rep(
+      list(
+        setNames(vector("list", length = length(est)), fit@Data@group.label)
+      ),
+      length(attr_names)
+    )
+    for (j in seq_along(attr_lst)) {
+      for (i in seq_along(fs_lst)) {
+        attr_lst[[j]][[i]] <- attr(fs_lst[[i]], which = attr_names[j])
+      }
+      attr(fs_lst, which = attr_names[j]) <- attr_lst[[j]]
+    }
     fs_lst
   }
 }
@@ -185,16 +200,8 @@ compute_fscore <- function(y, lambda, theta, psi = NULL,
     meany <- lambda %*% alpha + nu
     y1c <- y1c - as.vector(meany)
   }
-  if (method == "regression") {
-    if (is.null(psi)) {
-      stop("input of psi (latent covariance) is needed for regression scores")
-    }
-    # Regression score
-    a_mat <- compute_a_reg(lambda, psi, theta)
-  } else if (method == "Bartlett") {
-    # Bartlett score
-    a_mat <- compute_a_bartlett(lambda, theta)
-  }
+  a_mat <- compute_a_from_mat(method,
+                              lambda = lambda, psi = psi, theta = theta)
   fs <- t(a_mat %*% y1c + as.vector(alpha))
   if (acov) {
     # if (is.null(psi)) {
@@ -222,8 +229,10 @@ compute_fscore <- function(y, lambda, theta, psi = NULL,
   fs
 }
 
-compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
+compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
+                           what = c("a", "evfs", "ldfs")) {
   method <- match.arg(method)
+  what <- match.arg(what)
   free <- lavInspect(lavobj, what = "free")
   free_list <- lapply(free, FUN = \(x) x[which(x > 0)])
   mat <- lavInspect(lavobj, what = "est")
@@ -232,27 +241,49 @@ compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
       mat[[l]][which(free[[l]] == i)] <- par[i]
     }
   }
-  if (method == "regression") {
-    return(do.call(compute_a_reg, args = mat[c("lambda", "psi", "theta")]))
-  } else if (method == "Bartlett") {
-    return(do.call(compute_a_bartlett, args = mat[c("lambda", "theta")]))
+  a <- do.call(compute_a_from_mat,
+               args = c(method, mat[c("lambda", "psi", "theta")]))
+  if (what == "a") {
+    return(a)
+  } else if (what == "evfs") {
+    return(a %*% mat$theta %*% t(a))
+  } else if (what == "ldfs") {
+    return(a %*% mat$lambda)
   }
 }
 
-compute_a_reg <- function(lambda, psi, theta) {
+compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
+  compute_fspars(par, lavobj = lavobj, method = method, what = "a")
+}
+
+compute_a_from_mat <- function(method = c("regression", "Bartlett"),
+                               lambda, theta, psi = NULL) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    if (is.null(psi)) {
+      stop("input of psi (latent covariance) is needed for regression scores")
+    }
+    compute_a_reg(lambda, theta = theta, psi = psi)
+  } else if (method == "Bartlett") {
+    compute_a_bartlett(lambda, theta = theta, psi = psi)
+  }
+}
+
+compute_a_reg <- function(lambda, theta, psi) {
   covy <- lambda %*% psi %*% t(lambda) + theta
   ginvcovy <- MASS::ginv(covy)
   tlam_invcov <- crossprod(lambda, ginvcovy)
   psi %*% tlam_invcov
 }
 
-compute_a_bartlett <- function(lambda, theta) {
+compute_a_bartlett <- function(lambda, theta, psi = NULL) {
   ginvth <- MASS::ginv(theta)
   tlam_invth <- crossprod(lambda, ginvth)
   solve(tlam_invth %*% lambda, tlam_invth)
 }
 
 correct_evfs <- function(fit, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
   est_fit <- lavInspect(fit, what = "est")
   p <- nrow(est_fit$psi)
   jac_a <- vector("list", length = p)
@@ -278,4 +309,33 @@ correct_evfs <- function(fit, method = c("regression", "Bartlett")) {
     }
   }
   out
+}
+
+compute_evfs <- function(par, lavobj, method = c("regression", "Bartlett")) {
+  compute_fspars(par, lavobj = lavobj, method = method, what = "evfs")
+}
+
+compute_ldfs <- function(par, lavobj, method = c("regression", "Bartlett")) {
+  compute_fspars(par, lavobj = lavobj, method = method, what = "ldfs")
+}
+
+# Need to add function for computing ev_fs
+compute_grad_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  lavaan::lav_func_jacobian_complex(
+    function(x, fit, method) {
+      evfs <- compute_evfs(x, lavobj = fit, method = method)
+      c(compute_ldfs(x, lavobj = fit, method = method),
+        evfs[lower.tri(evfs, diag = TRUE)])
+    },
+    coef(fit),
+    fit = fit,
+    method = method
+  )
+}
+
+vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  jac <- compute_grad_ld_evfs(fit, method = method)
+  jac %*% lavaan::vcov(fit) %*% t(jac)
 }
