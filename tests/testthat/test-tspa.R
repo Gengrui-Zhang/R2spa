@@ -2,6 +2,8 @@
 
 # Loading packages and functions
 library(lavaan)
+library(OpenMx)
+library(umx)
 
 ########## Single-group example ##########
 
@@ -139,6 +141,79 @@ tspa_3var <- tspa(
     dem65 = 0.5724405
   )
 )
+
+# Compare to Mx
+model_umx <- umxLav2RAM("
+  fs_dem60 ~ fs_ind60
+  fs_dem65 ~ fs_ind60 + fs_dem60
+  fs_dem65 + fs_dem60 + fs_ind60 ~ 1
+  ", printTab = FALSE)
+# Loading
+matL <- mxMatrix(
+  type = "Iden", nrow = 3,
+  free = FALSE,
+  name = "L"
+)
+# Error
+matE <- mxMatrix(
+  type = "Diag", nrow = 3, ncol = 3,
+  free = FALSE,
+  values = c(0.6756472, 0.5724405, 0.1213615)^2,
+  name = "E"
+)
+tspa_mx <- tspa_mx_model(model_umx, data = fs_dat_3var,
+                         mat_ld = matL, mat_vc = matE)
+tspa_mx_fit <- mxRun(tspa_mx)
+# Check same coefficients and standard errors
+test_that("test same regression coefficients with Mx", {
+  expect_equal(
+    coef(tspa_mx_fit)[c(2, 3, 1, 6, 4, 5)],
+    expected = coef(tspa_3var),
+    tolerance = 1e-5,
+    ignore_attr = TRUE
+  )
+})
+test_that("test same standard errors with Mx", {
+  vc_mx <- diag(vcov(tspa_mx_fit))
+  vc_lavaan <- diag(vcov(tspa_3var))
+  expect_equal(
+    vc_mx[c(2, 3, 1, 6, 4, 5)],
+    expected = vc_lavaan,
+    tolerance = 1e-4,
+    ignore_attr = TRUE
+  )
+})
+# Use numeric matrices
+tspa_mx2 <- tspa_mx_model(model_umx,
+  data = fs_dat_3var,
+  mat_ld = diag(3) |>
+    `dimnames<-`(list(
+      c("fs_ind60", "fs_dem60", "fs_dem65"),
+      c("ind60", "dem60", "dem65")
+    )),
+  mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
+    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+)
+tspa_mx_fit2 <- mxRun(tspa_mx2)
+# Use column names for VC
+err_cov <- matrix(c("ev_fs_ind60", NA, NA,
+                    NA, "ev_fs_dem60", NA,
+                    NA, NA, "ev_fs_dem65"), nrow = 3) |>
+    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+tspa_mx3 <- tspa_mx_model(model_umx, data = fs_dat_3var,
+  mat_ld = matL, mat_vc = err_cov)
+tspa_mx_fit3 <- mxRun(tspa_mx3)
+test_that("Same results with different Mx matrices input", {
+  expect_equal(
+    coef(tspa_mx_fit2),
+    expected = coef(tspa_mx_fit)
+  )
+  expect_equal(
+    coef(tspa_mx_fit3),
+    expected = coef(tspa_mx_fit),
+    tolerance = 1e-5
+  )
+})
 
 ########## Testing section #############
 
