@@ -142,6 +142,11 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
                   ...)
   # to access the attribute, use attr(x,"tspaModel")
   attr(tspa_fit, "tspaModel") <- tspaModel
+  if (!is.null(vc)) {
+    attr(tspa_fit, "fsT") <- vc
+    attr(tspa_fit, "fsL") <- cross_loadings
+  }
+  attr(tspa_fit, "tspa_call") <- match.call()
   return(tspa_fit)
 }
 
@@ -166,15 +171,17 @@ tspaSingleGroup <- function(model, data, se = NULL) {
     latent_var_str <- paste(latent_var, collapse = "")
     error_constraint_str <- paste(error_constraint, collapse = "")
     # latent_variance_str <- paste(latent_variance, collapse="")
-    tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
-                        latent_var_str,
-                        "# constrain the errors\n",
-                        error_constraint_str,
-                        "# latent variances\n",
-                        # latent_variance_str,
-                        # "# regressions\n",
-                        model,
-                        "\n")
+    tspaModel <- paste0(
+      c("# latent variables (indicated by factor scores)",
+        latent_var_str,
+        "# constrain the errors",
+        error_constraint_str,
+        "# latent variances",
+        # latent_variance_str,
+        # "# regressions\n",
+        model),
+      collapse = "\n"
+    )
 
     return(tspaModel)
   }
@@ -215,7 +222,7 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
     "# regressions",
     model
   ),
-  collpase = "\n")
+  collapse = "\n")
 
   return(tspaModel)
 }
@@ -299,15 +306,17 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
     latent_var_str <- paste(latent_var, collapse = "")
     error_constraint_str <- paste(error_constraint, collapse = "")
     # latent_variance_str <- paste(latent_variance, collapse="")
-    tspaModel <- paste0("# latent variables (indicated by factor scores)\n",
-                        latent_var_str,
-                        "# constrain the errors\n",
-                        error_constraint_str,
-                        # "# latent variances\n",
-                        # latent_variance_str,
-                        "# regressions\n",
-                        model,
-                        "\n")
+    tspaModel <- paste0(
+      c("# latent variables (indicated by factor scores)",
+        latent_var_str,
+        "# constrain the errors",
+        error_constraint_str,
+        # "# latent variances\n",
+        # latent_variance_str,
+        "# regressions",
+        model),
+      collapse = "\n"
+    )
 
     return(tspaModel)
   }
