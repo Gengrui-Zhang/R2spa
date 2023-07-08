@@ -158,9 +158,9 @@ compute_pars_joint <- function(x) {
   ginvcovy <- MASS::ginv(covy)
   tlam_invcov <- crossprod(lam, ginvcovy)
   a_mat <- psi %*% tlam_invcov
-  fsA <- a_mat %*% lam
-  av_efs <- a_mat %*% th %*% t(a_mat)
-  c(fsA, av_efs[lower.tri(av_efs, diag = TRUE)])
+  fsL <- a_mat %*% lam
+  fsT <- a_mat %*% th %*% t(a_mat)
+  c(fsL, fsT[lower.tri(fsT, diag = TRUE)])
 }
 # Measurement parameters
 pars_joint <- compute_pars_joint(coef(cfa_joint))
@@ -178,21 +178,24 @@ fs_joint <- get_fs(PoliticalDemocracy,
 ```{r}
 tspa_fit2 <- tspa(model = "dem60 ~ ind60",
                   data = fs_joint,
-                  vc = attr(fs_joint, "av_efs"),
-                  cross_loadings = attr(fs_joint, "fsA"))
+                  vc = attr(fs_joint, "fsT"),
+                  cross_loadings = attr(fs_joint, "fsL"))
 # Estimate as function of constraints
 tspa_est <- function(pars) {
-  fsA <- matrix(pars[1:4], nrow = 2, ncol = 2)
-  av_efs <- lav_matrix_lower2full(pars[5:7])
-  dimnames(av_efs) <- list(c("ind60", "dem60"), c("ind60", "dem60"))
+  fsL <- matrix(pars[1:4], nrow = 2, ncol = 2)
+  fsT <- lav_matrix_lower2full(pars[5:7])
+  dimnames(fsL) <- dimnames(attr(fs_joint, "fsL"))
+  dimnames(fsT) <- list(c("fs_ind60", "fs_dem60"),
+                           c("fs_ind60", "fs_dem60"))
   coef(tspa(model = "dem60 ~ ind60", data = fs_joint,
-            vc = av_efs, cross_loadings = fsA))
+            vc = fsT, cross_loadings = fsL))
 }
 tspa_est(pars_joint)
 # Jacobian
 jac <- jacobian(tspa_est, x = pars_joint)
 # Corrected covariance matrix
-vcov(tspa_fit2) + jac %*% v_pars_joint %*% t(jac)
+# vcov(tspa_fit2) + jac %*% v_pars_joint %*% t(jac)
+vcov_corrected(tspa_fit2, vfsLT = v_pars_joint)
 ```
 
 Bartlett's Method
@@ -206,8 +209,8 @@ compute_parsb_joint <- function(x) {
   ginvth <- MASS::ginv(th)
   tlam_invth <- crossprod(lam, ginvth)
   a_mat <- solve(tlam_invth %*% lam, tlam_invth)
-  av_efs <- a_mat %*% th %*% t(a_mat)
-  diag(av_efs)
+  fsT <- a_mat %*% th %*% t(a_mat)
+  diag(fsT)
 }
 # Measurement parameters
 parsb_joint <- compute_parsb_joint(coef(cfa_joint))
@@ -224,14 +227,14 @@ fsb_joint <- get_fs(PoliticalDemocracy,
 ```{r}
 tspa_fit2b <- tspa(model = "dem60 ~ ind60",
                    data = fsb_joint,
-                   vc = attr(fsb_joint, "av_efs"),
+                   vc = attr(fsb_joint, "fsT"),
                    cross_loadings = diag(2))
 # Estimate as function of constraints
 tspa_estb <- function(vc) {
-  av_efs <- diag(vc)
-  dimnames(av_efs) <- list(c("ind60", "dem60"), c("ind60", "dem60"))
+  fsT <- diag(vc)
+  dimnames(fsT) <- list(c("ind60", "dem60"), c("ind60", "dem60"))
   coef(tspa(model = "dem60 ~ ind60", data = fsb_joint,
-            vc = av_efs, cross_loadings = diag(2)))
+            vc = fsT, cross_loadings = diag(2)))
 }
 tspa_estb(parsb_joint)
 # Jacobian
@@ -257,8 +260,8 @@ run_tspa2 <- function(df, inds) {
                      se = "none", test = "none")
   tspa_fit2 <- tspa(model = "dem60 ~ ind60",
                     data = fs_joint,
-                    vc = attr(fs_joint, "av_efs"),
-                    cross_loadings = attr(fs_joint, "fsA"),
+                    vc = attr(fs_joint, "fsT"),
+                    cross_loadings = attr(fs_joint, "fsL"),
                     test = "none")
   coef(tspa_fit2)
 }
@@ -270,7 +273,7 @@ run_tspa2b <- function(df, inds) {
                       se = "none", test = "none", method = "Bartlett")
   tspa_fit2b <- tspa(model = "dem60 ~ ind60",
                      data = fsb_joint,
-                     vc = attr(fsb_joint, "av_efs"),
+                     vc = attr(fsb_joint, "fsT"),
                      cross_loadings = diag(2),
                      test = "none")
   coef(tspa_fit2b)

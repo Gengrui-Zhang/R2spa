@@ -369,8 +369,8 @@ dem65 ~ ind60 + dem60
 tspa_mod_s <- tspaSingleGroupMF(
   model = path_mod,
   data = fs_dat_3fac,
-  vc = attr(fs_dat_3fac, "av_efs"),
-  cross_loadings = attr(fs_dat_3fac, "fsA")
+  vc = attr(fs_dat_3fac, "fsT"),
+  cross_loadings = attr(fs_dat_3fac, "fsL")
 )
 
 factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
@@ -402,8 +402,8 @@ tspa_mod_m <- tspaMultipleGroupMF(
   model = "visual ~ speed
            textual ~ visual + speed",
   data = fs_dat4,
-  vc = attr(fs_dat4, "av_efs"),
-  cross_loadings = attr(fs_dat4, "fsA")
+  vc = attr(fs_dat4, "fsT"),
+  cross_loadings = attr(fs_dat4, "fsL")
 )
 
 factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
@@ -430,8 +430,8 @@ tspa_fit_m <- tspa(
            textual ~ visual + speed",
   data = fs_dat4,
   group = "school",
-  vc = attr(fs_dat4, "av_efs"),
-  cross_loadings = attr(fs_dat4, "fsA")
+  vc = attr(fs_dat4, "fsT"),
+  cross_loadings = attr(fs_dat4, "fsL")
 )
 fs_dat4b <- get_fs(HolzingerSwineford1939, model = mod4,
                    group = "school", method = "Bartlett")

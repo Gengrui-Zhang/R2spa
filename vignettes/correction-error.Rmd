@@ -124,16 +124,16 @@ cfa_fit <- cfa("f =~ y1 + y2 + y3 + y4",
 # Jacobian
 R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
 jac_a <- lavaan::lav_func_jacobian_complex(
-    \(x) R2spa:::compute_a(x, lavobj = cfa_fit),
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]],
     coef(cfa_fit)
 )
 sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
              jac_a %*% vcov(cfa_fit) %*% t(jac_a)))
 fsy <- R2spa::get_fs(y, std.lv = TRUE)
-attr(fsy, which = "av_efs")
-# Using `get_fs(..., corrected_av_efs = TRUE)
-fsy2 <- R2spa::get_fs(y, std.lv = TRUE, corrected_av_efs = TRUE)
-attr(fsy2, which = "av_efs")
+attr(fsy, which = "fsT")
+# Using `get_fs(..., corrected_fsT = TRUE)
+fsy2 <- R2spa::get_fs(y, std.lv = TRUE, corrected_fsT = TRUE)
+attr(fsy2, which = "fsT")
 ```
 
 # Multidimensional Case
@@ -224,11 +224,11 @@ cfa_fit <- cfa("f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
 # Jacobian
 R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
 jac_a1 <- lavaan::lav_func_jacobian_complex(
-    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[1, ],
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]][1, ],
     coef(cfa_fit)
 )
 jac_a2 <- lavaan::lav_func_jacobian_complex(
-    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[2, ],
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]][2, ],
     coef(cfa_fit)
 )
 # Correction[1, 1]
@@ -244,13 +244,13 @@ fsy <- R2spa::get_fs(
     data.frame(y) |> setNames(paste0("y", 1:7)),
     model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
     std.lv = TRUE)
-attr(fsy, which = "av_efs")
-# Using `get_fs(..., corrected_av_efs = TRUE)
+attr(fsy, which = "fsT")
+# Using `get_fs(..., corrected_fsT = TRUE)
 fsy2 <- R2spa::get_fs(
     data.frame(y) |> setNames(paste0("y", 1:7)),
     model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
     std.lv = TRUE,
-    corrected_av_efs = TRUE)
-attr(fsy2, which = "av_efs")
+    corrected_fsT = TRUE)
+attr(fsy2, which = "fsT")
 ```
 

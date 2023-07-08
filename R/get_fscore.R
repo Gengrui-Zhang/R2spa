@@ -10,9 +10,13 @@
 #'               "regression" to be consistent with
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
-#' @param corrected_av_efs Logical. Whether to correct for the the sampling
+#' @param corrected_fsT Logical. Whether to correct for the the sampling
 #'                         error in the factor score weights when computing
 #'                         the error variance estimates of factor scores.
+#' @param vfsLT Logical. Whether to return the covariance matrix of `fsT`
+#'              and `fsL`, which can be used as input for [vcov_corrected()]
+#'              to obtain corrected covariances and standard errors for
+#'              [tspa()] results. This is currently ignored.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix `"fs_"`),
@@ -20,8 +24,8 @@
 #'         of factor `"_by_"` factor scores, and the error variance-covariance
 #'         of the factor scores (with prefix `"evfs_"`). The following are
 #'         also returned as attributes:
-#'         * `av_efs`: error covariance of factor scores
-#'         * `fsA`: loading matrix of factor scores
+#'         * `fsT`: error covariance of factor scores
+#'         * `fsL`: loading matrix of factor scores
 #'         * `fsb`: intercepts of factor scores
 #'         * `scoring_matrix`: weights for computing factor scores from items
 #'
@@ -51,8 +55,8 @@
 
 get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
-                   corrected_av_efs = FALSE,
-                   vcov_AT = FALSE,
+                   corrected_fsT = FALSE,
+                   vfsLT = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -66,7 +70,7 @@ get_fs <- function(data, model = NULL, group = NULL,
   fit <- cfa(model, data = data, group = group, ...)
   est <- lavInspect(fit, what = "est")
   y <- lavInspect(fit, what = "data")
-  if (corrected_av_efs) {
+  if (corrected_fsT) {
     add_to_evfs <- correct_evfs(fit, method = method)
   } else {
     add_to_evfs <- 0
@@ -80,7 +84,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                              alpha = est$alpha,
                              method = method,
                              fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "av_efs") + add_to_evfs)
+    augment_fs(est, fscore, attr(fscore, "fsT") + add_to_evfs)
   }
   if (is.null(group)) {
     prepare_fs_dat(y, est)
@@ -132,17 +136,17 @@ augment_fs <- function(est, fs, fs_ev) {
       count <- count + 1
     }
   }
-  fsA <- attr(fs, "fsA")
-  fs_names <- paste0("fs_", colnames(fsA))
-  fs_lds <- lapply(seq_len(ncol(fsA)), function(i) {
-    setNames(fsA[, i],
-             paste(colnames(fsA)[i], fs_names, sep = "_by_"))
+  fsL <- attr(fs, "fsL")
+  fs_names <- paste0("fs_", colnames(fsL))
+  fs_lds <- lapply(seq_len(ncol(fsL)), function(i) {
+    setNames(fsL[, i],
+             paste(colnames(fsL)[i], fs_names, sep = "_by_"))
   })
   fs_lds <- unlist(fs_lds)
   fs_dat <- cbind(as.data.frame(fs), fs_se, t(as.matrix(fs_lds)),
                   t(as.matrix(fs_evs)))
-  attr(fs_dat, "av_efs") <- fs_ev
-  attr(fs_dat, "fsA") <- fsA
+  attr(fs_dat, "fsT") <- fs_ev
+  attr(fs_dat, "fsL") <- fsL
   attr(fs_dat, "fsb") <- attr(fs, "fsb")
   attr(fs_dat, "scoring_matrix") <- attr(fs, "scoring_matrix")
   fs_dat
@@ -162,8 +166,8 @@ augment_fs <- function(est, fs, fs_ev) {
 #' @param center_y Logical indicating whether \code{y} should be mean-centered.
 #'                 Default to \code{TRUE}.
 #' @param fs_matrices Logical indicating whether covariances of the error
-#'                    portion of factor scores (\code{av_efs}), factor score
-#'                    loading matrix (\eqn{A}; \code{fsA}) and intercept vector
+#'                    portion of factor scores (\code{fsT}), factor score
+#'                    loading matrix (\eqn{L}; \code{fsL}) and intercept vector
 #'                    (\eqn{b}; \code{fsb}) should be returned.
 #'                    The loading and intercept matrices are the implied
 #'                    loadings and intercepts by the model when using the
@@ -222,19 +226,19 @@ compute_fscore <- function(y, lambda, theta, psi = NULL,
   }
   if (fs_matrices) {
     attr(fs, "scoring_matrix") <- a_mat
-    fsA <- unclass(a_mat %*% lambda)
-    fs_names <- paste0("fs_", colnames(fsA))
-    rownames(fsA) <- fs_names
-    attr(fs, "fsA") <- fsA
-    fsb <- as.numeric(alpha - fsA %*% alpha)
+    fsL <- unclass(a_mat %*% lambda)
+    fs_names <- paste0("fs_", colnames(fsL))
+    rownames(fsL) <- fs_names
+    attr(fs, "fsL") <- fsL
+    fsb <- as.numeric(alpha - fsL %*% alpha)
     names(fsb) <- fs_names
     attr(fs, "fsb") <- fsb
-    # tv <- fsA %*% psi %*% t(fsA)
+    # tv <- fsL %*% psi %*% t(fsL)
     # fsv <- a_mat %*% covy %*% t(a_mat)
-    # attr(fs, "av_efs") <- fsv - tv
-    av_efs <- a_mat %*% theta %*% t(a_mat)
-    rownames(av_efs) <- colnames(av_efs) <- fs_names
-    attr(fs, "av_efs") <- av_efs
+    # attr(fs, "fsT") <- fsv - tv
+    fsT <- a_mat %*% theta %*% t(a_mat)
+    rownames(fsT) <- colnames(fsT) <- fs_names
+    attr(fs, "fsT") <- fsT
   }
   fs
 }

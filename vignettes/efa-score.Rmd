@@ -107,7 +107,7 @@ head(bfi_fs)
 # Scoring matrix
 attr(bfi_fs, which = "scoring_matrix")
 # Error covariance
-attr(bfi_fs, which = "av_efs")
+attr(bfi_fs, which = "fsT")
 ```
 
 Recover factor covariances with 2S-PA
@@ -116,8 +116,10 @@ Recover factor covariances with 2S-PA
 ts_fit <- tspa("",
                data = data.frame(bscores$scores) |>
                    setNames(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O")),
-               vc = attr(bfi_fs, which = "av_efs"),
-               cross_loadings = diag(5))
+               vc = attr(bfi_fs, which = "fsT"),
+               cross_loadings = diag(5) |>
+                   `dimnames<-`(list(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O"),
+                                     c("N", "E", "C", "A", "O"))))
 lavInspect(ts_fit, what = "cor.lv") |>
     (`[`)(c("A", "C", "E", "N", "O"), c("A", "C", "E", "N", "O")) |>
     knitr::kable(digits = 2, caption = "With Bartlett scores and 2S-PA")
