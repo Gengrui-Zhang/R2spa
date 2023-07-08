@@ -73,9 +73,9 @@ get_fs <- function(data, model = NULL, group = NULL,
   if (corrected_fsT) {
     add_to_evfs <- correct_evfs(fit, method = method)
   } else {
-    add_to_evfs <- 0
+    add_to_evfs <- rep(0, lavInspect(fit, what = "ngroups"))
   }
-  prepare_fs_dat <- function(y, est) {
+  prepare_fs_dat <- function(y, est, add) {
     fscore <- compute_fscore(y,
                              lambda = est$lambda,
                              theta = est$theta,
@@ -84,20 +84,20 @@ get_fs <- function(data, model = NULL, group = NULL,
                              alpha = est$alpha,
                              method = method,
                              fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "fsT") + add_to_evfs)
+    augment_fs(est, fscore, attr(fscore, "fsT") + add)
   }
   if (is.null(group)) {
-    prepare_fs_dat(y, est)
+    prepare_fs_dat(y, est, add_to_evfs[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
       fit@Data@group.label
     )
-    for (i in seq_along(fs_lst)) {
-      fs_lst[[i]] <- prepare_fs_dat(y[[i]], est[[i]])
-      fs_lst[[i]][[group]] <- names(est[i])
+    for (g in seq_along(fs_lst)) {
+      fs_lst[[g]] <- prepare_fs_dat(y[[g]], est[[g]], add_to_evfs[[g]])
+      fs_lst[[g]][[group]] <- names(est[g])
     }
-    attr_names <- setdiff(names(attributes(fs_lst[[i]])),
+    attr_names <- setdiff(names(attributes(fs_lst[[1]])),
                           c("names", "class", "row.names", "col.names"))
     attr_lst <- rep(
       list(
@@ -106,8 +106,8 @@ get_fs <- function(data, model = NULL, group = NULL,
       length(attr_names)
     )
     for (j in seq_along(attr_lst)) {
-      for (i in seq_along(fs_lst)) {
-        attr_lst[[j]][[i]] <- attr(fs_lst[[i]], which = attr_names[j])
+      for (g in seq_along(fs_lst)) {
+        attr_lst[[j]][[g]] <- attr(fs_lst[[g]], which = attr_names[j])
       }
       attr(fs_lst, which = attr_names[j]) <- attr_lst[[j]]
     }
@@ -247,23 +247,34 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
                            what = c("a", "evfs", "ldfs")) {
   method <- match.arg(method)
   what <- match.arg(what)
-  free <- lavInspect(lavobj, what = "free")
-  free_list <- lapply(free, FUN = \(x) x[which(x > 0)])
-  mat <- lavInspect(lavobj, what = "est")
-  for (l in seq_along(free_list)) {
-    for (i in free_list[[l]]) {
-      mat[[l]][which(free[[l]] == i)] <- par[i]
+  ngrp <- lavInspect(lavobj, what = "ngroups")
+  frees <- lavInspect(lavobj, what = "free")
+  mats <- lavInspect(lavobj, what = "est")
+  if (ngrp == 1) {
+    frees <- list(frees)
+    mats <- list(mats)
+  }
+  out <- vector("list", ngrp)
+  for (g in seq_len(ngrp)) {
+    free <- frees[[g]]
+    mat <- mats[[g]]
+    free_list <- lapply(free, FUN = \(x) x[which(x > 0)])
+    for (l in seq_along(free_list)) {
+      for (i in free_list[[l]]) {
+        mat[[l]][which(free[[l]] == i)] <- par[i]
+      }
+    }
+    a <- do.call(compute_a_from_mat,
+                 args = c(method, mat[c("lambda", "psi", "theta")]))
+    if (what == "a") {
+      out[[g]] <- a
+    } else if (what == "evfs") {
+      out[[g]] <- a %*% mat$theta %*% t(a)
+    } else if (what == "ldfs") {
+      out[[g]] <- a %*% mat$lambda
     }
   }
-  a <- do.call(compute_a_from_mat,
-               args = c(method, mat[c("lambda", "psi", "theta")]))
-  if (what == "a") {
-    return(a)
-  } else if (what == "evfs") {
-    return(a %*% mat$theta %*% t(a))
-  } else if (what == "ldfs") {
-    return(a %*% mat$lambda)
-  }
+  out
 }
 
 compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
@@ -298,31 +309,38 @@ compute_a_bartlett <- function(lambda, theta, psi = NULL) {
 
 correct_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
-  est_fit <- lavInspect(fit, what = "est")
-  p <- nrow(est_fit$psi)
-  jac_a <- vector("list", length = p)
-  for (i in seq_len(p)) {
-    jac_a[[i]] <- lavaan::lav_func_jacobian_complex(
-      function(x, fit, method) {
-        compute_a(x, lavobj = fit, method = method)[i, ]
-      },
-      coef(fit),
-      fit = fit,
-      method = method
-    )
-  }
-  out <- matrix(nrow = p, ncol = p)
-  th <- est_fit$theta
-  vc_fit <- vcov(fit)
-  for (j in seq_len(p)) {
-    for (i in j:p) {
-      out[i, j] <- sum(diag(th %*% jac_a[[i]] %*% vc_fit %*% t(jac_a[[j]])))
-      if (i > j) {
-        out[j, i] <- out[i, j]
+  ngrp <- lavInspect(fit, what = "ngroups")
+  est_fits <- lavInspect(fit, what = "est")
+  if (ngrp == 1) est_fits <- list(est_fits)
+  outs <- vector("list", ngrp)
+  for (g in seq_len(ngrp)) {
+    est_fit <- est_fits[[g]]
+    p <- nrow(est_fit$psi)
+    jac_a <- vector("list", length = p)
+    for (i in seq_len(p)) {
+      jac_a[[i]] <- lavaan::lav_func_jacobian_complex(
+        function(x, fit, method) {
+          compute_a(x, lavobj = fit, method = method)[[g]][i, ]
+        },
+        coef(fit),
+        fit = fit,
+        method = method
+      )
+    }
+    out <- matrix(nrow = p, ncol = p)
+    th <- est_fit$theta
+    vc_fit <- vcov(fit)
+    for (j in seq_len(p)) {
+      for (i in j:p) {
+        out[i, j] <- sum(diag(th %*% jac_a[[i]] %*% vc_fit %*% t(jac_a[[j]])))
+        if (i > j) {
+          out[j, i] <- out[i, j]
+        }
       }
     }
+    outs[[g]] <- out
   }
-  out
+  outs
 }
 
 compute_evfs <- function(par, lavobj, method = c("regression", "Bartlett")) {
