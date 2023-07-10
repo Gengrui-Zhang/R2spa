@@ -68,12 +68,23 @@ get_fs <- function(data, model = NULL, group = NULL,
                    paste(ind_names, collapse = " + "))
   }
   fit <- cfa(model, data = data, group = group, ...)
-  est <- lavInspect(fit, what = "est")
-  y <- lavInspect(fit, what = "data")
+  get_fs_lavaan(lavobj = fit, method = method,
+                corrected_fsT = corrected_fsT,
+                vfsLT = vfsLT)
+}
+
+#' @inherit get_fs
+#' @export
+get_fs_lavaan <- function(lavobj,
+                          method = c("regression", "Bartlett"),
+                          corrected_fsT = FALSE,
+                          vfsLT = FALSE) {
+  est <- lavInspect(lavobj, what = "est")
+  y <- lavInspect(lavobj, what = "data")
   if (corrected_fsT) {
-    add_to_evfs <- correct_evfs(fit, method = method)
+    add_to_evfs <- correct_evfs(lavobj, method = method)
   } else {
-    add_to_evfs <- rep(0, lavInspect(fit, what = "ngroups"))
+    add_to_evfs <- rep(0, lavInspect(lavobj, what = "ngroups"))
   }
   prepare_fs_dat <- function(y, est, add) {
     fscore <- compute_fscore(y,
@@ -86,12 +97,13 @@ get_fs <- function(data, model = NULL, group = NULL,
                              fs_matrices = TRUE)
     augment_fs(est, fscore, attr(fscore, "fsT") + add)
   }
-  if (is.null(group)) {
+  group <- lavInspect(lavobj, what = "group")
+  if (length(group) == 0) {
     prepare_fs_dat(y, est, add_to_evfs[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
-      fit@Data@group.label
+      lavobj@Data@group.label
     )
     for (g in seq_along(fs_lst)) {
       fs_lst[[g]] <- prepare_fs_dat(y[[g]], est[[g]], add_to_evfs[[g]])
@@ -101,7 +113,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                           c("names", "class", "row.names", "col.names"))
     attr_lst <- rep(
       list(
-        setNames(vector("list", length = length(est)), fit@Data@group.label)
+        setNames(vector("list", length = length(est)), lavobj@Data@group.label)
       ),
       length(attr_names)
     )
@@ -351,13 +363,12 @@ compute_ldfs <- function(par, lavobj, method = c("regression", "Bartlett")) {
   compute_fspars(par, lavobj = lavobj, method = method, what = "ldfs")
 }
 
-# Need to add function for computing ev_fs
 compute_grad_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   lavaan::lav_func_jacobian_complex(
     function(x, fit, method) {
-      evfs <- compute_evfs(x, lavobj = fit, method = method)
-      c(compute_ldfs(x, lavobj = fit, method = method),
+      evfs <- compute_evfs(x, lavobj = fit, method = method)[[1]]
+      c(compute_ldfs(x, lavobj = fit, method = method)[[1]],
         evfs[lower.tri(evfs, diag = TRUE)])
     },
     coef(fit),
