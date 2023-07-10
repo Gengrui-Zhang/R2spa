@@ -1,18 +1,24 @@
-vcov_corrected <- function(tspa_fit, vfsLT, ...) {
+vcov_corrected <- function(tspa_fit, vfsLT, which_free = NULL, ...) {
     if (is.null(attr(tspa_fit, "fsT"))) {
         stop("corrected vcov requires a tspa model with ",
              "vc and cross-loadings specified.")
     }
-    num_ld <- length(attr(tspa_fit, "fsL"))
+    val_fsL <- attr(tspa_fit, "fsL")
+    num_ld <- length(val_fsL)
     val_fsT <- attr(tspa_fit, "fsT")
+    val_fsLT <- c(val_fsL, val_fsT[lower.tri(val_fsT, diag = TRUE)])
+    if (is.null(which_free)) {
+        which_free <- seq_along(val_fsLT)
+    }
     jac <- lavaan::lav_func_jacobian_complex(
         function(x) {
-            ld <- x[seq_len(num_ld)]
-            ev <- lavaan::lav_matrix_lower2full(x[(num_ld + 1):length(x)])
+            par <- val_fsLT
+            par[which_free] <- x
+            ld <- par[seq_len(num_ld)]
+            ev <- lavaan::lav_matrix_lower2full(par[(num_ld + 1):length(par)])
             lavaan::coef(update_tspa(tspa_fit, fsL = ld, fsT = ev))
         },
-        x = c(attr(tspa_fit, "fsL"),
-              val_fsT[lower.tri(val_fsT, diag = TRUE)]),
+        x = val_fsLT[which_free],
     )
     vcov(tspa_fit) + jac %*% vfsLT %*% t(jac)
 }
