@@ -1,3 +1,18 @@
+#' First-order correction of sampling covariance for 2S-PA estimates
+#' @param tspa_fit A fitted model from [tspa()].
+#' @param vfsLT The sampling covariance matrix of `fsL` and `fsT`, which can be
+#'              obtained with [get_fs()] with the argument `vfsLT = TRUE`.
+#' @param which_free An optional numeric vector indicating which parameters
+#'                   in `fsL` and `fsT` are free. The parameters are ordered
+#'                   by the `fsL` matrix and the lower-triangular part of
+#'                   `fsT`, by columns. For example, for a two-factor model,
+#'                   `fsL` and `fsT` are both 2 x 2 matrices, and the 
+#'                   error covariance between the two factor scores (i.e., 
+#'                   the [2, 1] element in `fsT`) has an index of 6.
+#' @param ... Currently not used.
+#' @return A corrected covariance matrix in the same dimension as
+#'     `vcov(tspa_fit)`.
+#' @export
 vcov_corrected <- function(tspa_fit, vfsLT, which_free = NULL, ...) {
     if (is.null(attr(tspa_fit, "fsT"))) {
         stop("corrected vcov requires a tspa model with ",
