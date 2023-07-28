@@ -74,6 +74,7 @@ get_fs <- function(data, model = NULL, group = NULL,
 }
 
 #' @inherit get_fs
+#' @param lavobj A lavaan model object when using [get_fs_lavaan()].
 #' @export
 get_fs_lavaan <- function(lavobj,
                           method = c("regression", "Bartlett"),
@@ -367,9 +368,12 @@ compute_grad_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   lavaan::lav_func_jacobian_complex(
     function(x, fit, method) {
-      evfs <- compute_evfs(x, lavobj = fit, method = method)[[1]]
-      c(compute_ldfs(x, lavobj = fit, method = method)[[1]],
-        evfs[lower.tri(evfs, diag = TRUE)])
+      evfs <- compute_evfs(x, lavobj = fit, method = method)
+      evfs_lower <- lapply(evfs, function(x) {
+        x[lower.tri(x, diag = TRUE)]
+      })
+      c(unlist(compute_ldfs(x, lavobj = fit, method = method)),
+        unlist(evfs_lower))
     },
     coef(fit),
     fit = fit,

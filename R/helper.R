@@ -1,4 +1,5 @@
 #' Create block diagonal matrix
+#' @param ... Either multiple matrices or a list of matrices.
 #' @export
 block_diag <- function(...) {
     if (...length() > 1) {
