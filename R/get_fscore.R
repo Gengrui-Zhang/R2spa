@@ -100,7 +100,7 @@ get_fs_lavaan <- function(lavobj,
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
-    prepare_fs_dat(y, est, add_to_evfs[[1]])
+    out <- prepare_fs_dat(y, est, add_to_evfs[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
@@ -124,8 +124,12 @@ get_fs_lavaan <- function(lavobj,
       }
       attr(fs_lst, which = attr_names[j]) <- attr_lst[[j]]
     }
-    fs_lst
+    out <- fs_lst
   }
+  if (vfsLT) {
+    attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
+  }
+  out
 }
 
 augment_fs <- function(est, fs, fs_ev) {
