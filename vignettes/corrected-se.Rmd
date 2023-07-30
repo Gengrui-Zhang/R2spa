@@ -31,7 +31,6 @@ where $V_{\gamma}$ is the naive covariance matrix of the structural parameter es
 ```{r load-pkg, message = FALSE}
 library(lavaan)
 library(R2spa)
-library(numDeriv)
 library(boot)
 ```
 

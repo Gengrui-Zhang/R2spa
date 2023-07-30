@@ -6,4 +6,3 @@
 ^docs$
 ^pkgdown$
 ^\.github$
-^vignettes/efa-score\.Rmd$

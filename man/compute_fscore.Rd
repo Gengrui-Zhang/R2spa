@@ -41,8 +41,8 @@ Default to \code{TRUE}.}
 of factor scores should be returned as an attribute.}
 
 \item{fs_matrices}{Logical indicating whether covariances of the error
-portion of factor scores (\code{av_efs}), factor score
-loading matrix (\eqn{A}; \code{fsA}) and intercept vector
+portion of factor scores (\code{fsT}), factor score
+loading matrix (\eqn{L}; \code{fsL}) and intercept vector
 (\eqn{b}; \code{fsb}) should be returned.
 The loading and intercept matrices are the implied
 loadings and intercepts by the model when using the
