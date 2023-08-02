@@ -144,6 +144,6 @@ upi <- function (model, data) {
   #############################################################################
 
   # Fit the model
-  fit_indProd <- sem(model, data = data, std.lv = TRUE, meanstructure = TRUE)
+  fit_indProd <- sem(model, data = data)
   return(fit_indProd)
 }

@@ -72,28 +72,21 @@ rapi_rel <- function (model, data, rel) {
   df_new <- cbind(data, centered_vars, int_centered)
 
   # Generate the error constraints with different reliability estimates
-  rel_sum1 <- c()
-  rel_sum2 <- c()
   rel_var1 <- c()
   rel_var2 <- c()
 
-  rel_sum1 <- ufs::scaleStructure(df_new[ ,unlist(indics[pairs$inter_pair_1[1]])])
-  rel_sum1 <- rel_sum1$output
-  rel_sum2 <- ufs::scaleStructure(df_new[ ,unlist(indics[pairs$inter_pair_1[2]])])
-  rel_sum2 <- rel_sum2$output
-
   if (rel == "alpha") {
-    rel_var1 <- rel_sum1$cronbach.alpha
-    rel_var2 <- rel_sum2$cronbach.alpha
+    rel_var1 <- psych::alpha(df_new[ ,unlist(indics[pairs$inter_pair_1[1]])])$total["raw_alpha"]
+    rel_var2 <- psych::alpha(df_new[ ,unlist(indics[pairs$inter_pair_1[2]])])$total["raw_alpha"]
   } else if (rel == "omega") {
-    rel_var1 <- rel_sum1$omega
-    rel_var2 <- rel_sum2$omega
-  } else if (rel == "H") {
-    rel_var1 <- rel_sum1$coefficientH
-    rel_var2 <- rel_sum2$coefficientH
+    rel_var1 <- psych::omega(df_new[ ,unlist(indics[pairs$inter_pair_1[1]])])$omega_h
+    rel_var2 <- psych::omega(df_new[ ,unlist(indics[pairs$inter_pair_1[2]])])$omega_h
+  # } else if (rel == "H") {
+  #   rel_var1 <- rel_sum1$coefficientH
+  #   rel_var2 <- rel_sum2$coefficientH
   } else if (rel == "GLB") {
-    rel_var1 <- rel_sum1$glb
-    rel_var2 <- rel_sum2$glb
+    rel_var1 <- psych::glb.fa(df_new[ ,unlist(indics[pairs$inter_pair_1[1]])])$glb
+    rel_var2 <- psych::glb.fa(df_new[ ,unlist(indics[pairs$inter_pair_1[2]])])$glb
   }
 
   evars_int <- rel_var1*var(centered_pred[,1], na.rm = T)*(1 - rel_var2)*var(centered_pred[,2], na.rm = T) +

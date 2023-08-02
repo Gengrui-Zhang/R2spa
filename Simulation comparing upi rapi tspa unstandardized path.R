@@ -44,7 +44,7 @@ devtools::load_all(".")
  }
 
  DESIGNFACTOR <- createDesign(
-   N = c(200, 500),
+   N = c(250, 500),
    beta1 = 1,  # fixed
    beta2 = 0.9,  # fixed
    beta3 = c(0.75, 0.80, 0.85),  # three conditions
@@ -199,7 +199,7 @@ devtools::load_all(".")
 
 # Run 200 replications
 
- sim_0730 <- runSimulation(design = DESIGNFACTOR,
+ sim_0802 <- runSimulation(design = DESIGNFACTOR,
                             replications = 2000,
                             generate = GenData,
                             analyse = extract_res,
@@ -207,13 +207,13 @@ devtools::load_all(".")
                             fixed_objects = FIXED_PARAMETER,
                             save = TRUE,
                             save_results = TRUE,
-                            filename = "simulation_result_0730",
+                            filename = "simulation_result_0802",
                             parallel = TRUE,
                             ncores = min(4L, parallel::detectCores() - 1))
 
 # Summarize the results
 
- sim_results <- sim_0730 %>%
+ sim_results <- sim_0802 %>%
    gather("var", "val", std_bias.rapi_yint_est:rse_bias.tspa_yint_se) %>%
    select(-c(SIM_TIME:WARNINGS)) %>%
    separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
@@ -228,11 +228,11 @@ devtools::load_all(".")
           cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
           rel_lab = as_factor(paste0("Reliability == ", rel)))
 
- write_csv(sim_results, "sim_results_0730.csv")
+ write_csv(sim_results, "sim_results_0802.csv")
 
 # Plot the results
 
- sim_plots <- read.csv("sim_results_0730.csv")
+ sim_plots <- read.csv("sim_results_0802.csv")
  # # Bias
  # sim_plots %>%
  #   ggplot(aes(x = factor(N), y = bias, color = method)) +
@@ -267,20 +267,3 @@ devtools::load_all(".")
    geom_boxplot() +
    facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
    labs(x = "Sample Size (N)", y = "RMSE")
-
-
- # 0730
- # Standardized coefficients.
- # std.lv = T
-
- # 0731
- # Unstandardized coefficients.
- # std.lv = T
-
- # 0801
- # Unstandardized coefficients.
- # std.lv = F
-
- # 0802
- # Standardized coefficients.
- # std.lv = F
