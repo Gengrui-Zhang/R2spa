@@ -8,7 +8,7 @@ tspa(
   model,
   data,
   reliability = NULL,
-  se = NULL,
+  se = "standard",
   se_fs = NULL,
   vc = NULL,
   cross_loadings = NULL,

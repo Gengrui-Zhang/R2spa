@@ -114,12 +114,12 @@
 #'      group = "school")
 
 
-tspa <- function(model, data, reliability = NULL, se = NULL,
+tspa <- function(model, data, reliability = NULL, se = "standard",
                  se_fs = NULL, vc = NULL, cross_loadings = NULL, ...) {
   if (!is.null(reliability)) {
     stop("tspa() currently does not support reliability model")
   }
-  if (!is.null(se)) {
+  if (!is.character(se)) {
     warning("using `se` to set se for factor scores is deprecated. ",
             "use `se_fs` instead.")
   }
