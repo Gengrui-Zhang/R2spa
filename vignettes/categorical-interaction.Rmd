@@ -189,10 +189,10 @@ fsreg_mx <- mxModel("str",
 )
 fsreg_umx <- umxLav2RAM(
     "
-      fsy ~ fsx + fsm + fsxm
+      fsy ~ b1 * fsx + b2 * fsm + b3 * fsxm
       fsy + fsx + fsm + fsxm ~ 1
-      fsx ~~ fsm + fsxm
-      fsm ~~ fsxm
+      fsx ~~ vx * fsx + fsm + fsxm
+      fsm ~~ vm * fsm + fsxm
     ",
     printTab = FALSE)
 ```
@@ -225,12 +225,21 @@ matE <- mxMatrix(
 
 ```{r}
 tspa_mx <-
-    R2spa:::tspa_mx_model(fsreg_umx, data = fs_dat,
-                          mat_ld = matL, mat_vc = matE)
+    tspa_mx_model(
+        mxModel(fsreg_umx,
+                mxAlgebra(b1 * sqrt(vx), name = "stdx_b1"),
+                mxAlgebra(b2 * sqrt(vm), name = "stdx_b2"),
+                mxAlgebra(b3 * sqrt(vx) * sqrt(vm), name = "stdx_b3"),
+                mxCI(c("stdx_b1", "stdx_b2", "stdx_b3"))),
+        data = fs_dat,
+        mat_ld = matL, mat_vc = matE)
 # Run OpenMx
-tspa_mx_fit <- mxRun(tspa_mx)
-# Summarize the results (takes 20 seconds or so)
+tspa_mx_fit <- mxRun(tspa_mx, intervals = TRUE)
+# Summarize the results (takes a minute or so)
+# Also include the X-Standardized coefficients
 summary(tspa_mx_fit)
-# Standardize coefficients (not for interaction)
-mxStandardizeRAMpaths(tspa_mx_fit)
+# Standard errors for X-Standardized coefficients
+mxSE(m1.stdx_b1, tspa_mx_fit)
+mxSE(m1.stdx_b2, tspa_mx_fit)
+mxSE(m1.stdx_b3, tspa_mx_fit)
 ```
