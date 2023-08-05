@@ -22,7 +22,11 @@ This vignette shows how to obtain Taylor-series corrected standard errors in 2S-
 
 The second-stage estimation treats as known the loading matrix and the error covariance matrix of the factor scores as indicators of the true latent latent variables. However, those are estimates based on the first-stage measurement model. When the sample size is large and/or the reliability of the factor scores are high, the uncertainty in the estimated loading and error covariance matrix is generally negligible. Otherwise, a first-order correction on the standard errors of the second-stage estimation is possible, as illustrated below.
 
-First-order correction for SE
+## First-order correction for SE
+
+$$\hat V_{\gamma, c} = \hat V_{\gamma} + \boldsymbol{J}_\boldsymbol{\gamma}(\hat{\boldsymbol{\theta}}) \hat V_{\theta} \boldsymbol{J}_\boldsymbol{\gamma}(\hat{\boldsymbol{\theta}})^\top,$$
+
+where $\boldsymbol{J}_\boldsymbol{\gamma}$ is the Jacobian matrix of $\hat{\boldsymbol{\gamma}}$ with respect to $\boldsymbol{\theta}$, or
 
 $$\hat V_{\gamma, c} = \hat V_{\gamma} + (\boldsymbol{H}_\gamma)^{-1} \left(\frac{\partial^2 \ell}{\partial \theta \partial \gamma^\top}\right) \hat V_{\theta} \left(\frac{\partial^2 \ell}{\partial \theta \partial \gamma^\top}\right)^\top (\boldsymbol{H}_\gamma)^{-1},$$
 
