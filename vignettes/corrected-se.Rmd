@@ -31,6 +31,7 @@ where $V_{\gamma}$ is the naive covariance matrix of the structural parameter es
 ```{r load-pkg, message = FALSE}
 library(lavaan)
 library(R2spa)
+library(numDeriv)
 library(boot)
 ```
 
@@ -91,20 +92,26 @@ sqrt(diag(vc_cor))
 
 Standardized solution
 
-```{r, eval = FALSE}
-tspa_est_std <- function(se) {
+```{r}
+tspa_est_std <- function(ld_ev) {
+  ld1 <- ld
+  ev1 <- ev
+  ld1[c(1, 4)] <- ld_ev[1:2]
+  ev1[c(1, 4)] <- ld_ev[3:4]
   tfit <- tspa(model = "dem60 ~ ind60",
                data = fs_dat,
-               se = list(ind60 = se[1], dem60 = se[2]))
-  standardizedSolution(tfit)$est.std[5]
+               cross_loadings = ld1,
+               vc = ev1)
+  standardizedSolution(tfit)$est.std[8]
 }
-tspa_est_std(unlist(se_fs))
+tspa_est_std(c(ld[c(1, 4)], ev[c(1, 4)]))
 # Jacobian
-jac_std <- jacobian(tspa_est_std, x = unlist(se_fs))
+jac_std <- numDeriv::jacobian(tspa_est_std,
+                              x = c(ld[c(1, 4)], ev[c(1, 4)]))
 # Corrected standard error
 sqrt(
-  standardizedSolution(tspa_fit)[5, "se"]^2 +
-    jac_std %*% vc_ev_fs %*% t(jac_std)
+  standardizedSolution(tspa_fit)[8, "se"]^2 +
+    jac_std %*% vldev %*% t(jac_std)
 )
 ```
 

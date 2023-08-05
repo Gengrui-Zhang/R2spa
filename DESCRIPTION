@@ -45,6 +45,7 @@ Suggests:
     magrittr,
     Matrix,
     mirt,
+    numDeriv,
     rmarkdown,
     psych,
     testthat (>= 3.0.0),
