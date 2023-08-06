@@ -119,13 +119,15 @@ sqrt(
 )
 ```
 
-Compare to joint model
+Compare to joint structural and measurement model
 
-```{r, eval = FALSE}
+```{r}
 sem_fit <- sem(model, data = PoliticalDemocracy)
 # Larger standard error
-vcov(sem_fit)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
-              c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")]
+(vc_j <- 
+  vcov(sem_fit)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")])
+sqrt(diag(vc_j))
 ```
 
 Bootstrap Standard Errors
@@ -166,6 +168,8 @@ boo$t |>
     apply(MARGIN = 2, FUN = mad) |>
     setNames(c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"))
 ```
+
+The standard errors seem to diverge slightly among methods. SE(`dem60~ind60`) with bootstrap is the lowest. SE(`ind60~~ind60`) with the joint model is particularly higher than the other two. SE(`dem60~~dem60`) is the lowest with the corrected 2S-PA. It should be pointed out that the joint model and 2S-PA are different estimators.
 
 ```{r, eval = FALSE}
 run_sem <- function(df, inds) {
