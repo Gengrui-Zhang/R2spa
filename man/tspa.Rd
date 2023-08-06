@@ -31,13 +31,13 @@ for multigroup 2S-PA.}
 
 \item{vc}{An error variance-covariance matrix of the factor scores, which
 can be obtained from the output of \code{get_fs()} using
-\code{attr()} with the argument \code{which = "av_efs"}.}
+\code{attr()} with the argument \code{which = "fsT"}.}
 
 \item{cross_loadings}{A matrix of loadings and cross-loadings from the
 latent variables to the factor scores \code{fs}, which
 can be obtained from the output of \code{get_fs()}
 using \code{attr()} with the argument
-\code{which = "fsA"}.
+\code{which = "fsL"}.
 For details see the multiple-factors vignette:
 \code{vignette("multiple-factors", package = "R2spa")}.}
 
@@ -77,8 +77,8 @@ fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
 tspa(model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
      data = fs_dat2,
-     vc = attr(fs_dat2, "av_efs"),
-     cross_loadings = attr(fs_dat2, "fsA"))
+     vc = attr(fs_dat2, "fsT"),
+     cross_loadings = attr(fs_dat2, "fsL"))
 
 # multigroup, two-factor example
 mod3 <- "
@@ -90,8 +90,8 @@ fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
                   group = "school")
 tspa(model = "visual ~ speed",
      data = fs_dat3,
-     vc = attr(fs_dat3, "av_efs"),
-     cross_loadings = attr(fs_dat3, "fsA"),
+     vc = attr(fs_dat3, "fsT"),
+     cross_loadings = attr(fs_dat3, "fsL"),
      group = "school")
 
 # multigroup, three-factor example
@@ -106,8 +106,8 @@ fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
 tspa(model = "visual ~ speed
               textual ~ visual + speed",
      data = fs_dat4,
-     vc = attr(fs_dat4, "av_efs"),
-     cross_loadings = attr(fs_dat4, "fsA"),
+     vc = attr(fs_dat4, "fsT"),
+     cross_loadings = attr(fs_dat4, "fsL"),
      group = "school")
 
 # get factor scores
