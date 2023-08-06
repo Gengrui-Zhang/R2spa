@@ -6,6 +6,8 @@
 
 - New function `vcov_corrected()` for computing corrected SEs (#39)
 
+- New function `get_fs_lavaan()` for computing factor scores and relevant matrices directly from a `lavaan` output (#61)
+
 - Update naming of relevant matrices when computing factor scores:
     * `fsT`: error covariance of factor scores
     * `fsL`: loading matrix of factor scores
