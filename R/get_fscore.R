@@ -11,8 +11,8 @@
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
 #' @param corrected_fsT Logical. Whether to correct for the the sampling
-#'                         error in the factor score weights when computing
-#'                         the error variance estimates of factor scores.
+#'                      error in the factor score weights when computing
+#'                      the error variance estimates of factor scores.
 #' @param vfsLT Logical. Whether to return the covariance matrix of `fsT`
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
