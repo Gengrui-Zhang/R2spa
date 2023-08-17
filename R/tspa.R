@@ -12,21 +12,22 @@
 #'           score variable for single-group 2S-PA. A list or data frame
 #'           storing the standard errors of each group in each latent factor
 #'           for multigroup 2S-PA.
-#' @param vc An error variance-covariance matrix of the factor scores, which
-#'           can be obtained from the output of \code{get_fs()} using
+#' @param fsT An error variance-covariance matrix of the factor scores, which
+#'            can be obtained from the output of \code{get_fs()} using
 #'           \code{attr()} with the argument \code{which = "fsT"}.
-#' @param cross_loadings A matrix of loadings and cross-loadings from the
-#'                       latent variables to the factor scores \code{fs}, which
-#'                       can be obtained from the output of \code{get_fs()}
-#'                       using \code{attr()} with the argument
-#'                       \code{which = "fsL"}.
-#'                       For details see the multiple-factors vignette:
-#'                       \code{vignette("multiple-factors", package = "R2spa")}.
+#' @param fsL A matrix of loadings and cross-loadings from the
+#'            latent variables to the factor scores \code{fs}, which
+#'            can be obtained from the output of \code{get_fs()} using
+#'            \code{attr()} with the argument \code{which = "fsL"}.
+#'            For details see the multiple-factors vignette:
+#'            \code{vignette("multiple-factors", package = "R2spa")}.
 #' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return An object of class \code{lavaan}, with an attribute \code{tspaModel}
 #'         that contains the model syntax.
+#'
 #' @export
+#'
 #' @examples
 #' library(lavaan)
 #'
@@ -53,8 +54,8 @@
 #' tspa(model = "dem60 ~ ind60
 #'               dem65 ~ ind60 + dem60",
 #'      data = fs_dat2,
-#'      vc = attr(fs_dat2, "fsT"),
-#'      cross_loadings = attr(fs_dat2, "fsL"))
+#'      fsT = attr(fs_dat2, "fsT"),
+#'      fsL = attr(fs_dat2, "fsL"))
 #'
 #' # multigroup, two-factor example
 #' mod3 <- "
@@ -66,8 +67,8 @@
 #'                   group = "school")
 #' tspa(model = "visual ~ speed",
 #'      data = fs_dat3,
-#'      vc = attr(fs_dat3, "fsT"),
-#'      cross_loadings = attr(fs_dat3, "fsL"),
+#'      fsT = attr(fs_dat3, "fsT"),
+#'      fsL = attr(fs_dat3, "fsL"),
 #'      group = "school")
 #'
 #' # multigroup, three-factor example
@@ -82,8 +83,8 @@
 #' tspa(model = "visual ~ speed
 #'               textual ~ visual + speed",
 #'      data = fs_dat4,
-#'      vc = attr(fs_dat4, "fsT"),
-#'      cross_loadings = attr(fs_dat4, "fsL"),
+#'      fsT = attr(fs_dat4, "fsT"),
+#'      fsL = attr(fs_dat4, "fsL"),
 #'      group = "school")
 #'
 #' # get factor scores
@@ -113,27 +114,50 @@
 
 
 tspa <- function(model, data, reliability = NULL, se = NULL,
-                 vc = NULL, cross_loadings = NULL, ...) {
+                 fsT = NULL, fsL = NULL, ...) {
+
+  if (nchar(model) == 0) {
+    stop("Please provide a structural path model.")
+  }
+
   if (!is.null(reliability)) {
     stop("tspa() currently does not support reliability model")
   }
+
   if (!is.data.frame(se)) {
     se <- as.data.frame(as.list(se))
   }
-  multigroup <- nrow(se) == 1 | is.list(vc)
+  multigroup <- nrow(se) == 1 | is.list(fsT)
+
+  if (sum(is.null(fsT), is.null(fsL)) == 1) {
+    stop("Please provide both or none of fsT and fsL.")
+  }
+
+  if (!is.null(fsT)) {
+    fs_names <- ifelse(multigroup, colnames(fsT[[1]]), colnames(fsT))
+    dat_names <- ifelse(multigroup, names(data[[1]]), names(data))
+    names_match <- lapply(fs_names, function(x) x %in% dat_names) |> unlist()
+    if (any(!names_match)) {
+      stop("Names of factor score variables do not match those in the input data.")
+    }
+  }
 
   if (multigroup) {
-    if (is.null(vc)) { # SE
+    if (!exists("group")) {
+      stop("Please specify 'group = ' to fit a multigroup model in lavaan.")
+    }
+
+    if (is.null(fsT)) { # SE
       tspaModel <- tspaMultipleGroupSe(model, data, se)
     } else { # covariance
-      tspaModel <- tspaMultipleGroupMF(model, data, vc, cross_loadings)
+      tspaModel <- tspaMultipleGroupMF(model, data, fsT, fsL)
       data <- do.call(rbind, data)
     }
   } else {
-    if (is.null(vc)) { # SE
+    if (is.null(fsT)) { # SE
       tspaModel <- tspaSingleGroup(model, data, se)
     } else { # covariance
-      tspaModel <- tspaSingleGroupMF(model, data, vc, cross_loadings)
+      tspaModel <- tspaSingleGroupMF(model, data, fsT, fsL)
     }
   }
 
@@ -142,9 +166,9 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
                   ...)
   # to access the attribute, use attr(x,"tspaModel")
   attr(tspa_fit, "tspaModel") <- tspaModel
-  if (!is.null(vc)) {
-    attr(tspa_fit, "fsT") <- vc
-    attr(tspa_fit, "fsL") <- cross_loadings
+  if (!is.null(fsT)) {
+    attr(tspa_fit, "fsT") <- fsT
+    attr(tspa_fit, "fsL") <- fsL
   }
   attr(tspa_fit, "tspa_call") <- match.call()
   return(tspa_fit)
@@ -187,17 +211,17 @@ tspaSingleGroup <- function(model, data, se = NULL) {
   }
 }
 
-tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
+tspaSingleGroupMF <- function(model, data, fsT, fsL) {
   # ev <- se^2
-  var <- colnames(cross_loadings)
-  len <- nrow(cross_loadings)
+  var <- colnames(fsL)
+  len <- nrow(fsL)
 
   col <- colnames(data)
-  fs <- rownames(cross_loadings)
-  colnames(vc) <- rownames(vc) <- fs
+  fs <- rownames(fsL)
+  colnames(fsT) <- rownames(fsT) <- fs
 
   # latent variables
-  loadings <- paste0(cross_loadings, " * ", fs)
+  loadings <- paste0(fsL, " * ", fs)
   loadings_list <- split(loadings, factor(rep(var, each = len),
                                           levels = var))
   loadings_c <- lapply(loadings_list, function(x) {
@@ -205,10 +229,10 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   })
   latent_var_str <- paste(var, "=~", loadings_c)
   # error variances
-  vc_in <- !upper.tri(vc)
-  ev_rhs <- colnames(vc)[col(vc_in)[vc_in]]
-  ev_lhs <- rownames(vc)[row(vc_in)[vc_in]]
-  error_constraint_str <- paste0(ev_lhs, " ~~ ", vc[vc_in], " * ", ev_rhs)
+  fsT_in <- !upper.tri(fsT)
+  ev_rhs <- colnames(fsT)[col(fsT_in)[fsT_in]]
+  ev_lhs <- rownames(fsT)[row(fsT_in)[fsT_in]]
+  error_constraint_str <- paste0(ev_lhs, " ~~ ", fsT[fsT_in], " * ", ev_rhs)
   # # latent variances
   # latent_variance_str <- paste(var, "~~", var)
 
@@ -227,17 +251,17 @@ tspaSingleGroupMF <- function(model, data, vc, cross_loadings) {
   return(tspaModel)
 }
 
-tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
-  ngroup <- length(vc)
-  var <- colnames(cross_loadings[[1]])
+tspaMultipleGroupMF <- function(model, data, fsT, fsL) {
+  ngroup <- length(fsT)
+  var <- colnames(fsL[[1]])
   nvar <- length(var)
 
   # col <- colnames(data[[1]])  # suppress as it is not used
-  fs <- rownames(cross_loadings[[1]])
-  # colnames(vc) <- rownames(vc) <- fs
+  fs <- rownames(fsL[[1]])
+  # colnames(fsT) <- rownames(fsT) <- fs
 
   # latent variables
-  loadings_mat <- matrix(unlist(cross_loadings), ncol = ngroup)
+  loadings_mat <- matrix(unlist(fsL), ncol = ngroup)
   loadings <- apply(loadings_mat, 1, function(x) {
     paste0("c(", paste0(x, collapse = ", "), ") * ")
   }) |>
@@ -249,10 +273,10 @@ tspaMultipleGroupMF <- function(model, data, vc, cross_loadings) {
   })
   latent_var_str <- paste(var, "=~", loadings_c)
   # error variances
-  vc_in <- !upper.tri(vc[[1]])
-  ev_rhs <- colnames(vc[[1]])[col(vc_in)[vc_in]]
-  ev_lhs <- rownames(vc[[1]])[row(vc_in)[vc_in]]
-  errors_mat <- matrix(unlist(vc), ncol = ngroup)[as.vector(vc_in), ]
+  fsT_in <- !upper.tri(fsT[[1]])
+  ev_rhs <- colnames(fsT[[1]])[col(fsT_in)[fsT_in]]
+  ev_lhs <- rownames(fsT[[1]])[row(fsT_in)[fsT_in]]
+  errors_mat <- matrix(unlist(fsT), ncol = ngroup)[as.vector(fsT_in), ]
   errors <- apply(errors_mat, 1, function(x) {
     paste0("c(", paste0(x, collapse = ", "), ")")
   })

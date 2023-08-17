@@ -116,8 +116,8 @@ Recover factor covariances with 2S-PA
 ts_fit <- tspa("",
                data = data.frame(bscores$scores) |>
                    setNames(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O")),
-               vc = attr(bfi_fs, which = "fsT"),
-               cross_loadings = diag(5) |>
+               fsT = attr(bfi_fs, which = "fsT"),
+               fsL = diag(5) |>
                    `dimnames<-`(list(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O"),
                                      c("N", "E", "C", "A", "O"))))
 lavInspect(ts_fit, what = "cor.lv") |>

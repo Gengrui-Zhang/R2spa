@@ -36,8 +36,8 @@ my_cfa <- "
 
 ```{r}
 tspa_fit <- tspa(model = "dem60 ~ ind60", data = fs_dat,
-                 vc = attr(fs_dat, "fsT"),
-                 cross_loadings = attr(fs_dat, "fsL"))
+                 fsT = attr(fs_dat, "fsT"),
+                 fsL = attr(fs_dat, "fsL"))
 parameterestimates(tspa_fit)
 ```
 
