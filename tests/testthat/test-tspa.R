@@ -518,6 +518,30 @@ test_that("Names of factor score variables need to match those in the input data
   )
 })
 
+test_that("Test indicator names not starting with 'fs_'", {
+  data("PoliticalDemocracy", package = "lavaan")
+  mod2 <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+  "
+  fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+  names(fs_dat2) <- gsub("fs_", "bs_", names(fs_dat2))
+  ecov_fs <- attr(fs_dat2, "fsT")
+  dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
+                              FUN = \(x) gsub("fs_", "bs_", x))
+  mat_ld <- attr(fs_dat2, "fsL")
+  rownames(mat_ld) <- gsub("fs_", "bs_", rownames(mat_ld))
+  expect_no_error(
+    tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+         data = fs_dat2,
+         fsT = ecov_fs,
+         fsL = mat_ld)
+  )
+})
+
 test_that("Missing group argument for a multigroup model", {
   expect_error(
     tspa(
@@ -530,3 +554,4 @@ test_that("Missing group argument for a multigroup model", {
     "Please specify 'group = ' to fit a multigroup model in lavaan"
   )
 })
+

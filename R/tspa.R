@@ -127,7 +127,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
   if (!is.data.frame(se)) {
     se <- as.data.frame(as.list(se))
   }
-  multigroup <- nrow(se) == 1 | is.list(fsT)
+  multigroup <- nrow(se) > 1 | is.list(fsT)
 
   if (sum(is.null(fsT), is.null(fsL)) == 1) {
     stop("Please provide both or none of fsT and fsL.")
@@ -143,7 +143,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
   }
 
   if (multigroup) {
-    if (!exists("group")) {
+    if (is.null(list(...)[["group"]])) {
       stop("Please specify 'group = ' to fit a multigroup model in lavaan.")
     }
 
@@ -256,9 +256,7 @@ tspaMultipleGroupMF <- function(model, data, fsT, fsL) {
   var <- colnames(fsL[[1]])
   nvar <- length(var)
 
-  # col <- colnames(data[[1]])  # suppress as it is not used
   fs <- rownames(fsL[[1]])
-  # colnames(fsT) <- rownames(fsT) <- fs
 
   # latent variables
   loadings_mat <- matrix(unlist(fsL), ncol = ngroup)
