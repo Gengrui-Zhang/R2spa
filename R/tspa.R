@@ -14,7 +14,7 @@
 #'           for multigroup 2S-PA.
 #' @param fsT An error variance-covariance matrix of the factor scores, which
 #'            can be obtained from the output of \code{get_fs()} using
-#'           \code{attr()} with the argument \code{which = "fsT"}.
+#'            \code{attr()} with the argument \code{which = "fsT"}.
 #' @param fsL A matrix of loadings and cross-loadings from the
 #'            latent variables to the factor scores \code{fs}, which
 #'            can be obtained from the output of \code{get_fs()} using
