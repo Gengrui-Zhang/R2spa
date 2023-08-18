@@ -76,7 +76,7 @@ head(fs_dat)
 tspa_fit <- tspa(
   model = "dem60 ~ ind60",
   data = fs_dat,
-  se = list(ind60 = 0.1213615, dem60 = 0.6756472)
+  se_fs = list(ind60 = 0.1213615, dem60 = 0.6756472)
 )
 parameterestimates(tspa_fit)
 #>        lhs op      rhs   est    se     z pvalue ci.lower ci.upper

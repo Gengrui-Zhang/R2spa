@@ -43,9 +43,9 @@ fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 
 tspa_fit_1 <- tspa(model = "dem60 ~ ind60", 
-                 data = fs_dat, 
-                 se = list(ind60 = 0.1213615, dem60 = 0.6756472),
-                 meanstructure = T)
+                   data = fs_dat, 
+                   se_fs = list(ind60 = 0.1213615, dem60 = 0.6756472),
+                   meanstructure = T)
 ```
 
 We recommend researchers to examine the diagnostic plot of factor scores in the model. They can use the function `tspa_plot()` to obtain two plots: (a) a scatter plot between factors, (b) a residual plot between factors.
@@ -116,9 +116,9 @@ fs_dat_dem65 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60, fs_dat_dem65)
 
 tspa_fit_2 <- tspa(model = "dem60 ~ ind60
-                          dem65 ~ ind60 + dem60", 
-                      data = fs_dat, 
-                      se = list(ind60 = 0.1213615, dem60 = 0.6756472, 
+                            dem65 ~ ind60 + dem60", 
+                   data = fs_dat, 
+                   se_fs = list(ind60 = 0.1213615, dem60 = 0.6756472, 
                                 dem65 = 0.5724405))
 ```
 
@@ -147,7 +147,7 @@ tspa_plot(tspa_fit_2,
 # dem60 and ind60
 latent_estimates <- data.frame(lavPredict(tspa_fit_2))
 lavInspect(tspa_fit_2, what = "est")
-update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"))
+# update(tspa_fit_2, data = lavInspect(tspa_fit_2, what = "data"))
 # class(tspa_fit_2)
 
 plot(latent_estimates$ind60, 
@@ -188,8 +188,8 @@ fs_hs <- cbind(do.call(rbind, fs_dat_visual),
 
 tspa_fit_3 <- tspa(model = "visual ~ speed",
                    data = fs_hs,
-                   se = data.frame(visual = c(0.3391326, 0.311828),
-                                   speed = c(0.2786875, 0.2740507)),
+                   se_fs = data.frame(visual = c(0.3391326, 0.311828),
+                                      speed = c(0.2786875, 0.2740507)),
                    group = "school"
                    # group.equal = "regressions"
                    )

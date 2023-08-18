@@ -4,7 +4,16 @@
 \alias{tspa}
 \title{Two-Stage Path Analysis}
 \usage{
-tspa(model, data, reliability = NULL, se = NULL, fsT = NULL, fsL = NULL, ...)
+tspa(
+  model,
+  data,
+  reliability = NULL,
+  se = "standard",
+  se_fs = NULL,
+  fsT = NULL,
+  fsL = NULL,
+  ...
+)
 }
 \arguments{
 \item{model}{A string variable describing the structural path model,
@@ -16,10 +25,13 @@ in \code{lavaan} syntax.}
 of each latent factor. Currently \code{tspa()} does not
 support the reliability argument. Please use \code{se}.}
 
-\item{se}{A numeric vector representing the standard errors of each factor
-score variable for single-group 2S-PA. A list or data frame
-storing the standard errors of each group in each latent factor
-for multigroup 2S-PA.}
+\item{se}{Deprecated to avoid conflict with the argument of the same name
+in \code{\link[lavaan:lavaan]{lavaan::lavaan()}}.}
+
+\item{se_fs}{A numeric vector representing the standard errors of each
+factor score variable for single-group 2S-PA. A list or data
+frame storing the standard errors of each group in each latent
+factor for multigroup 2S-PA.}
 
 \item{fsT}{An error variance-covariance matrix of the factor scores, which
 can be obtained from the output of \code{get_fs()} using
@@ -54,8 +66,8 @@ fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 # tspa model
 tspa(model = "dem60 ~ ind60", data = fs_dat,
-     se = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
-            dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
+     se_fs = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
+               dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
 
 # single-group, three-factor example
 mod2 <- "
@@ -114,15 +126,15 @@ fs_hs <- cbind(do.call(rbind, fs_dat_visual),
 # tspa model
 tspa(model = "visual ~ speed",
      data = fs_hs,
-     se = data.frame(visual = c(0.3391326, 0.311828),
-                     speed = c(0.2786875, 0.2740507)),
+     se_fs = data.frame(visual = c(0.3391326, 0.311828),
+                        speed = c(0.2786875, 0.2740507)),
      group = "school",
      group.equal = "regressions")
 
 # manually adding equality constraints on the regression coefficients
 tspa(model = "visual ~ c(b1, b1) * speed",
      data = fs_hs,
-     se = list(visual = c(0.3391326, 0.311828),
-               speed = c(0.2786875, 0.2740507)),
+     se_fs = list(visual = c(0.3391326, 0.311828),
+                  speed = c(0.2786875, 0.2740507)),
      group = "school")
 }

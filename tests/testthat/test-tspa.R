@@ -47,7 +47,7 @@ tspa_single <-
   tspa(
     model = "dem60 ~ ind60",
     data = fs_dat_single,
-    se = c(ind60 = 0.1213615, dem60 = 0.6756472)
+    se_fs = c(ind60 = 0.1213615, dem60 = 0.6756472)
   )
 
 ########## Testing section ############
@@ -135,7 +135,7 @@ tspa_3var <- tspa(
   model = "dem60 ~ ind60
                dem65 ~ ind60 + dem60",
   data = fs_dat_3var,
-  se = c(
+  se_fs = c(
     ind60 = 0.1213615,
     dem60 = 0.6756472,
     dem65 = 0.5724405
@@ -299,7 +299,7 @@ sem_multi <-
 tspa_multi <- tspa(
   model = "visual ~ speed",
   data = fs_dat_multi,
-  se = data.frame(
+  se_fs = data.frame(
     visual = c(0.3391326, 0.3118280),
     speed = c(0.2786875, 0.2740507)
   ),

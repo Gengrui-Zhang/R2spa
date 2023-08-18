@@ -53,7 +53,7 @@ To build a Two-Stage Path Analysis model, simply call the `tspa()` function with
 ```{r}
 tspa_fit <- tspa(model = "dem60 ~ ind60", 
                  data = fs_dat, 
-                 se = list(ind60 = 0.1213615, dem60 = 0.6756472))
+                 se_fs = list(ind60 = 0.1213615, dem60 = 0.6756472))
 ```
 
 To view the Two-Stage Path Analysis model, use `attributes([model name])$tspaModel`. Function `cat()` can help tidy up the model output. In the output, the values of error constraints are computed by squaring standard errors from the previous section.
@@ -102,8 +102,8 @@ To build a Two-Stage Path Analysis model, simply call the `tspa()` function with
 tspa_3var_fit <- tspa(model = "dem60 ~ ind60
                           dem65 ~ ind60 + dem60", 
                       data = fs_dat, 
-                      se = list(ind60 = 0.1213615, dem60 = 0.6756472, 
-                                dem65 = 0.5724405))
+                      se_fs = list(ind60 = 0.1213615, dem60 = 0.6756472, 
+                                   dem65 = 0.5724405))
 cat(attributes(tspa_3var_fit)$tspaModel)
 ```
 
@@ -147,8 +147,8 @@ Function `standardizedsolution()` enables user to view a table of standard error
 # tspa model
 tspa_fit <- tspa(model = "visual ~ speed",
                  data = fs_hs,
-                 se = data.frame(visual = c(0.3391326, 0.311828),
-                                 speed = c(0.2786875, 0.2740507)),
+                 se_fs = data.frame(visual = c(0.3391326, 0.311828),
+                                    speed = c(0.2786875, 0.2740507)),
                  group = "school"
                  # group.equal = "regressions"
                  )

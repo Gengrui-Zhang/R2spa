@@ -8,10 +8,12 @@
 #' @param reliability A numeric vector representing the reliability indexes
 #'                    of each latent factor. Currently \code{tspa()} does not
 #'                    support the reliability argument. Please use \code{se}.
-#' @param se A numeric vector representing the standard errors of each factor
-#'           score variable for single-group 2S-PA. A list or data frame
-#'           storing the standard errors of each group in each latent factor
-#'           for multigroup 2S-PA.
+#' @param se Deprecated to avoid conflict with the argument of the same name
+#'           in [lavaan::lavaan()].
+#' @param se_fs A numeric vector representing the standard errors of each
+#'              factor score variable for single-group 2S-PA. A list or data
+#'              frame storing the standard errors of each group in each latent
+#'              factor for multigroup 2S-PA.
 #' @param fsT An error variance-covariance matrix of the factor scores, which
 #'            can be obtained from the output of \code{get_fs()} using
 #'           \code{attr()} with the argument \code{which = "fsT"}.
@@ -40,8 +42,8 @@
 #' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
 #' # tspa model
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      se = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
-#'             dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
+#'      se_fs = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
+#'                dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
 #'
 #' # single-group, three-factor example
 #' mod2 <- "
@@ -100,21 +102,21 @@
 #' # tspa model
 #' tspa(model = "visual ~ speed",
 #'      data = fs_hs,
-#'      se = data.frame(visual = c(0.3391326, 0.311828),
-#'                      speed = c(0.2786875, 0.2740507)),
+#'      se_fs = data.frame(visual = c(0.3391326, 0.311828),
+#'                         speed = c(0.2786875, 0.2740507)),
 #'      group = "school",
 #'      group.equal = "regressions")
 #'
 #' # manually adding equality constraints on the regression coefficients
 #' tspa(model = "visual ~ c(b1, b1) * speed",
 #'      data = fs_hs,
-#'      se = list(visual = c(0.3391326, 0.311828),
-#'                speed = c(0.2786875, 0.2740507)),
+#'      se_fs = list(visual = c(0.3391326, 0.311828),
+#'                   speed = c(0.2786875, 0.2740507)),
 #'      group = "school")
 
 
-tspa <- function(model, data, reliability = NULL, se = NULL,
-                 fsT = NULL, fsL = NULL, ...) {
+tspa <- function(model, data, reliability = NULL, se = "standard",
+                 se_fs = NULL, fsT = NULL, fsL = NULL, ...) {
 
   if (nchar(model) == 0) {
     stop("Please provide a structural path model.")
@@ -123,11 +125,15 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
   if (!is.null(reliability)) {
     stop("tspa() currently does not support reliability model")
   }
-
-  if (!is.data.frame(se)) {
-    se <- as.data.frame(as.list(se))
+  if (!is.character(se)) {
+    warning("using `se` to set se for factor scores is deprecated. ",
+            "use `se_fs` instead.")
   }
-  multigroup <- nrow(se) > 1 | is.list(fsT)
+
+  if (!is.data.frame(se_fs)) {
+    se_fs <- as.data.frame(as.list(se_fs))
+  }
+  multigroup <- nrow(se_fs) > 1 | is.list(fsT)
 
   if (sum(is.null(fsT), is.null(fsL)) == 1) {
     stop("Please provide both or none of fsT and fsL.")
@@ -148,14 +154,14 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
     }
 
     if (is.null(fsT)) { # SE
-      tspaModel <- tspaMultipleGroupSe(model, data, se)
+      tspaModel <- tspaMultipleGroupSe(model, data, se_fs)
     } else { # covariance
       tspaModel <- tspaMultipleGroupMF(model, data, fsT, fsL)
       data <- do.call(rbind, data)
     }
   } else {
     if (is.null(fsT)) { # SE
-      tspaModel <- tspaSingleGroup(model, data, se)
+      tspaModel <- tspaSingleGroup(model, data, se_fs)
     } else { # covariance
       tspaModel <- tspaSingleGroupMF(model, data, fsT, fsL)
     }
@@ -163,6 +169,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL,
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data,
+                  se = se,
                   ...)
   # to access the attribute, use attr(x,"tspaModel")
   attr(tspa_fit, "tspaModel") <- tspaModel
