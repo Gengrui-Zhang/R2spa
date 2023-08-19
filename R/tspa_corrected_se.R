@@ -67,12 +67,12 @@ vcov_corrected <- function(tspa_fit, vfsLT, which_free = NULL, ...) {
 update_tspa <- function(tspa_fit, fsL, fsT) {
     call <- attr(tspa_fit, which = "tspa_call")
     if (!missing(fsL)) {
-        call$cross_loadings <- eval(call$cross_loadings)
-        call$cross_loadings <- fsL
+        call$fsL <- eval(call$fsL)
+        call$fsL <- fsL
     }
     if (!missing(fsT)) {
-        call$vc <- eval(call$vc)
-        call$vc <- fsT
+        call$fsT <- eval(call$fsT)
+        call$fsT <- fsT
     }
     eval(call)
 }
