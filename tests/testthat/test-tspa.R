@@ -461,10 +461,10 @@ test_that("Multiple-group multiple-factor example", code = {
 
 test_that("Empty path model", {
   expect_error(
-    tspa(model = "",
+    tspa(model = 123,
          data = fs_dat_3fac,
          fsT = attr(fs_dat_3fac, "fsT")),
-    "Please provide a structural path model."
+    "The structural path model provided is not a string."
   )
 })
 
