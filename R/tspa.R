@@ -118,8 +118,8 @@
 tspa <- function(model, data, reliability = NULL, se = "standard",
                  se_fs = NULL, fsT = NULL, fsL = NULL, ...) {
 
-  if (nchar(model) == 0) {
-    stop("Please provide a structural path model.")
+  if (!inherits(model, "character")) {
+    stop("The structural path model provided is not a string.")
   }
 
   if (!is.null(reliability)) {
@@ -135,7 +135,7 @@ tspa <- function(model, data, reliability = NULL, se = "standard",
   }
   multigroup <- nrow(se_fs) > 1 | is.list(fsT)
 
-  if (sum(is.null(fsT), is.null(fsL)) == 1) {
+  if (xor(is.null(fsT), is.null(fsL))) {
     stop("Please provide both or none of fsT and fsL.")
   }
 

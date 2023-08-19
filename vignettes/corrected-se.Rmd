@@ -87,11 +87,11 @@ tspa_fit <- tspa(model = "dem60 ~ ind60",
                  fsL = ld,
                  fsT = ev)
 # Unadjusted covariance
-fsTov(tspa_fit)
+vcov(tspa_fit)
 # Adjusted covariance matrix
-(fsT_cor <- fsTov_corrected(tspa_fit, vfsLT = vldev, which_free = c(1, 4, 5, 7)))
+(vc_cor <- vcov_corrected(tspa_fit, vfsLT = vldev, which_free = c(1, 4, 5, 7)))
 # Corrected standard errors
-sqrt(diag(fsT_cor))
+sqrt(diag(vc_cor))
 ```
 
 Standardized solution
@@ -124,10 +124,10 @@ Compare to joint structural and measurement model
 ```{r}
 sem_fit <- sem(model, data = PoliticalDemocracy)
 # Larger standard error
-(fsT_j <- 
-  fsTov(sem_fit)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+(vc_j <- 
+  vcov(sem_fit)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
                 c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")])
-sqrt(diag(fsT_j))
+sqrt(diag(vc_j))
 ```
 
 Bootstrap Standard Errors
@@ -197,11 +197,11 @@ tspa_fit2 <- tspa(model = "dem60 ~ ind60",
                   fsT = attr(fs_joint, "fsT"),
                   fsL = attr(fs_joint, "fsL"))
 # Unadjusted covariance
-fsTov(tspa_fit2)
+vcov(tspa_fit2)
 # Adjusted covariance
-(fsT2_cor <- fsTov_corrected(tspa_fit2, vfsLT = vldev_joint))
+(vc2_cor <- vcov_corrected(tspa_fit2, vfsLT = vldev_joint))
 # Corrected standard errors
-sqrt(diag(fsT2_cor))
+sqrt(diag(vc2_cor))
 ```
 
 Bootstrap Standard Errors
@@ -275,16 +275,16 @@ tspa_fit2b <- tspa(model = "dem60 ~ ind60",
                        `dimnames<-`(list(c("fs_ind60", "fs_dem60"),
                                          c("ind60", "dem60"))))
 # Unadjusted covariance matrix
-fsTov(tspa_fit2b)
+vcov(tspa_fit2b)
 # Adjusted covariance matrix
-(fsT2b_cor <- fsTov_corrected(
+(vc2b_cor <- vcov_corrected(
     tspa_fit2b,
     # Exclude fixed loadings and error variance
     vfsLT = vldevb_joint[c(5, 7), c(5, 7)],
     # Specify which elements are free (error variances only)
     which_free = c(5, 7)))
 # Corrected standard errors
-sqrt(diag(fsT2b_cor))
+sqrt(diag(vc2b_cor))
 ```
 
 ## Multiple Groups
@@ -309,7 +309,7 @@ fit <- cfa(mod,
            group.equal = c("loadings", "intercepts"),
            group.partial = c("visual=~x2", "x7~1"))
 fs_dat <- get_fs_lavaan(fit)
-vldev <- R2spa:::fsTov_ld_evfs(fit)
+vldev <- R2spa:::vcov_ld_evfs(fit)
 ```
 
 ```{r}
@@ -320,7 +320,7 @@ tspa_fit <- tspa(model = "visual ~~ textual + speed
                  fsL = attr(fs_dat, which = "fsL"),
                  fsT = attr(fs_dat, which = "fsT"))
 # Unadjusted covariance
-fsTov(tspa_fit)[c(1:6, 10:15), c(1:6, 10:15)]
+vcov(tspa_fit)[c(1:6, 10:15), c(1:6, 10:15)]
 # Adjusted covariance
-fsTov_corrected(tspa_fit, vfsLT = vldev)[c(1:6, 10:15), c(1:6, 10:15)]
+vcov_corrected(tspa_fit, vfsLT = vldev)[c(1:6, 10:15), c(1:6, 10:15)]
 ```

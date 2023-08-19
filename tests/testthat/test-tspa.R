@@ -534,11 +534,19 @@ test_that("Test indicator names not starting with 'fs_'", {
   mat_ld <- attr(fs_dat2, "fsL")
   rownames(mat_ld) <- gsub("fs_", "bs_", rownames(mat_ld))
   expect_no_error(
-    tspa(model = "dem60 ~ ind60
-              dem65 ~ ind60 + dem60",
-         data = fs_dat2,
-         fsT = ecov_fs,
-         fsL = mat_ld)
+    bs_fit <- tspa(model = "dem60 ~ ind60
+                            dem65 ~ ind60 + dem60",
+                   data = fs_dat2,
+                   fsT = ecov_fs,
+                   fsL = mat_ld)
+  )
+  fs_fit <- tspa(model = "dem60 ~ ind60
+                          dem65 ~ ind60 + dem60",
+                 data = get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE),
+                 fsT = attr(fs_dat2, "fsT"),
+                 fsL = attr(fs_dat2, "fsL"))
+  expect_identical(
+    parameterestimates(bs_fit)["est"], parameterestimates(fs_fit)["est"]
   )
 })
 
