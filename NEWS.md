@@ -21,6 +21,8 @@
     * Using 2S-PA with OpenMx and definition variables (PR #57)
     * Latent interaction with categorical indicators (#27)
 
+- Better error messages for `tspa()` (#53)
+
 # R2spa 0.0.2
 
 - Use `pkgdown` to create website, with GitHub action (#22)
