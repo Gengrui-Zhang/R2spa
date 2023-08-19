@@ -185,23 +185,23 @@ test_that("test same standard errors with Mx", {
 })
 # Use numeric matrices
 tspa_mx2 <- tspa_mx_model(model_umx,
-  data = fs_dat_3var,
-  mat_ld = diag(3) |>
-    `dimnames<-`(list(
-      c("fs_ind60", "fs_dem60", "fs_dem65"),
-      c("ind60", "dem60", "dem65")
-    )),
-  mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
-    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+                          data = fs_dat_3var,
+                          mat_ld = diag(3) |>
+                            `dimnames<-`(list(
+                              c("fs_ind60", "fs_dem60", "fs_dem65"),
+                              c("ind60", "dem60", "dem65")
+                            )),
+                          mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
+                            `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 )
 tspa_mx_fit2 <- mxRun(tspa_mx2)
 # Use column names for VC
 err_cov <- matrix(c("ev_fs_ind60", NA, NA,
                     NA, "ev_fs_dem60", NA,
                     NA, NA, "ev_fs_dem65"), nrow = 3) |>
-    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+  `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 tspa_mx3 <- tspa_mx_model(model_umx, data = fs_dat_3var,
-  mat_ld = matL, mat_vc = err_cov)
+                          mat_ld = matL, mat_vc = err_cov)
 tspa_mx_fit3 <- mxRun(tspa_mx3)
 test_that("Same results with different Mx matrices input", {
   expect_equal(
@@ -277,18 +277,18 @@ fs_dat_multi <- cbind(
 
 # SEM model
 sem_model_multi <- '
-                            # latent variables (indicated by factor scores)
-                              visual =~ c(1, 1) * fs_visual
-                              speed =~ c(1, 1) * fs_speed
-                            # constrain the errors
-                              fs_visual ~~ c(0.11501092038276, 0.097236701584) * fs_visual
-                              fs_speed ~~ c(0.07766672265625, 0.07510378617049) * fs_speed
-                            # latent variances
-                              visual ~~ c(v11, v12) * visual
-                              speed ~~ c(v21, v22) * speed
-                            # regressions
-                              visual ~ speed
-                           '
+ # latent variables (indicated by factor scores)
+   visual =~ c(1, 1) * fs_visual
+   speed =~ c(1, 1) * fs_speed
+ # constrain the errors
+   fs_visual ~~ c(0.11501092038276, 0.097236701584) * fs_visual
+   fs_speed ~~ c(0.07766672265625, 0.07510378617049) * fs_speed
+ # latent variances
+   visual ~~ c(v11, v12) * visual
+   speed ~~ c(v21, v22) * speed
+ # regressions
+   visual ~ speed
+'
 
 sem_multi <-
   sem(model = sem_model_multi,
@@ -369,8 +369,8 @@ dem65 ~ ind60 + dem60
 tspa_mod_s <- tspaSingleGroupMF(
   model = path_mod,
   data = fs_dat_3fac,
-  vc = attr(fs_dat_3fac, "fsT"),
-  cross_loadings = attr(fs_dat_3fac, "fsL")
+  fsT = attr(fs_dat_3fac, "fsT"),
+  fsL = attr(fs_dat_3fac, "fsL")
 )
 
 factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
@@ -402,8 +402,8 @@ tspa_mod_m <- tspaMultipleGroupMF(
   model = "visual ~ speed
            textual ~ visual + speed",
   data = fs_dat4,
-  vc = attr(fs_dat4, "fsT"),
-  cross_loadings = attr(fs_dat4, "fsL")
+  fsT = attr(fs_dat4, "fsT"),
+  fsL = attr(fs_dat4, "fsL")
 )
 
 factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
@@ -430,8 +430,8 @@ tspa_fit_m <- tspa(
            textual ~ visual + speed",
   data = fs_dat4,
   group = "school",
-  vc = attr(fs_dat4, "fsT"),
-  cross_loadings = attr(fs_dat4, "fsL")
+  fsT = attr(fs_dat4, "fsT"),
+  fsL = attr(fs_dat4, "fsL")
 )
 fs_dat4b <- get_fs(HolzingerSwineford1939, model = mod4,
                    group = "school", method = "Bartlett")
@@ -456,3 +456,110 @@ test_that("Multiple-group multiple-factor example", code = {
   expect_equal(sct$se[sct$op == "~"], expected = scs$se[scs$op == "~"],
                tolerance = 0.0001)
 })
+
+########## Error messages ##########
+
+test_that("Empty path model", {
+  expect_error(
+    tspa(model = 123,
+         data = fs_dat_3fac,
+         fsT = attr(fs_dat_3fac, "fsT")),
+    "The structural path model provided is not a string."
+  )
+})
+
+test_that("Need to provide none or both fsT and fsL", {
+  expect_error(
+    tspa(model = path_mod,
+         data = fs_dat_3fac,
+         fsT = attr(fs_dat_3fac, "fsT")),
+    "Please provide both or none of fsT and fsL"
+  )
+  expect_error(
+    tspa(model = path_mod,
+         data = fs_dat_3fac,
+         fsL = attr(fs_dat_3fac, "fsL")),
+    "Please provide both or none of fsT and fsL"
+  )
+  expect_no_error(
+    tspa(model = path_mod,
+         data = fs_dat_3fac,
+         fsT = attr(fs_dat_3fac, "fsT"),
+         fsL = attr(fs_dat_3fac, "fsL"))
+  )
+})
+
+test_that("Names of factor score variables need to match those in the input data", {
+  data("PoliticalDemocracy", package = "lavaan")
+  mod2 <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+  "
+  fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+  ecov_fs <- attr(fs_dat2, "fsT")
+  dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
+                              FUN = \(x) paste0("bs_", x))
+  expect_error(
+    tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+         data = fs_dat2,
+         fsT = ecov_fs,
+         fsL = attr(fs_dat2, "fsL")),
+    "Names of factor score variables do not match those in the input data."
+  )
+  expect_no_error(
+    tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+         data = fs_dat2,
+         fsT = attr(fs_dat2, "fsT"),
+         fsL = attr(fs_dat2, "fsL"))
+  )
+})
+
+test_that("Test indicator names not starting with 'fs_'", {
+  data("PoliticalDemocracy", package = "lavaan")
+  mod2 <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+  "
+  fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+  names(fs_dat2) <- gsub("fs_", "bs_", names(fs_dat2))
+  ecov_fs <- attr(fs_dat2, "fsT")
+  dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
+                              FUN = \(x) gsub("fs_", "bs_", x))
+  mat_ld <- attr(fs_dat2, "fsL")
+  rownames(mat_ld) <- gsub("fs_", "bs_", rownames(mat_ld))
+  expect_no_error(
+    bs_fit <- tspa(model = "dem60 ~ ind60
+                            dem65 ~ ind60 + dem60",
+                   data = fs_dat2,
+                   fsT = ecov_fs,
+                   fsL = mat_ld)
+  )
+  fs_fit <- tspa(model = "dem60 ~ ind60
+                          dem65 ~ ind60 + dem60",
+                 data = get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE),
+                 fsT = attr(fs_dat2, "fsT"),
+                 fsL = attr(fs_dat2, "fsL"))
+  expect_identical(
+    parameterestimates(bs_fit)["est"], parameterestimates(fs_fit)["est"]
+  )
+})
+
+test_that("Missing group argument for a multigroup model", {
+  expect_error(
+    tspa(
+      model = "visual ~ speed
+               textual ~ visual + speed",
+      data = fs_dat4,
+      fsT = attr(fs_dat4, "fsT"),
+      fsL = attr(fs_dat4, "fsL")
+    ),
+    "Please specify 'group = ' to fit a multigroup model in lavaan"
+  )
+})
+

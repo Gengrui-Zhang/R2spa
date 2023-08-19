@@ -84,8 +84,8 @@ ev <- block_diag(attr(fs1, which = "fsT"),
                  attr(fs2, which = "fsT"))
 tspa_fit <- tspa(model = "dem60 ~ ind60",
                  data = fs_dat,
-                 cross_loadings = ld,
-                 vc = ev)
+                 fsL = ld,
+                 fsT = ev)
 # Unadjusted covariance
 vcov(tspa_fit)
 # Adjusted covariance matrix
@@ -104,8 +104,8 @@ tspa_est_std <- function(ld_ev) {
   ev1[c(1, 4)] <- ld_ev[3:4]
   tfit <- tspa(model = "dem60 ~ ind60",
                data = fs_dat,
-               cross_loadings = ld1,
-               vc = ev1)
+               fsL = ld1,
+               fsT = ev1)
   standardizedSolution(tfit)$est.std[8]
 }
 tspa_est_std(c(ld[c(1, 4)], ev[c(1, 4)]))
@@ -146,8 +146,8 @@ run_tspa <- function(df, inds) {
                    attr(fs_dem60, which = "fsT"))
   tspa_fit <- tspa(model = "dem60 ~ ind60",
                    data = fs_dat,
-                   cross_loadings = ld,
-                   vc = ev,
+                   fsL = ld,
+                   fsT = ev,
                    test = "none")
   coef(tspa_fit)
 }
@@ -194,8 +194,8 @@ vldev_joint <- attr(fs_joint, which = "vfsLT")
 ```{r}
 tspa_fit2 <- tspa(model = "dem60 ~ ind60",
                   data = fs_joint,
-                  vc = attr(fs_joint, "fsT"),
-                  cross_loadings = attr(fs_joint, "fsL"))
+                  fsT = attr(fs_joint, "fsT"),
+                  fsL = attr(fs_joint, "fsL"))
 # Unadjusted covariance
 vcov(tspa_fit2)
 # Adjusted covariance
@@ -214,8 +214,8 @@ run_tspa2 <- function(df, inds) {
                      se = "none", test = "none")
   tspa_fit2 <- tspa(model = "dem60 ~ ind60",
                     data = fs_joint,
-                    vc = attr(fs_joint, "fsT"),
-                    cross_loadings = attr(fs_joint, "fsL"),
+                    fsT = attr(fs_joint, "fsT"),
+                    fsL = attr(fs_joint, "fsL"),
                     test = "none")
   coef(tspa_fit2)
 }
@@ -227,8 +227,8 @@ boo2 <- boot(PoliticalDemocracy, statistic = run_tspa2, R = 1999)
 #                       se = "none", test = "none", method = "Bartlett")
 #   tspa_fit2b <- tspa(model = "dem60 ~ ind60",
 #                      data = fsb_joint,
-#                      vc = attr(fsb_joint, "fsT"),
-#                      cross_loadings = diag(2),
+#                      fsT = attr(fsb_joint, "fsT"),
+#                      fsL = diag(2),
 #                      test = "none")
 #   coef(tspa_fit2b)
 # }
@@ -270,8 +270,8 @@ vldevb_joint <- attr(fsb_joint, which = "vfsLT")
 ```{r}
 tspa_fit2b <- tspa(model = "dem60 ~ ind60",
                    data = fsb_joint,
-                   vc = attr(fsb_joint, "fsT"),
-                   cross_loadings = diag(2) |>
+                   fsT = attr(fsb_joint, "fsT"),
+                   fsL = diag(2) |>
                        `dimnames<-`(list(c("fs_ind60", "fs_dem60"),
                                          c("ind60", "dem60"))))
 # Unadjusted covariance matrix
@@ -317,8 +317,8 @@ tspa_fit <- tspa(model = "visual ~~ textual + speed
                           textual ~~ speed",
                  data = fs_dat,
                  group = "school",
-                 cross_loadings = attr(fs_dat, which = "fsL"),
-                 vc = attr(fs_dat, which = "fsT"))
+                 fsL = attr(fs_dat, which = "fsL"),
+                 fsT = attr(fs_dat, which = "fsT"))
 # Unadjusted covariance
 vcov(tspa_fit)[c(1:6, 10:15), c(1:6, 10:15)]
 # Adjusted covariance
