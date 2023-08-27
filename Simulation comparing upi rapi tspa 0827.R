@@ -10,7 +10,8 @@ library(dplyr)
 library(tidyverse)
 library(ufs)
 library(MBESS)
-devtools::load_all(".")
+library(MASS)
+devtools::load_all()
 
 # Data Generation
 
@@ -57,7 +58,13 @@ devtools::load_all(".")
                                     X =~ x1 + x2 + x3
                                     M =~ m1 + m2 + m3
                                   # Structural Model
-                                    Y ~ X + M + X:M
+                                    Y ~ b1*X + b2*M + b3*X:M
+                                  # Define Standardized Coefficients
+                                    X ~~ v1*X
+                                    M ~~ v2*M
+                                    beta1 := b1*sqrt(v1)
+                                    beta2 := b2*sqrt(v2)
+                                    beta3 := b3*sqrt(v1)*sqrt(v2)
                                   ',
                          mu_x = 0, # latent mean of x: fixed at 0
                          mu_m = 0, # latent mean of m: fixed at 0,
@@ -119,7 +126,8 @@ devtools::load_all(".")
                          data = dat,
                          rel = "alpha")
   # Fit using upi function
-    fit_upi <- upi(model = fixed_objects$model, data = dat)
+    fit_upi <- upi(model = fixed_objects$model,
+                   data = dat)
   # Fit using tspa function
     fs_dat <- get_fs(dat,
                      model ='
@@ -130,18 +138,21 @@ devtools::load_all(".")
                      std.lv = TRUE)
     Y <- dat$Y
     fs_dat <- cbind(fs_dat, Y)
-    fit_tspa <- tspa(model = "Y ~ X + M + X:M",
+    fit_tspa <- tspa(model = "Y ~ b1*X + b2*M + b3*X:M
+                              beta1 := b1 * sqrt(v1)
+                              beta2 := b2 * sqrt(v2)
+                              beta3 := b3 * sqrt(v1) * sqrt(v2)",
                      data = fs_dat,
                      se = list(X = fs_dat$fs_X_se[1],
                                M = fs_dat$fs_M_se[1]))
 
   # Extract parameter estimates and standard errors
-    paret <- c(as.numeric(filter(standardizedSolution(fit_rapi), lhs == "Y" & op == "~" & rhs == "int")["est.std"]),
-               as.numeric(filter(standardizedSolution(fit_rapi), lhs == "Y" & op == "~" & rhs == "int")["se"]),
-               as.numeric(filter(standardizedSolution(fit_upi), lhs == "Y" & op == "~" & rhs == "X_int_M")["est.std"]),
-               as.numeric(filter(standardizedSolution(fit_upi), lhs == "Y" & op == "~" & rhs == "X_int_M")["se"]),
-               as.numeric(filter(standardizedSolution(fit_tspa), lhs == "Y" & op == "~" & rhs == "X.M")["est.std"]),
-               as.numeric(filter(standardizedSolution(fit_tspa), lhs == "Y" & op == "~" & rhs == "X.M")["se"]))
+    paret <- c(coef(fit_rapi)["b3"],
+               sqrt(vcov(fit_rapi)["b3", "b3"]),
+               coef(fit_upi)["b3"],
+               sqrt(vcov(fit_upi)["b3", "b3"]),
+               coef(fit_tspa)["b3"],
+               sqrt(vcov(fit_tspa)["b3", "b3"]))
     names(paret) <- c("rapi_yint_est", "rapi_yint_se",
                       "upi_yint_est", "upi_yint_se",
                       "tspa_yint_est", "tspa_yint_se")
@@ -199,7 +210,7 @@ devtools::load_all(".")
 
 # Run 200 replications
 
- sim_0802 <- runSimulation(design = DESIGNFACTOR,
+ sim_0827 <- runSimulation(design = DESIGNFACTOR,
                             replications = 2000,
                             generate = GenData,
                             analyse = extract_res,
@@ -207,13 +218,13 @@ devtools::load_all(".")
                             fixed_objects = FIXED_PARAMETER,
                             save = TRUE,
                             save_results = TRUE,
-                            filename = "simulation_result_0802",
+                            filename = "simulation_result_0827",
                             parallel = TRUE,
                             ncores = min(4L, parallel::detectCores() - 1))
 
 # Summarize the results
 
- sim_results <- sim_0802 %>%
+ sim_results <- sim_0827 %>%
    gather("var", "val", std_bias.rapi_yint_est:rse_bias.tspa_yint_se) %>%
    select(-c(SIM_TIME:WARNINGS)) %>%
    separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
@@ -228,11 +239,11 @@ devtools::load_all(".")
           cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
           rel_lab = as_factor(paste0("Reliability == ", rel)))
 
- write_csv(sim_results, "sim_results_0802.csv")
+ write_csv(sim_results, "sim_results_0827.csv")
 
 # Plot the results
 
- sim_plots <- read.csv("sim_results_0802.csv")
+ sim_plots <- read.csv("sim_results_0827.csv")
  # # Bias
  # sim_plots %>%
  #   ggplot(aes(x = factor(N), y = bias, color = method)) +

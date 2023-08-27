@@ -124,12 +124,19 @@ summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
 # Testing
 df <- read.csv("https://osf.io/download/grwn2/")
 model <- '
-tvalue =~ t1 + t2 + t3 + t4
-sources =~ s1 + s2 + s3 + s4 + s5
-tip =~ tip1 + tip2 + tip3
-tip ~ tvalue + sources + tvalue:sources
+  tvalue =~ t1 + t2 + t3 + t4
+  sources =~ s1 + s2 + s3 + s4 + s5
+  tip =~ tip1 + tip2 + tip3
+  tip ~ b1*tvalue + b2*sources + b3*tvalue:sources
+  
+  tvalue ~~ v1*tvalue
+  sources ~~ v2*sources
+              
+  beta1 := b1*sqrt(v1)
+  beta2 := b2*sqrt(v2)
+  beta3 := b3*sqrt(v1)*sqrt(v2)
 '
-summary(upi(data = df,
+summary(upi(data = data,
             model = model),
         fit.measure = TRUE,
         standardized = TRUE)
@@ -193,16 +200,18 @@ model_rapi <- "
               # regressions
               tip ~ b1*tvalue + b2*sources + b3*product_ind
               
-              #Define Standardized Coefficients
-              beta1 := b1 * sqrt(1.70026)
-              beta2 := b2 * sqrt(3.55476)
-              beta3 := b3 * sqrt(64.82799)
+              tvalue ~~ v1*tvalue
+              sources ~~ v2*sources
+              product_ind ~~ v3*product_ind
+              
+              # Define Standardized Coefficients
+              beta1 := b1 * sqrt(v1)
+              beta2 := b2 * sqrt(v2)
+              beta3 := b3 * sqrt(v1) * sqrt(v2)
               "
 
 fit_rapi <- sem(model_rapi, 
-                data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")],
-                std.lv = TRUE,
-                meanstructure = TRUE)
+                data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
 summary(fit_rapi, standardized = TRUE)
 ```
 
@@ -215,8 +224,9 @@ sources =~ s1 + s2 + s3 + s4 + s5
 tip =~ tip1 + tip2 + tip3
 tip ~ tvalue + sources + tvalue:sources
 '
-summary(rapi(data = df,
-            model = model),
+summary(rapi_rel(data = data,
+            model = model,
+            rel = "alpha"),
         fit.measure = TRUE,
         standardized = TRUE)
 
@@ -264,9 +274,18 @@ fs_int ~~ 0.3490127 * fs_int
 fs_tip ~~ 0.694483 * fs_tip
 
 # regressions
-tip ~ tvalue + sources + int
+tip ~ b1*tvalue + b2*sources + b3*int
+
+              tvalue ~~ v1*tvalue
+              sources ~~ v2*sources
+              int ~~ v3*int
+              
+              # Define Standardized Coefficients
+              beta1 := b1 * sqrt(v1)
+              beta2 := b2 * sqrt(v2)
+              beta3 := b3 * sqrt(v1) * sqrt(v2)
 '
-fitinttspa <- sem(modinttspa, data = fs_dat, std.lv = TRUE)
+fitinttspa <- sem(modinttspa, data = fs_dat)
 summary(fitinttspa, standardized = TRUE)
 ```
 
@@ -345,7 +364,26 @@ summary(res_lms)
 plot(res_lms)
 ```
 
+```{r}
+model = '
+          # Structural Model
+            Y ~ b1*X + b2*M + b3*X:M
+          
+          # Define Standardized Coefficients
+            X ~~ v1*X
+            M ~~ v2*M
+            beta1 := b1 * sqrt(v1)
+            beta2 := b2 * sqrt(v2)
+            beta3 := b3 * sqrt(v1) * sqrt(v2)
+        '
 
-
+model = '
+          # Measurement Model
+            X =~ x1 + x2 + x3
+            M =~ m1 + m2 + m3
+          # Structural Model
+            Y ~ X + M + X:M
+          '
+```
 
 

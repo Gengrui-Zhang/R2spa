@@ -4,11 +4,17 @@ rapi_rel <- function (model, data, rel) {
   # Model input example: y = x + m + x:m / Y = X + M + X:M
   # Model output should be a list of pairs of interaction terms
 
-  interpairs <- function (model) {
-    str_elements <- gsub(" ", "",
-                         unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
-                                         split = "+", fixed = TRUE)))
-    inter_terms <- as.list(gsub("\n", "", str_elements[grep(":", str_elements)]))
+  str_elements <- gsub(" ", "",
+                       unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
+                                       split = "+", fixed = TRUE)))
+  inter_terms <- gsub("\n", "", str_elements[intersect(grep(":", str_elements), grep(":=", str_elements, invert = T))])
+
+  if (grepl("*", inter_terms, fixed = TRUE)) {
+    int_label <- unlist(strsplit(inter_terms, split = "\\*"))[1]
+    inter_terms <- as.list(unlist(strsplit(inter_terms, split = "\\*"))[2])
+  }
+
+  interpairs <- function (inter_terms) {
     inter_vars <- list()
     for (i in seq(inter_terms)) {
       terms <- strsplit(inter_terms[[i]], split = ":")
@@ -18,7 +24,7 @@ rapi_rel <- function (model, data, rel) {
     return(inter_vars)
   }
 
-  pairs <- interpairs(model)
+  pairs <- interpairs(inter_terms)
 
   #############################################################################
   # Helper function 2: Parsing the original model and extract the indicators of interaction terms
@@ -106,21 +112,30 @@ rapi_rel <- function (model, data, rel) {
   latent_var_str <- paste(latent_var, collapse = "")
   error_constraint_str <- paste(error_constraint, collapse = "")
 
-  reg_str <- unlist(strsplit(model, split = "\n"))[grep(":", unlist(strsplit(model, split = "\n")), fixed = TRUE)]
-  reg_str <- trimws(reg_str)
-  reg_str <- unlist(strsplit(reg_str, split = " "))
-  reg_str[grep(":", unlist(strsplit(reg_str, split = " ")))] <- "int"
-  reg_str <- paste(reg_str, collapse = " ")
+  reg_str <- gsub(inter_terms[[1]], "int", trimws(unlist(strsplit(model, split = "\n"))
+                    [grep(inter_terms[[1]], unlist(strsplit(model, split = "\n")), fixed = TRUE)]))
 
-  Model_new <- gsub(":", ".", paste0("# latent variables (indicated by sum scores)\n",
+  var_constraint_str <- paste(trimws(unlist(strsplit(model, split = "\n"))
+         [grep("~~", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
+
+  defbeta_constraint_str <- paste(trimws(unlist(strsplit(model, split = "\n"))
+                                     [grep(":=", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
+
+  model_new <- paste0("# latent variables (indicated by sum scores)\n",
                                      latent_var_str,
                                      "# constrain the errors\n",
                                      error_constraint_str,
                                      "# regressions\n",
                                      reg_str,
-                                     "\n"))
+                                     "\n",
+                                     "# Variance Constriants\n",
+                                     var_constraint_str,
+                                     "\n",
+                                     "# Defined Betas\n",
+                                     defbeta_constraint_str,
+                                     "\n")
 
   # Fit the model
-  fit_rapi <- sem(Model_new, data = df_new)
+  fit_rapi <- sem(model_new, data = df_new)
   return(fit_rapi)
 }

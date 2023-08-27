@@ -245,6 +245,7 @@ tspaSingleGroup <- function(model, data, se = NULL) {
                                        paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
                                               collapse = "\n"),
                                        "\n"))
+    tspaModel <- gsub(".=", ":=", tspaModel, fixed = T)
 
     return (tspaModel)
   }
@@ -285,6 +286,7 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
                                        paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
                                               collapse = "\n"),
                                        "\n"))
+    tspaModel <- gsub(".=", ":=", tspaModel, fixed = T)
 
     return (tspaModel)
   }

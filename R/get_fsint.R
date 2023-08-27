@@ -10,11 +10,17 @@
 
 get_fsint <- function (model, data) {
   # Helper function 1: Parsing the model and extract the interaction pairs
-  interpairs <- function (model) {
-    str_elements <- gsub(" ", "",
-                         unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
-                                         split = "+", fixed = TRUE)))
-    inter_terms <- as.list(gsub("\n", "", str_elements[grep(":", str_elements)]))
+  str_elements <- gsub(" ", "",
+                       unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
+                                       split = "+", fixed = TRUE)))
+  inter_terms <- gsub("\n", "", str_elements[intersect(grep(":", str_elements), grep(":=", str_elements, invert = T))])
+
+  if (grepl("*", inter_terms, fixed = TRUE)) {
+    int_label <- unlist(strsplit(inter_terms, split = "\\*"))[1]
+    inter_terms <- as.list(unlist(strsplit(inter_terms, split = "\\*"))[2])
+  }
+
+  interpairs <- function (inter_terms) {
     inter_vars <- list()
     for (i in seq(inter_terms)) {
       terms <- strsplit(inter_terms[[i]], split = ":")
@@ -24,7 +30,7 @@ get_fsint <- function (model, data) {
     return(inter_vars)
   }
 
-  pairs <- interpairs(model)
+  pairs <- interpairs(inter_terms)
   pairs_count <- length(pairs)
 
   # Generate a data frame of factor scores

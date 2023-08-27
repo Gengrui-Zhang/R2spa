@@ -14,21 +14,27 @@ upi <- function (model, data) {
   # Model input example: y = x + m + x:m / Y = X + M + X:M
   # Model output should be a list of pairs of interaction terms
 
-  interpairs <- function (model) {
     str_elements <- gsub(" ", "",
                          unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
                                          split = "+", fixed = TRUE)))
-    inter_terms <- as.list(gsub("\n", "", str_elements[grep(":", str_elements)]))
-    inter_vars <- list()
-    for (i in seq(inter_terms)) {
-      terms <- strsplit(inter_terms[[i]], split = ":")
-      inter_vars[[i]] <- unlist(terms)
-      names(inter_vars)[i] <- paste0("inter_pair_", i)
-    }
-    return(inter_vars)
-  }
+    inter_terms <- gsub("\n", "", str_elements[intersect(grep(":", str_elements), grep(":=", str_elements, invert = T))])
 
-  pairs <- interpairs(model)
+    if (grepl("*", inter_terms, fixed = TRUE)) {
+      int_label <- unlist(strsplit(inter_terms, split = "\\*"))[1]
+      inter_terms <- as.list(unlist(strsplit(inter_terms, split = "\\*"))[2])
+    }
+
+    interpairs <- function (inter_terms) {
+      inter_vars <- list()
+      for (i in seq(inter_terms)) {
+        terms <- strsplit(inter_terms[[i]], split = ":")
+        inter_vars[[i]] <- unlist(terms)
+        names(inter_vars)[i] <- paste0("inter_pair_", i)
+      }
+      return(inter_vars)
+    }
+
+  pairs <- interpairs(inter_terms)
 
   #############################################################################
   # Helper function 2: Parsing the original model and extract the indicators of interaction terms
@@ -113,10 +119,11 @@ upi <- function (model, data) {
   }
   while (pairs_count > 0) {
     ind_syntax <- product_syntax(model, df, inter_pair = pairs[[pairs_count]], indicators = indics)
-    model <- paste(gsub(":", "_int_", model),
-                   ind_syntax)
+    model <- paste(model, ind_syntax)
     pairs_count <- pairs_count - 1
   }
+  model <- gsub(":", "_int_", model)
+  model <- gsub("_int_=", ":=", model)
 
   #############################################################################
   # Helper function 3: Generate the updated data with indicator products
@@ -141,6 +148,7 @@ upi <- function (model, data) {
     data <- cbind(data, interim_data)
     pairs_count <- pairs_count - 1
   }
+
   #############################################################################
 
   # Fit the model
