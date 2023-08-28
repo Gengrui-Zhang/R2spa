@@ -226,3 +226,58 @@ latent_cov |>
 ```
 
 One can see the 2S-PA covariance matrix is much closer to the population values than using just EB estimates.
+
+# With Missing Data
+
+Now consider data with missing time points. We consider missing at random, where data are more likely to be missing for later time points.
+
+```{r}
+set.seed(1942)
+# Missing indicators
+r1 <- rbinom(time1, size = 1, prob = (20 - time1) / 20 - 0.05)
+r2 <- rbinom(time2, size = 1, prob = (100 - time2) / 100 - 0.05)
+```
+
+Model with missing data
+
+```{r}
+# Empirical Bayes
+m1 <- lmer(y1 ~ time1 + (time1 | clus_id1),
+           data = data.frame(y1, time1, clus_id1),
+           REML = FALSE, subset = r1 == 1)
+fs_dat1 <- get_fs_lmer(m1)
+# Empirical Bayes
+m2 <- lmer(y2 ~ time2 + (time2 | clus_id2),
+           data = data.frame(y2, time2, clus_id2),
+           REML = FALSE, subset = r2 == 1)
+fs_dat2 <- get_fs_lmer(m2)
+colnames(fs_dat1) <- paste0(colnames(fs_dat1), "_1")
+colnames(fs_dat2) <- paste0(colnames(fs_dat2), "_2")
+fs_dat <- cbind(fs_dat1, fs_dat2)
+```
+
+Note that the cross-loadings and error covariances are not constant across clusters.
+
+```{r}
+head(fs_dat)
+```
+
+Now run 2S-PA and compare with EB estimates without accounting for error
+
+```{r}
+tspa3o_mx <- tspa_mx_model(m3_umx, data = fs_dat,
+                           mat_ld = cross_load, mat_vc = err_cov)
+# Run OpenMx
+tspa3o_mx_fit <- mxTryHard(tspa3o_mx)
+# Summarize the results
+summary(tspa3o_mx_fit)
+```
+
+```{r}
+cov(cbind(fs_dat1[, 1:2], fs_dat2[, 1:2])) |>
+  knitr::kable(digits = 3, caption = "EB covariance")
+umx_lower2full(coef(tspa3o_mx_fit)[1:10], diag = TRUE) |>
+  knitr::kable(digits = 3, caption = "2S-PA covariance")
+latent_cov |>
+  knitr::kable(digits = 3, caption = "Population covariance")
+```
