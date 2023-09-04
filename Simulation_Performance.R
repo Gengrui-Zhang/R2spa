@@ -270,20 +270,35 @@ sim_cat_0827 <- runSimulation(design = DESIGNFACTOR,
 
 # Summarize the results
 
-sim_results <- readRDS("sim_cat_0827.rds") %>%
-  gather("var", "val", std_bias.fsx_est:rse_bias.tspaxm_se) %>%
-  select(-c(SIM_TIME:WARNINGS)) %>%
-  separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
-  separate(col = parmet, into = c("method", "par", "result"),  sep = "_") %>%
-  select(-result) %>%
-  spread(stats, val) %>%
-  relocate(REPLICATIONS, .after = last_col()) %>%
-  mutate(N_lab = as_factor(paste0("italic(N) == ", N)),
-         beta_lab = as_factor(paste0("\\beta_{1} == ", beta)),
-         cov_xm_lab = as_factor(paste0("Correlation_XM == ", cov_xm)))
+sim_temp <- readRDS("sim_cat_0827.rds") %>%
+  rename("COVERAGE.fs_x_est" = "coverage1",
+         "COVERAGE.fs_m_est" = "coverage2",
+         "COVERAGE.fs_xm_est" = "coverage3",
+         "COVERAGE.tspa_x_est" = "coverage4",
+         "COVERAGE.tspa_m_est" = "coverage5",
+         "COVERAGE.tspa_xm_est" = "coverage6",
+         "RSEbias.fs_x_se" = "rse_bias.fsx_se",
+         "RSEbias.fs_m_se" = "rse_bias.fsm_se",
+         "RSEbias.fs_xm_se" = "rse_bias.fsxm_se",
+         "RSEbias.tspa_x_se" = "rse_bias.tspax_se",
+         "RSEbias.tspa_m_se" = "rse_bias.tspam_se",
+         "RSEbias.tspa_xm_se" = "rse_bias.tspaxm_se",
+         "STDbias.fs_x_est" = "std_bias.fsx_est",
+         "STDbias.fs_m_est" = "std_bias.fsm_est",
+         "STDbias.fs_xm_est" = "std_bias.fsxm_est",
+         "STDbias.tspa_x_est" = "std_bias.tspax_est",
+         "STDbias.tspa_m_est" = "std_bias.tspam_est",
+         "STDbias.tspa_xm_est" = "std_bias.tspaxm_est",
+         "RMSE.fs_x_est" = "rmse.fsx_est",
+         "RMSE.fs_m_est" = "rmse.fsm_est",
+         "RMSE.fs_xm_est" = "rmse.fsxm_est",
+         "RMSE.tspa_x_est" = "rmse.tspax_est",
+         "RMSE.tspa_m_est" = "rmse.tspam_est",
+         "RMSE.tspa_xm_est" = "rmse.tspaxm_est") %>%
+  mutate(beta = as.character(rep(c(rep(0.2, 3), rep(0.15, 3)), 3)))
 
-sim_results <- simulation_result_1 %>%
-  gather("var", "val", std_bias.rapi_yint_est:rse_bias.tspa_yint_se) %>%
+sim_results <- sim_temp %>%
+  gather("var", "val", STDbias.fs_x_est:RSEbias.tspa_xm_se) %>%
   select(-c(SIM_TIME:WARNINGS)) %>%
   separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
   separate(col = parmet, into = c("method", "par", "result"),  sep = "_") %>%
@@ -291,17 +306,14 @@ sim_results <- simulation_result_1 %>%
   spread(stats, val) %>%
   relocate(REPLICATIONS, .after = last_col()) %>%
   mutate(N_lab = as_factor(paste0("italic(N) == ", N)),
-         beta1_lab = as_factor(paste0("\\beta_{1} == ", beta1)),
-         beta2_lab = as_factor(paste0("\\beta_{1} == ", beta2)),
-         beta3_lab = as_factor(paste0("\\beta_{1} == ", beta3)),
-         cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
-         rel_lab = as_factor(paste0("Reliability == ", rel)))
+         beta_lab = as_factor(paste0("beta == ", beta)),
+         cov_xm_lab = as_factor(paste0("Correlation_XM == ", cov_xm)))
 
 write_csv(sim_results, "sim_cat_0827.csv")
 
 # Plot the results
 
-sim_plots <- read.csv("sim_results_0404.csv")
+sim_plots <- read.csv("sim_cat_0827.csv")
 # # Bias
 # sim_plots %>%
 #   ggplot(aes(x = factor(N), y = bias, color = method)) +
@@ -311,30 +323,30 @@ sim_plots <- read.csv("sim_results_0404.csv")
 
 # Standard Bias
 sim_plots %>%
-  ggplot(aes(x = factor(N), y = std_bias, color = method)) +
+  ggplot(aes(x = factor(N), y = STDbias, color = method)) +
   geom_boxplot() +
-  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-  labs(x = "Sample Size (N)", y = "Standard Bias")
+  facet_grid(beta_lab ~ cov_xm_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Standardized Bias")
 
 # Relative SE Bias
 sim_plots %>%
-  ggplot(aes(x = factor(N), y = rse_bias, color = method)) +
+  ggplot(aes(x = factor(N), y = RSEbias, color = method)) +
   geom_boxplot() +
-  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  facet_grid(beta_lab ~ cov_xm_lab, labeller = label_parsed) +
   labs(x = "Sample Size (N)", y = "Relative SE Bias")
 
 # Coverage rate
 sim_plots %>%
-  ggplot(aes(x = factor(N), y = coverage, color = method)) +
+  ggplot(aes(x = factor(N), y = COVERAGE, color = method)) +
   geom_boxplot() +
-  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  facet_grid(beta_lab ~ cov_xm_lab, labeller = label_parsed) +
   labs(x = "Sample Size (N)", y = "Coverage Rate (95%)")
 
 # RMSE
 sim_plots %>%
-  ggplot(aes(x = factor(N), y = rmse, color = method)) +
+  ggplot(aes(x = factor(N), y = RMSE, color = method)) +
   geom_boxplot() +
-  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  facet_grid(beta_lab ~ cov_xm_lab, labeller = label_parsed) +
   labs(x = "Sample Size (N)", y = "RMSE")
 
 
