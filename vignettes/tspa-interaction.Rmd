@@ -136,7 +136,7 @@ model <- '
   beta2 := b2*sqrt(v2)
   beta3 := b3*sqrt(v1)*sqrt(v2)
 '
-summary(upi(data = data,
+summary(upi(data = df,
             model = model),
         fit.measure = TRUE,
         standardized = TRUE)

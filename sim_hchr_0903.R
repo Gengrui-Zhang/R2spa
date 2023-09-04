@@ -11,7 +11,7 @@ library(tidyverse)
 library(ufs)
 library(MBESS)
 library(MASS)
-# devtools::load_all()
+devtools::load_all(".")
 
 # Data Generation
 
@@ -211,7 +211,7 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
 # Run 200 replications
 
 sim_0903 <- runSimulation(design = DESIGNFACTOR,
-                          replications = 2000,
+                          replications = 5000,
                           generate = GenData,
                           analyse = extract_res,
                           summarise = evaluate_res,
@@ -226,7 +226,7 @@ sim_0903 <- runSimulation(design = DESIGNFACTOR,
 
 sim_results <- sim_0903 %>%
   gather("var", "val", std_bias.rapi_yint_est:rse_bias.tspa_yint_se) %>%
-  select(-c(SIM_TIME:WARNINGS)) %>%
+  select(-c(SIM_TIME:SEED)) %>%
   separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
   separate(col = parmet, into = c("method", "par", "result"),  sep = "_") %>%
   select(-result) %>%
@@ -241,40 +241,40 @@ sim_results <- sim_0903 %>%
 
 write_csv(sim_results, "sim_hchr_0903.csv")
 
-# # Plot the results
-#
-# sim_plots <- read.csv("sim_results_0827.csv")
-# # # Bias
-# # sim_plots %>%
-# #   ggplot(aes(x = factor(N), y = bias, color = method)) +
-# #   geom_boxplot() +
-# #   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-# #   labs(x = "Sample Size (N)", y = "Bias")
-#
-# # Standard Bias
+# Plot the results
+
+sim_plots <- read.csv("sim_hchr_0903.csv")
+# # Bias
 # sim_plots %>%
-#   ggplot(aes(x = factor(N), y = std_bias, color = method)) +
+#   ggplot(aes(x = factor(N), y = bias, color = method)) +
 #   geom_boxplot() +
 #   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-#   labs(x = "Sample Size (N)", y = "Standard Bias")
-#
-# # Relative SE Bias
-# sim_plots %>%
-#   ggplot(aes(x = factor(N), y = rse_bias, color = method)) +
-#   geom_boxplot() +
-#   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-#   labs(x = "Sample Size (N)", y = "Relative SE Bias")
-#
-# # Coverage rate
-# sim_plots %>%
-#   ggplot(aes(x = factor(N), y = coverage, color = method)) +
-#   geom_boxplot() +
-#   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-#   labs(x = "Sample Size (N)", y = "Coverage Rate (95%)")
-#
-# # RMSE
-# sim_plots %>%
-#   ggplot(aes(x = factor(N), y = rmse, color = method)) +
-#   geom_boxplot() +
-#   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-#   labs(x = "Sample Size (N)", y = "RMSE")
+#   labs(x = "Sample Size (N)", y = "Bias")
+
+# Standard Bias
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = std_bias, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Standard Bias")
+
+# Relative SE Bias
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = rse_bias, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Relative SE Bias")
+
+# Coverage rate
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = coverage, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Coverage Rate (95%)")
+
+# RMSE
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = rmse, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "RMSE")
