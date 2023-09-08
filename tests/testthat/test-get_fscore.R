@@ -238,3 +238,32 @@ test_that("Test that standard errors for each observation are positive numbers a
   }
 })
 
+fs_config <- get_fs(HolzingerSwineford1939,
+  hs_model_2,
+  group = "school",
+  corrected_fsT = TRUE
+)
+
+fs_metric <- get_fs(HolzingerSwineford1939,
+  hs_model_2,
+  group = "school",
+  group.equal = "loadings",
+  corrected_fsT = TRUE
+)
+
+fs_single <- get_fs(
+  HolzingerSwineford1939 |>
+    subset(school == "Grant-White"),
+  hs_model_2,
+  corrected_fsT = TRUE
+)
+
+test_that("Correction factor is similar with single or multiple groups", {
+  fst1 <- attr(fs_config, "fsT")
+  fst2 <- attr(fs_metric, "fsT")
+  fst3 <- attr(fs_single, "fsT")
+  expect_equal(fst1[[2]], fst3, tolerance = 1e-5)
+  d1 <- fst1[[1]] - fst1[[2]]
+  d2 <- fst2[[1]] - fst2[[2]]
+  expect_lt(mean(abs(d2)), mean(abs(d1)))
+})

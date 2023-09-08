@@ -1,0 +1,296 @@
+---
+title: "Multi-Factor Measurement Model (OpenMx)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tspa-vignette-mx}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message = FALSE}
+library(lavaan)
+library(R2spa)
+library(OpenMx)
+library(umx)
+library(mirt)
+```
+
+The example is from https://lavaan.ugent.be/tutorial/sem.html. 
+
+```{r}
+# CFA
+my_cfa <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+"
+(fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa, std.lv = TRUE)) |> head()
+```
+
+```{r}
+tspa_fit <- tspa(model = "dem60 ~ ind60", data = fs_dat,
+                 fsT = attr(fs_dat, "fsT"),
+                 fsL = attr(fs_dat, "fsL"))
+parameterestimates(tspa_fit)
+```
+
+Using OpenMx
+
+1. Create OpenMx model without latent variables
+
+```{r}
+fsreg_umx <- umxLav2RAM(
+    "
+    fs_dem60 ~ fs_ind60
+    fs_dem60 + fs_ind60 ~ 1
+    ",
+    printTab = FALSE)
+```
+
+- Create loading and error covariance matrices (need reordering)
+
+```{r}
+# Loading
+matL <- mxMatrix(
+    type = "Full", nrow = 2, ncol = 2,
+    free = FALSE,
+    values = attr(fs_dat, "fsL")[2:1, 2:1],
+    name = "L"
+)
+# Error
+matE <- mxMatrix(
+    type = "Symm", nrow = 2, ncol = 2,
+    free = FALSE,
+    values = attr(fs_dat, "fsT")[2:1, 2:1],
+    name = "E"
+)
+```
+
+- Run 2S-PA
+
+```{r}
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = matL, mat_vc = matE)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results (takes 20 seconds or so)
+summary(tspa_mx_fit)
+# Standardize coefficients
+mxStandardizeRAMpaths(tspa_mx_fit, SE = TRUE)$m1[1, ]
+```
+
+```{r, eval = FALSE}
+# Alternative specification
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = attr(fs_dat, "fsL"),
+                         mat_vc = attr(fs_dat, "fsT"))
+```
+
+- Compare to joint model with OpenMx
+
+```{r}
+jreg_umx_fit <- umxRAM(
+    "
+    # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    # latent regression
+    dem60 ~ ind60
+    ",
+    data = PoliticalDemocracy)
+mxStandardizeRAMpaths(jreg_umx_fit, SE = TRUE)[4, ]
+```
+
+# Combined with IRT
+
+Example from Lai & Hsiao (2021, Psychological Methods)
+
+```{r}
+# Simulate data with mirt
+set.seed(1234)
+num_obs <- 1000
+# Simulate theta
+eta <- MASS::mvrnorm(num_obs, mu = c(0, 0), Sigma = diag(c(1, 1 - 0.5^2)),
+                     empirical = TRUE)
+th1 <- eta[, 1]
+th2 <- -1 + 0.5 * th1 + eta[, 2]
+# items and response data
+a1 <- matrix(1, 10)
+d1 <- matrix(rnorm(10))
+a2 <- matrix(runif(10, min = 0.5, max = 1.5))
+d2 <- matrix(rnorm(10))
+dat1 <- simdata(a = a1, d = d1, N = num_obs, itemtype = "2PL", Theta = th1)
+dat2 <- simdata(a = a2, d = d2, N = num_obs, itemtype = "2PL", Theta = th2)
+# Factor scores
+mod1 <- mirt(dat1, model = 1, itemtype = "Rasch", verbose = FALSE)
+mod2 <- mirt(dat2, model = 1, itemtype = "2PL", verbose = FALSE)
+fs1 <- fscores(mod1, full.scores.SE = TRUE)
+fs2 <- fscores(mod2, full.scores.SE = TRUE)
+lm(fs2[, 1] ~ fs1[, 1])  # attenuated coefficient
+```
+
+Joint model
+
+- With WLS
+
+```{r}
+dat <- cbind(dat1, dat2)
+colnames(dat) <- paste0("i", 1:20)
+wls_fit <- sem("
+f1 =~ i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10
+f2 =~ i11 + i12 + i13 + i14 + i15 + i16 + i17 + i18 + i19 + i20
+f2 ~ f1
+", data = dat, ordered = TRUE, std.lv = TRUE)
+coef(wls_fit)["f2~f1"]
+```
+
+- With Maximum Likelihood
+
+Note: This is extremely computational intensive
+
+Using `tspa_mx_model()`
+
+```{r}
+# Combine into data set
+fs_dat <- cbind(fs1, fs2) |>
+    as.data.frame() |>
+    setNames(c("fs1", "se_fs1", "fs2", "se_fs2")) |>
+    # Compute reliability and error variances
+    within(expr = {
+        rel_fs1 <- 1 - se_fs1^2
+        rel_fs2 <- 1 - se_fs2^2
+        ev_fs1 <- se_fs1^2 * (1 - se_fs1^2)
+        ev_fs2 <- se_fs2^2 * (1 - se_fs2^2)
+    })
+```
+
+```{r}
+# Loading
+matL <- mxMatrix(
+    type = "Diag", nrow = 2, ncol = 2,
+    free = FALSE,
+    labels = c("data.rel_fs2", "data.rel_fs1"),
+    name = "L"
+)
+# Error
+matE <- mxMatrix(
+    type = "Diag", nrow = 2, ncol = 2,
+    free = FALSE,
+    labels = c("data.ev_fs2", "data.ev_fs1"),
+    name = "E"
+)
+```
+
+```{r}
+fsreg_umx <- umxLav2RAM(
+    "
+      fs2 ~ fs1
+      fs2 + fs1 ~ 1
+    ",
+    printTab = FALSE)
+```
+
+```{r}
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = matL, mat_vc = matE)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results
+summary(tspa_mx_fit)
+```
+
+Alternatively, one can use named matrices (`mat_ld` and `mat_vc`) to specify the names of the columns for the loading and error covariance matrices.
+
+```{r}
+cross_load <- matrix(c("rel_fs2", NA, NA, "rel_fs1"), nrow = 2) |>
+    `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
+err_cov <- matrix(c("ev_fs2", NA, NA, "ev_fs1"), nrow = 2) |>
+    `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = cross_load, mat_vc = err_cov)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results
+summary(tspa_mx_fit)
+```
+
+- Compare to joint model with OpenMx
+
+Note: FIML couldn't finish within 12 hours
+
+```{r}
+jreg_umx <- umxRAM(
+    "
+    f1 =~ i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10
+    f2 =~ i11 + i12 + i13 + i14 + i15 + i16 + i17 + i18 + i19 + i20
+    f2 ~ f1
+    i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 ~ 0
+    i11 + i12 + i13 + i14 + i15 + i16 + i17 + i18 + i19 + i20 ~ 0
+    i1 ~~ 1 * i1
+    i2 ~~ 1 * i2
+    i3 ~~ 1 * i3
+    i4 ~~ 1 * i4
+    i5 ~~ 1 * i5
+    i6 ~~ 1 * i6
+    i7 ~~ 1 * i7
+    i8 ~~ 1 * i8
+    i9 ~~ 1 * i9
+    i10 ~~ 1 * i10
+    i11 ~~ 1 * i11
+    i12 ~~ 1 * i12
+    i13 ~~ 1 * i13
+    i14 ~~ 1 * i14
+    i15 ~~ 1 * i15
+    i16 ~~ 1 * i16
+    i17 ~~ 1 * i17
+    i18 ~~ 1 * i18
+    i19 ~~ 1 * i19
+    i20 ~~ 1 * i20
+    ",
+    data = lapply(as.data.frame(dat), FUN = mxFactor,
+                 levels = c(0, 1)) |>
+               as.data.frame(),
+    type = "DWLS")
+mxStandardizeRAMpaths(jreg_umx_fit, SE = TRUE)[4, ]
+```
+
+<!-- ## Multidimensional Example
+
+```{r, eval = FALSE, include = FALSE}
+# Simulate data with mirt
+set.seed(1234)
+num_obs <- 1000
+true_b <- 0
+# Simulate theta
+eta <- MASS::mvrnorm(num_obs, mu = c(0, 0), Sigma = diag(c(1, 1 - true_b^2)),
+                     empirical = TRUE)
+th1 <- eta[, 1]
+th2 <- -1 + true_b * th1 + eta[, 2]
+# items and response data
+a1 <- matrix(1, 10)
+d1 <- matrix(rnorm(10))
+a2 <- matrix(runif(10, min = 0.5, max = 1.5))
+d2 <- matrix(rnorm(10))
+dat <- simdata(a = cbind(c(a1, rep(0, 10)), c(rep(0, 10), a2)), d = c(d1, d2),
+               N = num_obs, itemtype = "2PL", Theta = cbind(th1, th2))
+# Multidimensional IRT
+mod <- "
+F1 = 1-10
+F2 = 11-20
+COV = F1*F2
+CONSTRAIN = (1-10, a1)
+"
+mfit <- mirt(dat, model = mod, itemtype = "2PL", verbose = FALSE)
+# Factor scores
+fs <- fscores(mfit, return.acov = TRUE)
+# TODO: Find the formula for ACOV, and see how to figure out
+#       the cross-loadings
+```
+-->

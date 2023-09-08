@@ -9,6 +9,8 @@ get_fs(
   model = NULL,
   group = NULL,
   method = c("regression", "Bartlett"),
+  corrected_fsT = FALSE,
+  vfsLT = FALSE,
   ...
 )
 }
@@ -28,12 +30,28 @@ analysis, which is passed to \code{\link[lavaan]{cfa}}.}
 \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 more desirable properties and may be preferred for 2S-PA.}
 
+\item{corrected_fsT}{Logical. Whether to correct for the the sampling
+error in the factor score weights when computing
+the error variance estimates of factor scores.}
+
+\item{vfsLT}{Logical. Whether to return the covariance matrix of \code{fsT}
+and \code{fsL}, which can be used as input for \code{\link[=vcov_corrected]{vcov_corrected()}}
+to obtain corrected covariances and standard errors for
+\code{\link[=tspa]{tspa()}} results. This is currently ignored.}
+
 \item{...}{additional arguments passed to \code{\link[lavaan]{cfa}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
 \value{
-A data frame containing the factor scores (with prefix "fs_") and
-the standard errors (with suffix "_se").
+A data frame containing the factor scores (with prefix \code{"fs_"}),
+the standard errors (with suffix \code{"_se"}), the implied loadings
+of factor \code{"_by_"} factor scores, and the error variance-covariance
+of the factor scores (with prefix \code{"evfs_"}). The following are
+also returned as attributes:
+* \code{fsT}: error covariance of factor scores
+* \code{fsL}: loading matrix of factor scores
+* \code{fsb}: intercepts of factor scores
+* \code{scoring_matrix}: weights for computing factor scores from items
 }
 \description{
 Get Factor Scores and the Corresponding Standard Error of Measurement

@@ -1,0 +1,128 @@
+---
+title: "EFA Scores"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{efa-scores}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette demonstrates how to use the `compute_fscore()` function to calculate factor scores based on exploratory factor analysis, and compare the results to those calculated by the `psych::factor.scores()` function.
+
+```{r}
+library(psych)
+data(bfi, package = "psych")
+library(lavaan)
+```
+
+## Example: Big Five Inventory
+
+```{r}
+# Covariance (with FIML)
+corr_bfi <- lavCor(bfi[1:25], missing = "fiml")
+# EFA (Target rotation)
+target_mat_bfi <- matrix(0, nrow = 25, ncol = 5)
+target_mat_bfi[1:5, 1] <- NA
+target_mat_bfi[6:10, 2] <- NA
+target_mat_bfi[11:15, 3] <- NA
+target_mat_bfi[16:20, 4] <- NA
+target_mat_bfi[21:25, 5] <- NA
+fa_target_bfi <- psych::fa(
+    corr_bfi, n.obs = 2436,
+    nfactors = 5,
+    rotate = "targetQ", Target = target_mat_bfi,
+    scores = "Bartlett")
+# Factor correlations
+fa_target_bfi$Phi |>
+    (`[`)(paste0("MR", 1:5), paste0("MR", 1:5)) |>
+    knitr::kable(digits = 2, caption = "EFA Factor Correlation")
+```
+
+```{r}
+# Correlation with sum scores
+bfi |>
+    transform(A = (7 - A1) + A2 + A3 + A4 + A5,
+           C = C1 + C2 + C3 + (7 - C4) + (7 - C5),
+           E = (7 - E1) + (7 - E2) + E3 + E4 + E5,
+           N = N1 + N2 + N3 + N4 + N5,
+           O = O1 + (7 - O2) + O3 + O4 + (7 - O5)) |>
+    subset(select = A:O) |>
+    cor(use = "complete") |>
+    knitr::kable(digits = 2, caption = "Sum scores")
+```
+
+Hand calculate the Bartlett scores using weights
+
+```{r}
+# Bartlett score for first person
+bscores <-
+    psych::factor.scores(bfi[, 1:25], f = fa_target_bfi,
+                         method = "Bartlett")
+fa_target_bfi$weights
+# Calculation by hand
+y1 <- scale(bfi[, 1:25])[1, ]  # z-score
+crossprod(fa_target_bfi$weights, as.matrix(y1))
+# Compare to results from psych::fa()
+bscores$scores[1, ]
+```
+
+```{r}
+# Covariance of Bartlett scores
+cov(bscores$scores, use = "complete") |>
+    (`[`)(paste0("MR", 1:5), paste0("MR", 1:5)) |>
+    knitr::kable(digits = 2, caption = "With Bartlett scores")
+```
+
+### Using `compute_fscore()` and perform a two-stage analysis
+
+Use `R2spa::compute_fscore()`
+
+```{r}
+# Obtain error covariances
+yc <- scale(bfi[, 1:25])
+yc <- yc[complete.cases(yc), ]
+lam <- fa_target_bfi$loadings
+colnames(lam) <- c("N", "E", "C", "A", "O")
+phi <- fa_target_bfi$Phi
+th <- diag(fa_target_bfi$uniquenesses)
+# # scoring weights
+# a <- solve(crossprod(lam, solve(th, lam)), t(solve(th, lam)))
+# ecov_fs <- a %*% th %*% t(a)
+# dimnames(ecov_fs) <- rep(list(c("N", "E", "C", "A", "O")), 2)
+# Two-stage analysis
+library(R2spa)
+bfi_fs <- compute_fscore(yc, lambda = lam, theta = th,
+                         method = "Bartlett", center_y = FALSE,
+                         fs_matrices = TRUE)
+head(bfi_fs)
+# Scoring matrix
+attr(bfi_fs, which = "scoring_matrix")
+# Error covariance
+attr(bfi_fs, which = "fsT")
+```
+
+Recover factor covariances with 2S-PA
+
+```{r}
+ts_fit <- tspa("",
+               data = data.frame(bscores$scores) |>
+                   setNames(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O")),
+               fsT = attr(bfi_fs, which = "fsT"),
+               fsL = diag(5) |>
+                   `dimnames<-`(list(c("fs_N", "fs_E", "fs_C", "fs_A", "fs_O"),
+                                     c("N", "E", "C", "A", "O"))))
+lavInspect(ts_fit, what = "cor.lv") |>
+    (`[`)(c("A", "C", "E", "N", "O"), c("A", "C", "E", "N", "O")) |>
+    knitr::kable(digits = 2, caption = "With Bartlett scores and 2S-PA")
+```
+
+

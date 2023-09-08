@@ -1,0 +1,256 @@
+---
+title: "Correction to Measurement Error"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{correction-error}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+When computing the reliability or the standard errors of factor scores, we typically condition on the estimates of the model parameters, aka assuming that they are known. However, when sample size is small, ignoring those can be problematic as the model parameters are imprecise. This vignette provides details on how to obtain more realistic estimates of standard errors of factor scores.
+
+# Unidimensional Case
+
+Consider the conditional variance of the factor scores, $Var(\tilde \eta \mid \eta)$, with $\tilde \eta = \boldsymbol{a}^\top \boldsymbol{y}$. From the factor model, we have
+
+$$Var(\tilde \eta \mid \eta) = Var(\boldsymbol{a}^\top \boldsymbol{\lambda} \eta + \boldsymbol{a}^\top \boldsymbol{\varepsilon} \mid \eta) = \eta^2 Var(\boldsymbol{a}^\top \boldsymbol{\lambda}) + Var(\boldsymbol{a}^\top \boldsymbol{\varepsilon}).$$
+
+The second term is the error component. Here is a small simulation:
+
+```{r}
+#' Load package and set seed
+library(lavaan)
+library(R2spa)
+set.seed(191254)
+
+#' Fixed conditions
+num_obs <- 100
+lambda <- c(.3, .5, .7, .9)
+theta <- c(.5, .4, .5, .7)
+
+#' Simulate true score, and standardized
+eta <- rnorm(num_obs)
+eta <- (eta - mean(eta))
+eta <- eta / sqrt(mean(eta^2))
+
+#' Function for simulating y
+simy <- function(eta, lambda) {
+    t(tcrossprod(lambda, eta) +
+          rnorm(length(lambda) * length(eta), sd = sqrt(theta)))
+}
+```
+
+```{r, eval = FALSE}
+#' Simulation
+nsim <- 2500
+tfsy_sim <- fsy_sim <- matrix(NA, nrow = num_obs, ncol = nsim)
+# Also save the scoring matrix
+a_sim <- matrix(NA, nrow = length(lambda), ncol = nsim)
+for (i in seq_len(nsim)) {
+    y <- simy(eta = eta, lambda = lambda)
+    tfsy_sim[, i] <- R2spa::compute_fscore(
+      y, lambda = lambda, theta = diag(theta), psi = matrix(1)
+    )
+    fsy <- R2spa::get_fs(y, std.lv = TRUE)
+    fsy_sim[, i] <- fsy[, 1]
+    a_sim[, i] <- attr(fsy, which = "scoring_matrix")
+}
+```
+
+```{r echo = FALSE, eval = FALSE}
+saveRDS(list(tfsy_sim, fsy_sim, a_sim), file = "sim_correction-error.RDS")
+```
+
+```{r echo = FALSE, include = FALSE}
+tfsy_sim <- readRDS("sim_correction-error.RDS")[[1]]
+fsy_sim <- readRDS("sim_correction-error.RDS")[[2]]
+a_sim <- readRDS("sim_correction-error.RDS")[[3]]
+```
+
+```{r}
+#' Average conditional variance
+# a known
+apply(tfsy_sim, 1, var) |> mean()
+# compare to theoretical value
+true_a <- R2spa:::compute_a_reg(lambda, psi = matrix(1), theta = diag(theta))
+true_a %*% diag(theta) %*% t(true_a)
+# a estimated
+apply(fsy_sim, 1, var) |> mean() 
+```
+
+The standard errors are larger when using sample estimates of weights.
+
+When $\boldsymbol{a}$ is known, the error variance is simply $\boldsymbol{a}^\top \boldsymbol{\Theta} \boldsymbol{a}$. However, when $\boldsymbol{a}$ is unknown and estimated as $\tilde{\boldsymbol{a}}$ from the data, 
+
+$$Var(\tilde{\boldsymbol{a}}^\top \boldsymbol{\varepsilon}) = E[Var(\tilde{\boldsymbol{a}}^\top \boldsymbol{\varepsilon} \mid \tilde{\boldsymbol{a}})] + Var[E(\tilde{\boldsymbol{a}}^\top \boldsymbol{\varepsilon} \mid \tilde{\boldsymbol{a}})].$$
+
+Under the assumption of $E(\boldsymbol{\varepsilon})$ = $\boldsymbol{0}$, the second term is 0. The first term is an expectation of a quadratic form, 
+
+$$E(\tilde{\boldsymbol{a}}^\top \boldsymbol{\Theta} \tilde{\boldsymbol{a}}) = E(\tilde{\boldsymbol{a}}^\top) \boldsymbol{\Theta} E(\tilde{\boldsymbol{a}}) + \mathrm{tr}(\boldsymbol{\Theta} \boldsymbol{V}_{\tilde{\boldsymbol{a}}})$$
+
+where $\boldsymbol{V}_{\tilde{\boldsymbol{a}}}$ is the covariance matrix of $\tilde{\boldsymbol{a}}$. We can see this using the simulated data
+
+```{r}
+correct_fac <- sum(diag(diag(theta) %*% cov(t(a_sim))))
+true_a %*% diag(theta) %*% t(true_a) + correct_fac
+```
+
+## Correction Factor
+
+We can approximate $\boldsymbol{V}_{\tilde{\boldsymbol{a}}}$ using the [delta method](https://en.wikipedia.org/wiki/Delta_method), and the other terms in the above using sample estimates
+
+$$\tilde{\boldsymbol{a}}^\top \hat{\boldsymbol{\Theta}} \tilde{\boldsymbol{a}} + \mathrm{tr}(\hat{\boldsymbol{\Theta}} \hat{\boldsymbol{V}}_{\tilde{\boldsymbol{a}}}).$$
+
+The delta method estimate, $\hat{\boldsymbol{V}}_{\tilde{\boldsymbol{a}}}$, is
+
+$$\boldsymbol{J}_{\tilde{\boldsymbol{a}}}(\boldsymbol{\theta})^\top \hat{\boldsymbol{V}}_{\tilde{\boldsymbol{\theta}}} \boldsymbol{J}_{\tilde{\boldsymbol{a}}}(\boldsymbol{\theta}),$$
+
+where $\boldsymbol{J}_{\tilde{\boldsymbol{a}}}(\boldsymbol{\theta})$ is the Jacobian matrix, and $\hat{\boldsymbol{V}}_{\tilde{\boldsymbol{\theta}}}$ is the sampling variance of the sample estimator of $\boldsymbol{\theta}$. The Jacobian can be approximated using finite difference with `lavaan::lav_func_jacobian_complex()`.
+
+```{r}
+y <- simy(eta = eta, lambda = lambda)
+cfa_fit <- cfa("f =~ y1 + y2 + y3 + y4",
+               data = setNames(data.frame(y), paste0("y", 1:4)),
+               std.lv = TRUE)
+# Jacobian
+R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
+jac_a <- lavaan::lav_func_jacobian_complex(
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]],
+    coef(cfa_fit)
+)
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a %*% vcov(cfa_fit) %*% t(jac_a)))
+fsy <- R2spa::get_fs(y, std.lv = TRUE)
+attr(fsy, which = "fsT")
+# Using `get_fs(..., corrected_fsT = TRUE)
+fsy2 <- R2spa::get_fs(y, std.lv = TRUE, corrected_fsT = TRUE)
+attr(fsy2, which = "fsT")
+```
+
+# Multidimensional Case
+
+```{r}
+#' Set seed
+set.seed(251329)
+
+#' Fixed conditions
+num_obs <- 100
+lambda <- Matrix::bdiag(list(c(.3, .5, .7, .9), c(.7, .6, .7))) |>
+    as.matrix()
+theta <- c(.5, .4, .5, .7, .7, .8, .5)
+psi <- matrix(c(1, -.4, -.4, 1), nrow = 2)
+
+#' Simulate true score (exact means and covariances)
+eta <- MASS::mvrnorm(num_obs, mu = rep(0, 2), Sigma = psi, empirical = TRUE)
+
+#' Function for simulating y
+simy <- function(eta, lambda) {
+    tcrossprod(eta, lambda) +
+        MASS::mvrnorm(num_obs, mu = rep(0, length(theta)), Sigma = diag(theta))
+}
+```
+
+```{r, eval = FALSE}
+#' Simulation
+nsim <- 2500
+tfsy_sim <- fsy_sim <- array(NA, dim = c(num_obs, ncol(lambda), nsim))
+# Also save the scoring matrix
+a_sim <- array(NA, dim = c(ncol(lambda), nrow(lambda), nsim))
+for (i in seq_len(nsim)) {
+    y <- simy(eta = eta, lambda = lambda)
+    tfsy_sim[, , i] <- R2spa::compute_fscore(
+      y, lambda = lambda, theta = diag(theta), psi = psi
+    )
+    fsy <- R2spa::get_fs(
+        data.frame(y) |> setNames(paste0("y", 1:7)),
+        model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+        std.lv = TRUE)
+    fsy_sim[, , i] <- as.matrix(fsy[, 1:2])
+    a_sim[, , i] <- attr(fsy, which = "scoring_matrix")
+}
+```
+
+```{r echo = FALSE, eval = FALSE}
+saveRDS(list(tfsy_sim, fsy_sim, a_sim), file = "sim_correction-error-multi.RDS")
+```
+
+```{r echo = FALSE, include = FALSE}
+tfsy_sim <- readRDS("sim_correction-error-multi.RDS")[[1]]
+fsy_sim <- readRDS("sim_correction-error-multi.RDS")[[2]]
+a_sim <- readRDS("sim_correction-error-multi.RDS")[[3]]
+```
+
+```{r}
+#' Average conditional variance
+# a known
+apply(tfsy_sim, MARGIN = 1, FUN = \(x) cov(t(x))) |> 
+    rowMeans() |> matrix(ncol = 2, nrow = 2)
+# compare to theoretical value
+true_a <- R2spa:::compute_a_reg(lambda, psi = psi, theta = diag(theta))
+true_a %*% diag(theta) %*% t(true_a)
+# a estimated
+apply(fsy_sim, MARGIN = 1, FUN = \(x) cov(t(x))) |> 
+    rowMeans() |> matrix(ncol = 2, nrow = 2)
+```
+
+```{r}
+correct_fac11 <- sum(diag(diag(theta) %*% cov(t(a_sim[1, , ]))))
+correct_fac22 <- sum(diag(diag(theta) %*% cov(t(a_sim[2, , ]))))
+correct_fac21 <- sum(diag(diag(theta) %*%
+                              cov(t(a_sim[2, , ]), t(a_sim[1, , ]))))
+correct_fac <- matrix(c(correct_fac11, correct_fac21,
+                        correct_fac21, correct_fac22), nrow = 2)
+true_a %*% diag(theta) %*% t(true_a) + correct_fac
+```
+
+The $i$, $j$ element of the correction matrix can be approximated by $\mathrm{tr}(\hat{\boldsymbol{\Theta}} \hat{\boldsymbol{V}}_{{\tilde{\boldsymbol{a}}_i}{\tilde{\boldsymbol{a}}_j}})$, with $\hat{\boldsymbol{V}}_{{\tilde{\boldsymbol{a}}_i}{\tilde{\boldsymbol{a}}_j}})$ obtained by
+
+$$\boldsymbol{J}_{\tilde{\boldsymbol{a}}_i}(\boldsymbol{\theta})^\top \hat{\boldsymbol{V}}_{\tilde{\boldsymbol{\theta}}} \boldsymbol{J}_{\tilde{\boldsymbol{a}}_j}(\boldsymbol{\theta}),$$
+
+```{r}
+y <- simy(eta = eta, lambda = lambda)
+cfa_fit <- cfa("f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+               data = setNames(data.frame(y), paste0("y", 1:7)),
+               std.lv = TRUE)
+# Jacobian
+R2spa:::compute_a(coef(cfa_fit), lavobj = cfa_fit)
+jac_a1 <- lavaan::lav_func_jacobian_complex(
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]][1, ],
+    coef(cfa_fit)
+)
+jac_a2 <- lavaan::lav_func_jacobian_complex(
+    \(x) R2spa:::compute_a(x, lavobj = cfa_fit)[[1]][2, ],
+    coef(cfa_fit)
+)
+# Correction[1, 1]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a1 %*% vcov(cfa_fit) %*% t(jac_a1)))
+# Correction[2, 2]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a2 %*% vcov(cfa_fit) %*% t(jac_a2)))
+# Correction[2, 1]
+sum(diag(lavInspect(cfa_fit, what = "est")$theta %*%
+             jac_a2 %*% vcov(cfa_fit) %*% t(jac_a1)))
+fsy <- R2spa::get_fs(
+    data.frame(y) |> setNames(paste0("y", 1:7)),
+    model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+    std.lv = TRUE)
+attr(fsy, which = "fsT")
+# Using `get_fs(..., corrected_fsT = TRUE)
+fsy2 <- R2spa::get_fs(
+    data.frame(y) |> setNames(paste0("y", 1:7)),
+    model = "f1 =~ y1 + y2 + y3 + y4\nf2 =~ y5 + y6 + y7",
+    std.lv = TRUE,
+    corrected_fsT = TRUE)
+attr(fsy2, which = "fsT")
+```
+
