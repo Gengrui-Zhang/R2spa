@@ -45,9 +45,9 @@ can be obtained from the output of \code{get_fs()} using
 For details see the multiple-factors vignette:
 \code{vignette("multiple-factors", package = "R2spa")}.}
 
-\item{fsb}{A vector or list of vectors for the intercepts of factor scores,
-which can be obtained from the output of \code{get_fs()} using
-\code{attr()} with the argument \code{which = "fsb"}.}
+\item{fsb}{A vector of intercepts for the factor scores \code{fs}, which can
+be obtained from the output of \code{get_fs()} using \code{attr()}
+with the argument \code{which = "fsb"}.}
 
 \item{...}{Additional arguments passed to \code{\link[lavaan]{sem}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
@@ -86,8 +86,7 @@ tspa(model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
      data = fs_dat2,
      fsT = attr(fs_dat2, "fsT"),
-     fsL = attr(fs_dat2, "fsL"),
-     fsb = attr(fs_dat2, "fsb"))
+     fsL = attr(fs_dat2, "fsL"))
 
 # multigroup, two-factor example
 mod3 <- "
@@ -101,7 +100,6 @@ tspa(model = "visual ~ speed",
      data = fs_dat3,
      fsT = attr(fs_dat3, "fsT"),
      fsL = attr(fs_dat3, "fsL"),
-     fsb = attr(fs_dat3, "fsb"),
      group = "school")
 
 # multigroup, three-factor example
@@ -118,7 +116,6 @@ tspa(model = "visual ~ speed
      data = fs_dat4,
      fsT = attr(fs_dat4, "fsT"),
      fsL = attr(fs_dat4, "fsL"),
-     fsb = attr(fs_dat4, "fsb"),
      group = "school")
 
 # get factor scores

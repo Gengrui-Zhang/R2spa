@@ -354,57 +354,23 @@ test_that("test if the se of variance is similar for two methods", {
   )
 })
 
-# Test tspaSingleGroupMF()
-cfa_3fac <-  '
-  # latent variables
-  ind60 =~ x1 + x2 + x3
-  dem60 =~ y1 + y2 + y3 + y4
-  dem65 =~ y5 + y6 + y7 + y8
-'
-fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
-path_mod <- '
-dem60 ~ ind60
-dem65 ~ ind60 + dem60
-'
-tspa_mod_s <- tspaMultipleGroupMF(
-  model = path_mod,
-  data = fs_dat_3fac,
-  fsT = attr(fs_dat_3fac, "fsT"),
-  fsL = attr(fs_dat_3fac, "fsL"),
-  fsb = attr(fs_dat_3fac, "fsb")
-)
-
-factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
-loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
-
-test_that("The order of factors in the model from tspaSingleGroupMF()", {
-  expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
-  expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
-})
-test_that("The order of loadings in the model from tspaSingleGroupMF()", {
-  expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
-               loadings_order_s$lhs)
-  expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
-               loadings_order_s$rhs)
-})
-
-
-# Test tspaMultipleGroupMF()
+# Test tspa_mf()
 mod4 <- "
   # latent variables
     visual =~ x1 + x2 + x3
     textual =~ x4 + x5 + x6
     speed =~ x7 + x8 + x9
+
 "
 fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
                   group = "school")
-tspa_mod_m <- tspaMultipleGroupMF(
+tspa_mod_m <- tspa_mf(
   model = "visual ~ speed
            textual ~ visual + speed",
   data = fs_dat4,
   fsT = attr(fs_dat4, "fsT"),
   fsL = attr(fs_dat4, "fsL"),
-  fsb = attr(fs_dat4, "fsb")
+  fsb = NULL
 )
 
 factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
@@ -412,13 +378,13 @@ factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
 loadings_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
                            op == "=~")
 
-test_that("The order of factors in the model from tspaSingleGroupMF()", {
+test_that("The order of factors in the model from tspa_mf()", {
   expect_equal(rep(c("visual", "textual", "textual"), 2),
                factors_order_m$lhs)
   expect_equal(rep(c("speed", "visual", "speed"), 2),
                factors_order_m$rhs)
 })
-test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+test_that("The order of loadings in the model from tspa_mf()", {
   expect_equal(rep(c("visual", "textual", "speed"), each = 3) |> rep(2),
                loadings_order_m$lhs)
   expect_equal(rep(c("fs_visual", "fs_textual", "fs_speed"), 6),
@@ -432,8 +398,7 @@ tspa_fit_m <- tspa(
   data = fs_dat4,
   group = "school",
   fsT = attr(fs_dat4, "fsT"),
-  fsL = attr(fs_dat4, "fsL"),
-  fsb = attr(fs_dat4, "fsb")
+  fsL = attr(fs_dat4, "fsL")
 )
 fs_dat4b <- get_fs(HolzingerSwineford1939, model = mod4,
                    group = "school", method = "Bartlett")
@@ -517,8 +482,8 @@ i ~ 0 * 1
 s ~ 1
 "
 growth_fit <- tspa(growth_mod, fs_dat5,
-                   vc = attr(fs_dat5, "av_efs"),
-                   cross_loadings = attr(fs_dat5, "fsA"),
+                   fsT = attr(fs_dat5, "fsT"),
+                   fsL = attr(fs_dat5, "fsL"),
                    fsb = attr(fs_dat5, "fsb"),
                    missing = "fiml")
 
@@ -527,30 +492,30 @@ growth_fit <- tspa(growth_mod, fs_dat5,
 test_that("Empty path model", {
   expect_error(
     tspa(model = 123,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT")),
+         data = fs_dat5,
+         fsT = attr(fs_dat5, "fsT")),
     "The structural path model provided is not a string."
   )
 })
 
 test_that("Need to provide none or both fsT and fsL", {
   expect_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT")),
+    tspa(model = growth_mod,
+         data = fs_dat5,
+         fsT = attr(fs_dat5, "fsT")),
     "Please provide both or none of fsT and fsL"
   )
   expect_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsL = attr(fs_dat_3fac, "fsL")),
+    tspa(model = growth_mod,
+         data = fs_dat5,
+         fsL = attr(fs_dat5, "fsL")),
     "Please provide both or none of fsT and fsL"
   )
   expect_no_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT"),
-         fsL = attr(fs_dat_3fac, "fsL"))
+    tspa(model = growth_mod,
+         data = fs_dat5,
+         fsT = attr(fs_dat5, "fsT"),
+         fsL = attr(fs_dat5, "fsL"))
   )
 })
 
@@ -627,4 +592,3 @@ test_that("Missing group argument for a multigroup model", {
     "Please specify 'group = ' to fit a multigroup model in lavaan"
   )
 })
-
