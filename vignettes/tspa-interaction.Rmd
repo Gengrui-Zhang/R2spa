@@ -215,6 +215,62 @@ fit_rapi <- sem(model_rapi,
 summary(fit_rapi, standardized = TRUE)
 ```
 
+```{r}
+# Computer centered sum score
+df$tvalue_centered <- rowSums(df[, c("t1", "t2", "t3", "t4")]) - mean(rowSums(df[, c("t1", "t2", "t3", "t4")]), na.rm = T)
+df$sources_centered <- rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]) - mean(rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]), na.rm = T)
+df$tip_centered <- rowSums(df[, c("tip1", "tip2", "tip3")]) - mean(rowSums(df[, c("tip1", "tip2", "tip3")]), na.rm = T)
+df$int_centered <- df$tvalue_centered*df$sources_centered
+df$int_centered <- df$int_centered - mean(df$int_centered, na.rm = T)
+
+# Sum of error variances and se
+PE_vcov <- PE[PE$op == "~~", ]
+PE_vcov <- PE_vcov[PE_vcov$label == "", ]
+
+rel_tvalue <- unlist(as.vector(psych::alpha(df[, c("t1", "t2", "t3", "t4")])$total["raw_alpha"]))
+rel_sources <- unlist(as.vector(psych::alpha(df[, c("s1", "s2", "s3", "s4", "s5")])$total["raw_alpha"]))
+rel_tip <- unlist(as.vector(psych::alpha(df[, c("tip1", "tip2", "tip3")])$total["raw_alpha"]))
+
+error_tvalue <- (1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+error_sources <- (1 - rel_sources)*var(df$sources_centered, na.rm = T)
+error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
+error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
+    (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+
+
+# Single-indicator Model
+
+model_rapi <- "
+              tvalue =~ tsum_centered
+              sources =~ ssum_centered
+              tip =~ tips_sum_centered
+              product_ind =~ int_centered
+              
+              # Constrain the errors
+              tsum_centered ~~ 1.762796*tsum_centered
+              ssum_centered ~~ 3.625876*ssum_centered
+              tips_sum_centered ~~ 2.805245 *tips_sum_centered
+              int_centered ~~ 66.87365 *int_centered
+              
+              # regressions
+              tip ~ b1*tvalue + b2*sources + b3*product_ind
+              
+              tvalue ~~ v1*tvalue
+              sources ~~ v2*sources
+              product_ind ~~ v3*product_ind
+              
+              # Define Standardized Coefficients
+              beta1 := b1 * sqrt(v1)
+              beta2 := b2 * sqrt(v2)
+              beta3 := b3 * sqrt(v1) * sqrt(v2)
+              "
+
+fit_rapi <- sem(model_rapi, 
+                data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
+summary(fit_rapi, standardized = TRUE)
+```
+
+
 ```{r rapi function}
 # Testing
 df <- read.csv("https://osf.io/download/grwn2/")

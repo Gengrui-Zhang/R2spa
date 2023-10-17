@@ -256,7 +256,7 @@ devtools::load_all(".")
    ggplot(aes(x = factor(N), y = std_bias, color = method)) +
    geom_boxplot() +
    facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
-   labs(x = "Sample Size (N)", y = "Standard Bias")
+   labs(x = "Sample Size (N)", y = "Standardized Bias")
 
  # Relative SE Bias
  sim_plots %>%
