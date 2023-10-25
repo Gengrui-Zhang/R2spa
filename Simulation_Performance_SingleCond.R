@@ -14,10 +14,10 @@ devtools::load_all()
 # Write into a function
 
 DESIGNFACTOR <- createDesign(
-  N = c(250, 1000, 5000),
+  N = 5000,
   beta = list(set1 = c(.2, .3, -.4),
               set2 = c(.15, .30, .22)),
-  cov_xm = c(0.2, 0.5, 0.8)
+  cov_xm = 0.8
 )
 
 GenData <- function (condition, fixed_objects = NULL) {
@@ -190,9 +190,9 @@ extract_res <- function (condition, dat, fixed_objects = NULL) {
 
   # Extract parameter estimates and standard errors
   paret <- c(fscore = round(fs_summary$coefficients[-1,"Estimate"], 3),
-                fscore_se = round(fs_summary$coefficients[-1,"Std. Error"], 3),
-                tspa_pe = tspa_pe,
-                tspa_se = tspa_se)
+             fscore_se = round(fs_summary$coefficients[-1,"Std. Error"], 3),
+             tspa_pe = tspa_pe,
+             tspa_se = tspa_se)
   names(paret) <- c("fsx_est", "fsm_est", "fsxm_est",
                     "fsx_se", "fsm_se", "fsxm_se",
                     "tspax_est", "tspam_est", "tspaxm_est",
@@ -257,20 +257,20 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
   )
 }
 
-sim_cat_0827 <- runSimulation(design = DESIGNFACTOR,
-                           replications = 2000,
-                           generate = GenData,
-                           analyse = extract_res,
-                           summarise = evaluate_res,
-                           save = TRUE,
-                           save_results = TRUE,
-                           filename = "sim_cat_0827",
-                           parallel = TRUE,
-                           ncores = min(4L, parallel::detectCores() - 1))
+sim_cat_singlecond <- runSimulation(design = DESIGNFACTOR,
+                              replications = 2000,
+                              generate = GenData,
+                              analyse = extract_res,
+                              summarise = evaluate_res,
+                              save = TRUE,
+                              save_results = TRUE,
+                              filename = "sim_cat_singlecond",
+                              parallel = TRUE,
+                              ncores = min(4L, parallel::detectCores() - 1))
 
 # Summarize the results
 
-sim_temp <- readRDS("sim_cat_0827.rds") %>%
+sim_temp <- readRDS("sim_cat_singlecond.rds") %>%
   rename("COVERAGE.fs_x_est" = "coverage1",
          "COVERAGE.fs_m_est" = "coverage2",
          "COVERAGE.fs_xm_est" = "coverage3",
@@ -295,7 +295,7 @@ sim_temp <- readRDS("sim_cat_0827.rds") %>%
          "RMSE.tspa_x_est" = "rmse.tspax_est",
          "RMSE.tspa_m_est" = "rmse.tspam_est",
          "RMSE.tspa_xm_est" = "rmse.tspaxm_est") %>%
-  mutate(beta = as.character(rep(c(rep(0.2, 3), rep(0.15, 3)), 3)))
+  mutate(beta = as.character(rep(c(rep(0.2, 1), rep(0.15, 1)), 1)))
 
 sim_results <- sim_temp %>%
   gather("var", "val", STDbias.fs_x_est:RSEbias.tspa_xm_se) %>%
@@ -309,11 +309,11 @@ sim_results <- sim_temp %>%
          beta_lab = as_factor(paste0("beta == ", beta)),
          cov_xm_lab = as_factor(paste0("Correlation_XM == ", cov_xm)))
 
-write_csv(sim_results, "sim_cat_0827.csv")
+write_csv(sim_results, "sim_cat_singlecond.csv")
 
 # Plot the results
 
-sim_plots <- read.csv("sim_cat_0827.csv")
+sim_plots <- read.csv("sim_cat_singlecond.csv")
 # # Bias
 # sim_plots %>%
 #   ggplot(aes(x = factor(N), y = bias, color = method)) +

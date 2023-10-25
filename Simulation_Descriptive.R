@@ -4,10 +4,11 @@ library(SimDesign)
 library(mirt)  # for IRT
 library(OpenMx)
 library(umx)
+library(dplyr)
 library(R2spa)
 library(ufs)
 library(ggplot2)
-devtools::load_all()
+library(devtools)
 set.seed(52422)
 
 # Write into a function
@@ -48,7 +49,7 @@ GenData <- function (condition, fixed_objects = NULL) {
                         cov_xm, 1, 0,
                         0, 0, evar), nrow = 3)
   eta <- MASS::mvrnorm(num_obs, mu = rep(0, 3), Sigma = cov_xm_ey,
-                       empirical = TRUE)
+                       empirical = FALSE)
   # Add product term
   eta <- cbind(eta, eta[, 1] * eta[, 2])
 
@@ -203,7 +204,7 @@ extract_res <- function (condition, dat, fixed_objects = NULL) {
 results_df <- list()
 for (i in seq_len(nrow(DESIGNFACTOR))) {
   temp_result <- c()
-  for (j in 1:2000) {
+  for (j in 1:2) {
     temp_row <- as.data.frame(t(unlist(extract_res(dat = GenData(DESIGNFACTOR[i,])))))
     temp_result <- rbind(temp_result, temp_row)
   }
