@@ -49,7 +49,7 @@ GenData <- function (condition, fixed_objects = NULL) {
                         cov_xm, 1, 0,
                         0, 0, evar), nrow = 3)
   eta <- MASS::mvrnorm(num_obs, mu = rep(0, 3), Sigma = cov_xm_ey,
-                       empirical = TRUE)
+                       empirical = FALSE)
   # Add product term
   eta <- cbind(eta, eta[, 1] * eta[, 2])
 
