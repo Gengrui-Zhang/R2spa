@@ -216,7 +216,7 @@ matL <- mxMatrix(
 matE <- mxMatrix(
     type = "Diag", nrow = 4, ncol = 4,
     free = FALSE,
-    labels = c("data.ev_fsm", "data.ev_fsx", "data.ev_fsm", "data.ev_fsxm"),
+    labels = c("data.ev_fsy", "data.ev_fsx", "data.ev_fsm", "data.ev_fsxm"),
     name = "E"
 )
 ```
