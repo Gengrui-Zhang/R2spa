@@ -151,7 +151,7 @@ tspa <- function(model, data, reliability = NULL, se = "standard",
     }
   }
 
-  if (multigroup & is.null(list(...)[["group"]])) {
+  if (multigroup && is.null(list(...)[["group"]])) {
     stop("Please specify 'group = ' to fit a multigroup model in lavaan.")
   }
 
@@ -255,8 +255,8 @@ tspa_mf <- function(model, data, fsT, fsL, fsb) {
   if (!is.null(fsb)) {
     # intercepts
     intercepts_mat <- matrix(unlist(fsb), ncol = ngroup)
-    intercepts <- split(intercepts_mat, rep(1:nrow(intercepts_mat), ngroup))
-    intercept_constraint <- paste0("# constrin the intercepts\n",
+    intercepts <- split(intercepts_mat, rep(seq_len(nrow(intercepts_mat)), ngroup))
+    intercept_constraint <- paste0("# constrain the intercepts\n",
                                    fs, " ~ ", intercepts, " * 1")
   } else {
     intercept_constraint <- ""

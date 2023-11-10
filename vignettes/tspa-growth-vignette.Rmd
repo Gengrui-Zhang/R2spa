@@ -17,7 +17,6 @@ knitr::opts_chunk$set(
 ```{r, message = FALSE}
 library(lavaan)
 library(R2spa)
-library(dplyr)
 ```
 
 We use the example from [this tutorial](https://quantdev.ssri.psu.edu/tutorials/growth-modeling-chapter-14-modeling-change-latent-variables-measured-continuous) from Chapter 14 of the book *Growth Modeling* (Grimm, Ram & Estabrook, 2017) to demonstrate how to perform linear growth modeling with two-stage path analysis (2S-PA)
@@ -170,8 +169,8 @@ The joint structural equation model and 2S-PA yielded comparable estimates of th
 
 ```{r}
 parameterestimates(tspa_growth_fit) |>
-  filter(lhs %in% c("i", "s") & op  %in% c("~1", "~~"))
+  subset(subset = lhs %in% c("i", "s") & op %in% c("~1", "~~"))
 parameterestimates(jsem_growth_fit) |>
-  filter(lhs %in% c("i", "s") & op  %in% c("~1", "~~"))
+  subset(subset = lhs %in% c("i", "s") & op  %in% c("~1", "~~"))
 ```
 
