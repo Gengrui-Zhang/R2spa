@@ -83,7 +83,6 @@ jsem_growth_fit <- lavaan(jsem_growth_mod,
                           data = eclsk,
                           meanstructure = TRUE,
                           estimator = "ML",
-                          missing = "fiml",
                           fixed.x = FALSE)
 ```
 
@@ -134,7 +133,7 @@ m_g8 ~ i3 * 1
 
 ```{r}
 # Get factor scores
-fs_dat <- get_fs(eclsk, model = strict_mod, std.lv = TRUE)
+fs_dat <- get_fs(eclsk, model = strict_mod)
 ```
 
 In the second stage, we use the factor scores obtained from the strict invariance model to model the growth trajectory across time points. The growth model is the same as the "latent basis model" in the joint structural equation model. 
@@ -144,6 +143,11 @@ In the second stage, we use the factor scores obtained from the strict invarianc
 tspa_growth_mod <- "
 i =~ 1 * eta1 + 1 * eta2 + 1 * eta3
 s =~ 0 * eta1 + start(.5) * eta2 + 1 * eta3
+
+# factor variances
+eta1 ~~ psi * eta1
+eta2 ~~ psi * eta2
+eta3 ~~ psi * eta3
 
 i ~~ start(.8) * i
 s ~~ start(.5) * s
@@ -157,8 +161,7 @@ tspa_growth_fit <- tspa(tspa_growth_mod, fs_dat,
                         fsT = attr(fs_dat, "fsT"),
                         fsL = attr(fs_dat, "fsL"),
                         fsb = attr(fs_dat, "fsb"),
-                        estimator = "ML", 
-                        missing = "fiml")
+                        estimator = "ML")
 ```
 
 ## Comparison
