@@ -181,8 +181,6 @@ int_var <- tvalues_lambda^2*sources_error +
   sources_lambda^2*tvalues_error + 
   sources_error*tvalues_error 
 
-sqrt(int_var)
-
 # Single-indicator Model
 
 model_rapi <- "
@@ -237,32 +235,42 @@ error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
 error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
     (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
 
+var_int <- var(df$int_centered, na.rm = T) - var(df$tvalue_centered, na.rm = T)*rel_tvalue*error_sources - var(df$sources_centered, na.rm = T)*rel_sources*error_tvalue - error_sources*error_tvalue
+
 
 # Single-indicator Model
 
 model_rapi <- "
-              tvalue =~ tsum_centered
-              sources =~ ssum_centered
-              tip =~ tips_sum_centered
-              product_ind =~ int_centered
+              tvalue =~ 1*tsum_centered
+              sources =~ 1*ssum_centered
+              tip =~ 1*tips_sum_centered
+              int =~ 1*int_centered
+
+              # Error variance
+              tsum_centered ~~ ve1*tsum_centered
+              ssum_centered ~~ ve2*ssum_centered
+              int_centered ~~ ve3*int_centered
+              tips_sum_centered ~~ vey*tips_sum_centered
               
-              # Constrain the errors
-              tsum_centered ~~ 1.762796*tsum_centered
-              ssum_centered ~~ 3.625876*ssum_centered
-              tips_sum_centered ~~ 2.805245 *tips_sum_centered
-              int_centered ~~ 66.87365 *int_centered
+              # True score variance
+              tvalue ~~ veta1*tvalue
+              sources ~~ veta2*sources
+              int ~~ veta3*int
+              tip ~~ vetay*tip 
               
-              # regressions
-              tip ~ b1*tvalue + b2*sources + b3*product_ind
+              # Total variance
+              ve1 == veta1*(1 - 0.8351241)/0.8351241
+              ve2 == veta2*(1 - 0.814727)/0.814727
+              ve3 == ve1*veta2 + ve2*veta1 + ve1*ve2 
+              vey == vetay*(1 - 0.4601677)/0.4601677
               
-              tvalue ~~ v1*tvalue
-              sources ~~ v2*sources
-              product_ind ~~ v3*product_ind
+              # regression
+              tip ~ b1*tvalue + b2*sources + b3*int
               
               # Define Standardized Coefficients
-              beta1 := b1 * sqrt(v1)
-              beta2 := b2 * sqrt(v2)
-              beta3 := b3 * sqrt(v1) * sqrt(v2)
+              beta1 := b1 * sqrt(veta1)
+              beta2 := b2 * sqrt(veta2)
+              beta3 := b3 * sqrt(veta3)
               "
 
 fit_rapi <- sem(model_rapi, 
