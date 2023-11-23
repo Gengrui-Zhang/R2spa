@@ -272,6 +272,7 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
     mats <- list(mats)
   }
   out <- vector("list", ngrp)
+  mp <- lavobj@Data@Mp
   for (g in seq_len(ngrp)) {
     free <- frees[[g]]
     mat <- mats[[g]]
@@ -281,14 +282,27 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
         mat[[l]][which(free[[l]] == i)] <- par[i]
       }
     }
-    a <- do.call(compute_a_from_mat,
-                 args = c(method, mat[c("lambda", "psi", "theta")]))
-    if (what == "a") {
-      out[[g]] <- a
-    } else if (what == "evfs") {
-      out[[g]] <- a %*% mat$theta %*% t(a)
-    } else if (what == "ldfs") {
-      out[[g]] <- a %*% mat$lambda
+    pat <- mp[[g]]$pat
+    if (is.null(pat)) {
+      pat <- matrix(TRUE, nrow = 1, ncol = ncol(mat$theta))
+    }
+    num_mp <- nrow(pat)
+    out[[g]] <- vector("list", num_mp)
+    for (m in seq_len(num_mp)) {
+      idx <- which(pat[m, ])
+      a <- do.call(compute_a_from_mat,
+                   args = c(method, mat[c("lambda", "psi", "theta")],
+                            idx = list(idx)))
+      if (what == "a") {
+        out[[g]][[m]] <- a
+      } else if (what == "evfs") {
+        out[[g]][[m]] <- a %*% mat$theta[idx, idx, drop = FALSE] %*% t(a)
+      } else if (what == "ldfs") {
+        out[[g]][[m]] <- a %*% mat$lambda[idx, , drop = FALSE]
+      }
+      if (num_mp == 1) {
+        out[[g]] <- out[[g]][[1]]
+      }
     }
   }
   out
@@ -299,7 +313,11 @@ compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
 }
 
 compute_a_from_mat <- function(method = c("regression", "Bartlett"),
-                               lambda, theta, psi = NULL) {
+                               lambda, theta, psi = NULL, idx = NULL) {
+  if (!is.null(idx)) {
+    lambda <- lambda[idx, , drop = FALSE]
+    theta <- theta[idx, idx, drop = FALSE]
+  }
   method <- match.arg(method)
   if (method == "regression") {
     if (is.null(psi)) {
