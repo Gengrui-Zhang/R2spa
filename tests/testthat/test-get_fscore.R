@@ -56,7 +56,7 @@ test_that("Test that standard errors for each observation are the same", {
   fs_names <- colnames(test_object_fs)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (j in names_se) {
-      expect_identical(var(test_object_fs[[j]]), 0)
+    expect_identical(var(test_object_fs[[j]]), 0)
   }
 })
 
@@ -207,8 +207,8 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(rb_test_object)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(rb_test_object[,i]), 0)
-      expect_lt(max(rb_test_object[,i]), 1)
+    expect_gt(min(rb_test_object[,i]), 0)
+    expect_lt(max(rb_test_object[,i]), 1)
   }
 })
 
@@ -233,22 +233,22 @@ test_that("Test that standard errors for each observation are positive numbers a
   fs_names <- colnames(rb_test_object)
   names_se <- grep("_se", fs_names, value = TRUE)
   for (i in names_se) {
-      expect_gt(min(rb_test_object[, i]), 0)
-      expect_lt(max(rb_test_object[, i]), 1)
+    expect_gt(min(rb_test_object[, i]), 0)
+    expect_lt(max(rb_test_object[, i]), 1)
   }
 })
 
 fs_config <- get_fs(HolzingerSwineford1939,
-  hs_model_2,
-  group = "school",
-  corrected_fsT = TRUE
+                    hs_model_2,
+                    group = "school",
+                    corrected_fsT = TRUE
 )
 
 fs_metric <- get_fs(HolzingerSwineford1939,
-  hs_model_2,
-  group = "school",
-  group.equal = "loadings",
-  corrected_fsT = TRUE
+                    hs_model_2,
+                    group = "school",
+                    group.equal = "loadings",
+                    corrected_fsT = TRUE
 )
 
 fs_single <- get_fs(
@@ -267,3 +267,26 @@ test_that("Correction factor is similar with single or multiple groups", {
   d2 <- fst2[[1]] - fst2[[2]]
   expect_lt(mean(abs(d2)), mean(abs(d1)))
 })
+
+########## Computing reliability ##########
+
+test_that("", {
+  fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+               corrected_fsT = TRUE, reliability = TRUE)
+  expect_equal(attr(fs, "reliability"), .9826732,
+               tolerance = 1e-7)
+})
+
+test_that("Return a warning message for corrected_fsT = FALSE when reliability = TRUE", {
+  expect_warning(get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+                        corrected_fsT = FALSE, reliability = TRUE))
+})
+
+test_that("Return a warning message for reliability of Bartlett scores", {
+  expect_warning(get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+                        method = "Bartlett", corrected_fsT = TRUE,
+                        reliability = TRUE))
+})
+
+
+

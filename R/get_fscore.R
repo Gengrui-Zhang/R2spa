@@ -10,13 +10,15 @@
 #'               "regression" to be consistent with
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
-#' @param corrected_fsT Logical. Whether to correct for the the sampling
+#' @param corrected_fsT Logical. Whether to correct for the sampling
 #'                      error in the factor score weights when computing
 #'                      the error variance estimates of factor scores.
 #' @param vfsLT Logical. Whether to return the covariance matrix of `fsT`
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
 #'              [tspa()] results. This is currently ignored.
+#' @param reliability Local. Whether to return the reliability of factor
+#'                    scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix `"fs_"`),
@@ -57,6 +59,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
                    corrected_fsT = FALSE,
                    vfsLT = FALSE,
+                   reliability = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -70,7 +73,8 @@ get_fs <- function(data, model = NULL, group = NULL,
   fit <- cfa(model, data = data, group = group, ...)
   get_fs_lavaan(lavobj = fit, method = method,
                 corrected_fsT = corrected_fsT,
-                vfsLT = vfsLT)
+                vfsLT = vfsLT,
+                reliability = reliability)
 }
 
 #' @inherit get_fs
@@ -79,7 +83,8 @@ get_fs <- function(data, model = NULL, group = NULL,
 get_fs_lavaan <- function(lavobj,
                           method = c("regression", "Bartlett"),
                           corrected_fsT = FALSE,
-                          vfsLT = FALSE) {
+                          vfsLT = FALSE,
+                          reliability = FALSE) {
   est <- lavInspect(lavobj, what = "est")
   y <- lavInspect(lavobj, what = "data")
   if (corrected_fsT) {
@@ -128,6 +133,16 @@ get_fs_lavaan <- function(lavobj,
   }
   if (vfsLT) {
     attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
+  }
+  if (reliability) {
+    if (corrected_fsT) {
+      ev_fs <- out[1, grepl("ev_fs", names(out))]
+      attr(out, "reliability") <- compute_rel(ev_fs, method = method)
+    } else {
+      warning("Computing the reliability of factor scores requires the ",
+              "corrected error variance estimates. ",
+              "Specify `corrected_fsT = TRUE` to proceed. ")
+    }
   }
   out
 }
@@ -389,4 +404,15 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   jac <- compute_grad_ld_evfs(fit, method = method)
   jac %*% lavaan::vcov(fit) %*% t(jac)
+}
+
+compute_rel <- function(ev_fs, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    return((1 + sqrt(1 - 4 * ev_fs)) / 2)
+  } else if (method == "Bartlett") {
+    warning("get_fs() currently supports the computation of the reliability ",
+            "of regression scores only")
+    return(NULL)
+  }
 }
