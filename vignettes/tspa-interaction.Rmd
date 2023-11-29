@@ -120,6 +120,60 @@ fitintMC <- sem(modintMC, data = dat3, std.lv = TRUE, meanstructure = TRUE)
 summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
 ```
 
+```{r Simulated Data}
+
+df <- GenData(condition = condition, fixed_objects = fixed_objects)
+
+model <- '
+  lat_x =~ x1 + x2 + x3
+  lat_m =~ m1 + m2 + m3
+  Y ~ lat_x + lat_m
+'
+
+fitME <- sem(model, data = df, std.lv = TRUE, estimator = "mlr")
+summary(fitME, fit.measure = TRUE)
+
+## Compute product indicators (double mean centering)
+
+#create names
+#not required, but makes syntax easier to write
+lat_x <- paste0("x", 1:3)
+lat_m <- paste0("m", 1:3)
+
+intNames <- paste0(rep(lat_x, each = length(lat_m)), lat_m)
+
+df_ind <- indProd(df, var1 = c("x1", "x2", "x3"),
+                var2 = c("m1", "m2", "m3"),
+                match = FALSE, doubleMC = TRUE,
+                namesProd = intNames)
+
+## Mean Centering interaction model
+
+mod_ind <- '
+
+  lat_x =~ x1 + x2 + x3
+  lat_m =~ m1 + m2 + m3
+
+  int =~ x1m1 + x2m2 + x3m3 
+         
+  Y ~  b1*lat_x + b2*lat_m + b3*int
+  
+  lat_x ~~ v1*lat_x
+  lat_m ~~ v2*lat_m
+  int ~~ v3*int
+            
+  # Define Standardized Coefficients
+  beta1 := b1 * sqrt(v1)
+  beta2 := b2 * sqrt(v2)
+  beta3 := b3 * sqrt(v1) * sqrt(v2)
+'
+
+fitintMC <- sem(mod_ind, data = df_ind, std.lv = FALSE, meanstructure = TRUE)
+summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
+
+```
+
+
 ```{r upi function}
 # Testing
 df <- read.csv("https://osf.io/download/grwn2/")
@@ -141,6 +195,59 @@ summary(upi(data = df,
         fit.measure = TRUE,
         standardized = TRUE)
 ```
+
+```{r test data generation function}
+
+# Test function
+# cor_xm = 0.3, beta_3 = 0.8, rel = 0.7
+
+   # Generate scores for observed items: x1 - x3, m1 - m3
+   eta_scores <- rmnorm(50000, mean = c(0, 0), varcov = matrix(c(1, 0.3,
+                                    0.3, 1), nrow = 2)) # Factor scores
+   # Generate eta scores with interaction
+   eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
+   delta <- rmnorm(50000, varcov = diag(c(1.32, 0.99, 0.69),
+                                  nrow = 6)) # Errors/Residuals of Indicators
+   item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
+
+   y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, sqrt(0.766)) # Y scores / DV scores
+   
+   df <- cbind(y_scores, eta_scores_int)
+
+model ='
+        # Structural Model
+            Y ~ X + M + XM'
+
+colnames(df) <- c("Y", "X", "M", "XM")
+
+fit <- sem(model = model, data = df)
+summary(fit, standardized = TRUE)
+
+# cor_xm = 0.6, beta_3 = 0.75, rel = 0.9
+
+# Generate scores for observed items: x1 - x3, m1 - m3
+   eta_scores <- rmnorm(5000, mean = c(0, 0), varcov = matrix(c(1, 0.6,
+                                    0.6, 1), nrow = 2)) # Factor scores
+   # Generate eta scores with interaction
+   eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
+   delta <- rmnorm(N, varcov = diag(c(0.34, 0.26, 0.18),
+                                  nrow = 6)) # Errors/Residuals of Indicators
+   item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
+
+   y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, sqrt(0.766)) # Y scores / DV scores
+   
+   df <- cbind(y_scores, eta_scores_int)
+
+model ='
+        # Structural Model
+            Y ~ X + M + XM'
+
+colnames(df) <- c("Y", "X", "M", "XM")
+
+fit <- sem(model = model, data = df)
+summary(fit, standardized = TRUE)
+```
+
 
 # Reliability-adjusted Product Indicator
 
