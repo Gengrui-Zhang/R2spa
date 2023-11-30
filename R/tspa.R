@@ -189,15 +189,18 @@ tspa_sf <- function(model, data, se = NULL) {
     latent_var <- rep(NA, len)
     error_constraint <- rep(NA, len)
 
-    for (x in seq_len(len)) {
-      latent_var[x] <- paste0(
+    latent_var <- lapply(seq_len(len), function(x) {
+      paste0(
         var[x], "=~ c(",
         paste0(rep(1, group), collapse = ", "), ") * ", fs[x], "\n"
       )
-      error_constraint[x] <- paste0(
+    })
+
+    error_constraint <- lapply(seq_len(len), function(x) {
+      paste0(
         fs[x], "~~ c(", paste(ev[x], collapse = ", "), ") * ", fs[x], "\n"
       )
-    }
+    })
 
     latent_var_str <- paste(latent_var, collapse = "")
     error_constraint_str <- paste(error_constraint, collapse = "")
