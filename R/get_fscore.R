@@ -137,7 +137,17 @@ get_fs_lavaan <- function(lavobj,
   if (reliability) {
     if (corrected_fsT) {
       ev_fs <- out[1, grepl("ev_fs", names(out))]
-      attr(out, "reliability") <- compute_rel(ev_fs, method = method)
+      if (length(ev_fs) > 1) {
+        warning("Compution of reliability for a multi-factor model is not ",
+                "currently supported. ")
+      } else {
+        attr(out, "reliability") <- compute_rel(
+          fsL = attr(out, "fsL"),
+          ev_fs = ev_fs,
+          psi = est$psi,
+          method = method
+        )
+      }
     } else {
       warning("Computing the reliability of factor scores requires the ",
               "corrected error variance estimates. ",
@@ -406,13 +416,12 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   jac %*% lavaan::vcov(fit) %*% t(jac)
 }
 
-compute_rel <- function(ev_fs, method = c("regression", "Bartlett")) {
+compute_rel <- function(fsL, ev_fs, psi,
+                        method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   if (method == "regression") {
-    return((1 + sqrt(1 - 4 * ev_fs)) / 2)
+    return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
   } else if (method == "Bartlett") {
-    warning("get_fs() currently supports the computation of the reliability ",
-            "of regression scores only")
-    return(NULL)
+    return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
   }
 }

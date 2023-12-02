@@ -270,22 +270,23 @@ test_that("Correction factor is similar with single or multiple groups", {
 
 ########## Computing reliability ##########
 
-test_that("", {
+test_that("Regression factor scores", {
   fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
                corrected_fsT = TRUE, reliability = TRUE)
-  expect_equal(attr(fs, "reliability"), .9826732,
+  expect_equal(as.vector(attr(fs, "reliability")), .9601968,
+               tolerance = 1e-7)
+})
+
+test_that("Bartlett factor scores", {
+  fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+               corrected_fsT = TRUE, reliability = TRUE, method = "Bartlett")
+  expect_equal(as.vector(attr(fs, "reliability")), .9820669,
                tolerance = 1e-7)
 })
 
 test_that("Return a warning message for corrected_fsT = FALSE when reliability = TRUE", {
   expect_warning(get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
                         corrected_fsT = FALSE, reliability = TRUE))
-})
-
-test_that("Return a warning message for reliability of Bartlett scores", {
-  expect_warning(get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
-                        method = "Bartlett", corrected_fsT = TRUE,
-                        reliability = TRUE))
 })
 
 
