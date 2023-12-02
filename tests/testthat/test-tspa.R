@@ -427,12 +427,31 @@ test_that("Multiple-group multiple-factor example", code = {
 # An example from Chapter 14 of Grimm et al. (2016)
 # https://quantdev.ssri.psu.edu/tutorials/growth-modeling-chapter-14-modeling-change-latent-variables-measured-continuous
 
-mod5 <- "
-eta1 =~ l1 * s_g3 + l2 * r_g3 + l3 * m_g3
-eta2 =~ l1 * s_g5 + l2 * r_g5 + L3 * m_g5
-eta3 =~ l1 * s_g8 + l2 * r_g8 + L3 * m_g8
+mean_vec <- c(248.83, 270.6, 278.84, 486.26, 448.44, 459.6,
+              422.91, 415.63, 374.35)
+cov_mat <- matrix(c(
+  232.71, 207.92, 188.09, 319.68, 285.26, 277.85, 260.75, 249.28, 217.96,
+  207.92, 254.88, 212.14, 331.88, 313.8, 314.91, 274.99, 281.29, 243.6,
+  188.09, 212.14, 270.46, 325.97, 308.84, 346.36, 284.9, 291.28, 281.55,
+  319.68, 331.88, 325.97, 797.86, 617.02, 581.17, 511.8, 470.36, 420.6,
+  285.26, 313.8, 308.84, 617.02, 662.41, 555.9, 448.81, 449.25, 394.63,
+  277.85, 314.91, 346.36, 581.17, 555.9, 736.45, 440.78, 439.33, 443.67,
+  260.75, 274.99, 284.9, 511.8, 448.81, 440.78, 618.23, 528.01, 437.92,
+  249.28, 281.29, 291.28, 470.36, 449.25, 439.33, 528.01, 583.24, 448.64,
+  217.96, 243.6, 281.55, 420.6, 394.63, 443.67, 437.92, 448.64, 480.57
+), nrow = 9, ncol = 9, byrow = TRUE)
+set.seed(123)
+sim_dat <- MASS::mvrnorm(n = 2000, mu = mean_vec, Sigma = cov_mat) |>
+  `colnames<-`(c("s_g3", "s_g5", "s_g8", "r_g3", "r_g5", "r_g8",
+                 "m_g3", "m_g5", "m_g8"))
 
-# latent variable variances/covariances
+strict_mod <- "
+# factor loadings
+eta1 =~ 15.1749088 * s_g3 + l2 * r_g3 + l3 * m_g3
+eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + L3 * m_g5
+eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + L3 * m_g8
+
+# factor variances/covariances
 eta1 ~~ 1 * eta1 + eta2 + eta3
 eta2 ~~ eta2 + eta3
 eta3 ~~ eta3
@@ -464,15 +483,16 @@ m_g3 ~ i3 * 1
 m_g5 ~ i3 * 1
 m_g8 ~ i3 * 1
 "
-eclsk <- read.csv(
-  "https://quantdev.ssri.psu.edu/sites/qdev/files/ECLS_Science.csv",
-  header = TRUE
-)
-fs_dat5 <- get_fs(eclsk, model = mod5, std.lv = TRUE)
+fs_growth_dat <- get_fs(sim_dat, model = strict_mod, std.lv = TRUE)
 
 growth_mod <- "
 i =~ 1 * eta1 + 1 * eta2 + 1 * eta3
 s =~ 0 * eta1 + start(.5) * eta2 + 1 * eta3
+
+# factor variances
+eta1 ~~ psi * eta1
+eta2 ~~ psi * eta2
+eta3 ~~ psi * eta3
 
 i ~~ start(.8) * i
 s ~~ start(.5) * s
@@ -481,19 +501,18 @@ i ~~ start(0) * s
 i ~ 0 * 1
 s ~ 1
 "
-growth_fit <- tspa(growth_mod, fs_dat5,
-                   fsT = attr(fs_dat5, "fsT"),
-                   fsL = attr(fs_dat5, "fsL"),
-                   fsb = attr(fs_dat5, "fsb"),
-                   missing = "fiml")
+growth_fit <- tspa(growth_mod, fs_growth_dat,
+                   fsT = attr(fs_growth_dat, "fsT"),
+                   fsL = attr(fs_growth_dat, "fsL"),
+                   fsb = attr(fs_growth_dat, "fsb"))
 
 ########## Error messages ##########
 
 test_that("Empty path model", {
   expect_error(
     tspa(model = 123,
-         data = fs_dat5,
-         fsT = attr(fs_dat5, "fsT")),
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT")),
     "The structural path model provided is not a string."
   )
 })
@@ -501,21 +520,22 @@ test_that("Empty path model", {
 test_that("Need to provide none or both fsT and fsL", {
   expect_error(
     tspa(model = growth_mod,
-         data = fs_dat5,
-         fsT = attr(fs_dat5, "fsT")),
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT")),
     "Please provide both or none of fsT and fsL"
   )
   expect_error(
     tspa(model = growth_mod,
-         data = fs_dat5,
-         fsL = attr(fs_dat5, "fsL")),
+         data = fs_growth_dat,
+         fsL = attr(fs_growth_dat, "fsL")),
     "Please provide both or none of fsT and fsL"
   )
   expect_no_error(
-    tspa(model = growth_mod,
-         data = fs_dat5,
-         fsT = attr(fs_dat5, "fsT"),
-         fsL = attr(fs_dat5, "fsL"))
+    tspa(growth_mod,
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT"),
+         fsL = attr(fs_growth_dat, "fsL"),
+         fsb = attr(fs_growth_dat, "fsb"))
   )
 })
 
