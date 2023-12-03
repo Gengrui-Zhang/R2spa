@@ -147,7 +147,9 @@ tspa <- function(model, data, reliability = NULL, se = "standard",
     dat_names <- ifelse(multigroup, names(data[[1]]), names(data))
     names_match <- lapply(fs_names, function(x) x %in% dat_names) |> unlist()
     if (any(!names_match)) {
-      stop("Names of factor score variables do not match those in the input data.")
+      stop(
+        "Names of factor score variables do not match those in the input data."
+      )
     }
   }
 

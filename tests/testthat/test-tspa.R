@@ -12,14 +12,14 @@ library(umx)
 # Example 1: Single-group with two variables
 
 # CFA model
-cfa_single1 <- '
-                            # latent variables
-                            ind60 =~ x1 + x2 + x3
-                           '
-cfa_single2 <- '
-                            # latent variables
-                            dem60 =~ y1 + y2 + y3 + y4
-                           '
+cfa_single1 <- "
+# latent variables
+ind60 =~ x1 + x2 + x3
+"
+cfa_single2 <- "
+# latent variables
+dem60 =~ y1 + y2 + y3 + y4
+"
 
 # get factor scores
 fs_single1 <- get_fs(PoliticalDemocracy, cfa_single1)
@@ -54,16 +54,18 @@ tspa_single <-
 
 # Class of input
 var_len <- 2
-se = c(ind60 = 0.1213615, dem60 = 0.6756472)
+se <- c(ind60 = 0.1213615, dem60 = 0.6756472)
 
 # The tspa data should be composed of two parts: variable, and se
-test_that("test the number of columns in tspa data are multiples of the variable length",
-          {
-            expect_gt(ncol(fs_dat_single), 1)
-            expect_equal(ncol(fs_dat_single) %% var_len, 0)
-          })
+test_that(
+  "Number of columns in tspa data are multiples of the variable length",
+  {
+    expect_gt(ncol(fs_dat_single), 1)
+    expect_equal(ncol(fs_dat_single) %% var_len, 0)
+  }
+)
 
-test_that ("Test the data variable names should contain prefix (fs_)", {
+test_that("Test the data variable names should contain prefix (fs_)", {
   fs_names <- colnames(fs_dat_single)
   expect_true(all(grepl("fs_", fs_names)))
 })
@@ -72,22 +74,32 @@ test_that ("Test the data variable names should contain prefix (fs_)", {
 
 # Parameter estimates
 
-test_that("test if the regression coefficients of factors are the same for two methods",
-          {
-            expect_equal(coef(cfa_single)["dem60~ind60"],
-                         coef(tspa_single)["dem60~ind60"])
-          })
+test_that(
+  "Regression coefficients of factors are the same for two methods",
+  {
+    expect_equal(
+      coef(cfa_single)["dem60~ind60"],
+      coef(tspa_single)["dem60~ind60"]
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are the same for two methods",
-          {
-            expect_equal(
-              vcov(cfa_single)[c("dem60~ind60", "v1", "v2"),
-                               c("dem60~ind60", "v1", "v2")],
-              vcov(tspa_single)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
-                                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")],
-              ignore_attr = TRUE
-            )
-          })
+test_that(
+  "se of regression coefficients are the same for two methods",
+  {
+    expect_equal(
+      vcov(cfa_single)[
+        c("dem60~ind60", "v1", "v2"),
+        c("dem60~ind60", "v1", "v2")
+      ],
+      vcov(tspa_single)[
+        c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+        c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")
+      ],
+      ignore_attr = TRUE
+    )
+  }
+)
 
 # Fit measures
 
@@ -184,15 +196,16 @@ test_that("test same standard errors with Mx", {
   )
 })
 # Use numeric matrices
-tspa_mx2 <- tspa_mx_model(model_umx,
-                          data = fs_dat_3var,
-                          mat_ld = diag(3) |>
-                            `dimnames<-`(list(
-                              c("fs_ind60", "fs_dem60", "fs_dem65"),
-                              c("ind60", "dem60", "dem65")
-                            )),
-                          mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
-                            `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+tspa_mx2 <- tspa_mx_model(
+  model_umx,
+  data = fs_dat_3var,
+  mat_ld = diag(3) |>
+    `dimnames<-`(list(
+      c("fs_ind60", "fs_dem60", "fs_dem65"),
+      c("ind60", "dem60", "dem65")
+    )),
+  mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
+    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 )
 tspa_mx_fit2 <- mxRun(tspa_mx2)
 # Use column names for VC
@@ -223,21 +236,25 @@ sem_path_3var <- subset(standardizedSolution(sem_3var),
 tspa_path_3var <- subset(standardizedSolution(tspa_3var),
                          subset = op == "~")
 
-test_that("test if the regression coefficients of factors are similar for two methods",
-          {
-            expect_lt(
-              max(abs(sem_path_3var$est.std - tspa_path_3var$est.std)),
-              expected = .05
-            )
-          })
+test_that(
+  "Regression coefficients of factors are similar for two methods",
+  {
+    expect_lt(
+      max(abs(sem_path_3var$est.std - tspa_path_3var$est.std)),
+      expected = .05
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are similar for two methods",
-          {
-            expect_lt(
-              max(abs(sem_path_3var$se - tspa_path_3var$se)),
-              expected = .01
-            )
-          })
+test_that(
+  "se of regression coefficients are similar for two methods",
+  {
+    expect_lt(
+      max(abs(sem_path_3var$se - tspa_path_3var$se)),
+      expected = .01
+    )
+  }
+)
 
 # Variance of factors
 sem_var_3var <- subset(standardizedSolution(sem_3var),
@@ -315,21 +332,22 @@ sem_path_multi <- subset(standardizedSolution(sem_multi),
 tspa_path_multi <- subset(standardizedSolution(tspa_multi),
                           subset = op == "~")
 
-test_that("test if the regression coefficients of factors are similar for two methods",
-          {
-            expect_equal(
-              sem_path_multi$est.std,
-              tspa_path_multi$est.std
-            )
-          })
+test_that(
+  "Regression coefficients of factors are similar for two methods",
+  {
+    expect_equal(
+      sem_path_multi$est.std,
+      tspa_path_multi$est.std
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are similar for two methods",
-          {
-            expect_equal(
-              sem_path_multi$se,
-              tspa_path_multi$se
-            )
-          })
+test_that("se of regression coefficients are similar for two methods", {
+  expect_equal(
+    sem_path_multi$se,
+    tspa_path_multi$se
+  )
+})
 
 # Variance of factors
 
@@ -539,34 +557,42 @@ test_that("Need to provide none or both fsT and fsL", {
   )
 })
 
-test_that("Names of factor score variables need to match those in the input data", {
-  data("PoliticalDemocracy", package = "lavaan")
-  mod2 <- "
+test_that(
+  "Names of factor score variables need to match those in the input data",
+  {
+    data("PoliticalDemocracy", package = "lavaan")
+    mod2 <- "
   # latent variables
     ind60 =~ x1 + x2 + x3
     dem60 =~ y1 + y2 + y3 + y4
     dem65 =~ y5 + y6 + y7 + y8
   "
-  fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
-  ecov_fs <- attr(fs_dat2, "fsT")
-  dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
-                              FUN = \(x) paste0("bs_", x))
-  expect_error(
-    tspa(model = "dem60 ~ ind60
+    fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+    ecov_fs <- attr(fs_dat2, "fsT")
+    dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
+      FUN = \(x) paste0("bs_", x)
+    )
+    expect_error(
+      tspa(
+        model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
-         data = fs_dat2,
-         fsT = ecov_fs,
-         fsL = attr(fs_dat2, "fsL")),
-    "Names of factor score variables do not match those in the input data."
-  )
-  expect_no_error(
-    tspa(model = "dem60 ~ ind60
+        data = fs_dat2,
+        fsT = ecov_fs,
+        fsL = attr(fs_dat2, "fsL")
+      ),
+      "Names of factor score variables do not match those in the input data."
+    )
+    expect_no_error(
+      tspa(
+        model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
-         data = fs_dat2,
-         fsT = attr(fs_dat2, "fsT"),
-         fsL = attr(fs_dat2, "fsL"))
-  )
-})
+        data = fs_dat2,
+        fsT = attr(fs_dat2, "fsT"),
+        fsL = attr(fs_dat2, "fsL")
+      )
+    )
+  }
+)
 
 test_that("Test indicator names not starting with 'fs_'", {
   data("PoliticalDemocracy", package = "lavaan")
