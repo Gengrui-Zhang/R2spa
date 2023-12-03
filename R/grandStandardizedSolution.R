@@ -33,7 +33,7 @@
 #' '
 #' fit1 <- sem(model = mod1,
 #'           data  = PoliticalDemocracy)
-#' grandStandardizedSolution(fit1)
+#' grand_standardized_solution(fit1)
 #'
 #' ## A single-group, three-factor example
 #' mod2 <- '
@@ -47,7 +47,7 @@
 #' '
 #' fit2 <- sem(model = mod2,
 #'             data  = PoliticalDemocracy)
-#' grandStandardizedSolution(fit2)
+#' grand_standardized_solution(fit2)
 #'
 #' ## A multigroup, two-factor example
 #' mod3 <- '
@@ -60,7 +60,7 @@
 #' fit3 <- sem(mod3, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStandardizedSolution(fit3)
+#' grand_standardized_solution(fit3)
 #'
 #' ## A multigroup, three-factor example
 #' mod4 <- '
@@ -75,10 +75,10 @@
 #' fit4 <- sem(mod4, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStandardizedSolution(fit4)
+#' grand_standardized_solution(fit4)
 
 
-grandStandardizedSolution <- function(object, model_list = NULL,
+grand_standardized_solution <- function(object, model_list = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL, level = .95) {
   if (is.null(model_list)) model_list <- lavTech(object, what = "est")
@@ -256,3 +256,7 @@ grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
     diag(inv_s_eta) %*% x %*% diag(s_eta)
   })
 }
+
+#' @rdname grand_standardized_solution
+#' @export
+grandStandardizedSolution <- grand_standardized_solution
