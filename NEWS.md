@@ -1,3 +1,35 @@
+# R2spa 0.0.3
+
+- Add function `tspa_plot()` for bivariate and residual plots (#23)
+
+- `get_fs()` gains argument `corrected_fsT` for computing corrected error estimates (#50)
+
+- New function `vcov_corrected()` for computing corrected SEs (#39)
+
+- New function `get_fs_lavaan()` for computing factor scores and relevant matrices directly from a `lavaan` output (#61)
+
+- Initial support for 2S-PA with *OpenMx* with `tspa_mx()`
+
+- Update naming of relevant matrices when computing factor scores:
+    * `fsT`: error covariance of factor scores
+    * `fsL`: loading matrix of factor scores
+    * `fsb`: intercepts of factor scores
+    * `scoring_matrix`: weights for computing factor scores from items
+
+- New vignettes for:
+    * Corrected error variance of factor scores (#50)
+    * Corrected standard errors incorporating uncertainty in measurement parameters of factor scores (#39)
+    * Using 2S-PA with EFA scores
+    * Using 2S-PA with OpenMx and definition variables (PR #57)
+    * Latent interaction with categorical indicators (#27)
+    * Growth modeling
+
+- Better error messages for `tspa()` (#53)
+
+- Support mean structure and growth model (#36, #19)
+
+- Clean up code with `lintr` (#33)
+
 # R2spa 0.0.2
 
 - Use `pkgdown` to create website, with GitHub action (#22)
