@@ -144,7 +144,9 @@ tspa <- function(model, data, reliability = NULL, se = "standard",
     dat_names <- ifelse(multigroup, names(data[[1]]), names(data))
     names_match <- lapply(fs_names, function(x) x %in% dat_names) |> unlist()
     if (any(!names_match)) {
-      stop("Names of factor score variables do not match those in the input data.")
+      stop(
+        "Names of factor score variables do not match those in the input data."
+      )
     }
   }
 
@@ -329,7 +331,11 @@ tspaMultipleGroupSe <- function(model, data, se = NULL) {
       error_constraint[x] <- paste0(
         fs[x], "~~ c(", paste(ev[x], collapse = ", "), ") * ", fs[x], "\n"
       )
-      # latent_variance[x] <- paste0(var[x], " ~~ c(", paste0(paste0(rep(paste0("v",x), group), 1:group), collapse = ", "), ") * ", var[x], "\n")
+      # latent_variance[x] <- paste0(
+      #   var[x], " ~~ c(",
+      #   paste0(paste0(rep(paste0("v", x), group), 1:group), collapse = ", "),
+      #   ") * ", var[x], "\n"
+      # )
     }
 
     latent_var_str <- paste(latent_var, collapse = "")
