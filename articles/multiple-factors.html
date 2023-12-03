@@ -8,8 +8,8 @@
 <meta name="description" content="R2spa">
 <title>Multi-Factor Measurement Model • R2spa</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.2.2/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.2.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Multi-Factor Measurement Model">
 <meta property="og:description" content="R2spa">
@@ -26,7 +26,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,14 +36,23 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item">
+  <a class="nav-link" href="../articles/R2spa.html">Get started</a>
+</li>
+<li class="nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
 </li>
 <li class="active nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/categorical-interaction.html">Using Two-Stage Path Analysis with Definition Variables for Latent Interactions with Categorical Indicators</a>
+    <a class="dropdown-item" href="../articles/corrected-se.html">Corrected Standard Errors</a>
+    <a class="dropdown-item" href="../articles/correction-error.html">Correction to Measurement Error</a>
+    <a class="dropdown-item" href="../articles/efa-score.html">EFA Scores</a>
     <a class="dropdown-item" href="../articles/gr-std-coef.html">Grand Standardized Coefficients</a>
     <a class="dropdown-item" href="../articles/multiple-factors.html">Multi-Factor Measurement Model</a>
-    <a class="dropdown-item" href="../articles/tspa-vignette.html">Two-Stage Path Analysis (2S-PA) Model Examples</a>
+    <a class="dropdown-item" href="../articles/tspa-growth-vignette.html">Linear Growth Modeling with Two-Stage Path Analysis</a>
+    <a class="dropdown-item" href="../articles/tspa-plot-vignette.html">Diagnostic plots for `tspa` models</a>
+    <a class="dropdown-item" href="../articles/tspa-vignette-mx.html">Multi-Factor Measurement Model (OpenMx)</a>
   </div>
 </li>
 <li class="nav-item">
@@ -154,34 +163,38 @@ is generally not diagonal, as the following shows:</p>
 <span><span class="co">#&gt; 4  1.8702043  1.4849083   0.1859987   0.3012901         0.9553858</span></span>
 <span><span class="co">#&gt; 5  1.2446060  0.9193277   0.1859987   0.3012901         0.9553858</span></span>
 <span><span class="co">#&gt; 6  0.3348621  0.4886331   0.1859987   0.3012901         0.9553858</span></span>
-<span><span class="co">#&gt;   ind60_by_fs_dem60 dem60_by_fs_ind60 dem60_by_fs_dem60 evfs_ind60_ind60</span></span>
-<span><span class="co">#&gt; 1        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt; 2        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt; 3        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt; 4        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt; 5        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt; 6        0.05816994        0.01834111         0.8688889       0.03459552</span></span>
-<span><span class="co">#&gt;   evfs_dem60_ind60 evfs_dem60_dem60</span></span>
-<span><span class="co">#&gt; 1      0.004017388       0.09077571</span></span>
-<span><span class="co">#&gt; 2      0.004017388       0.09077571</span></span>
-<span><span class="co">#&gt; 3      0.004017388       0.09077571</span></span>
-<span><span class="co">#&gt; 4      0.004017388       0.09077571</span></span>
-<span><span class="co">#&gt; 5      0.004017388       0.09077571</span></span>
-<span><span class="co">#&gt; 6      0.004017388       0.09077571</span></span></code></pre></div>
+<span><span class="co">#&gt;   ind60_by_fs_dem60 dem60_by_fs_ind60 dem60_by_fs_dem60 ev_fs_ind60</span></span>
+<span><span class="co">#&gt; 1        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt; 2        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt; 3        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt; 4        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt; 5        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt; 6        0.05816994        0.01834111         0.8688889  0.03459552</span></span>
+<span><span class="co">#&gt;   ecov_fs_dem60_fs_ind60 ev_fs_dem60</span></span>
+<span><span class="co">#&gt; 1            0.004017388  0.09077571</span></span>
+<span><span class="co">#&gt; 2            0.004017388  0.09077571</span></span>
+<span><span class="co">#&gt; 3            0.004017388  0.09077571</span></span>
+<span><span class="co">#&gt; 4            0.004017388  0.09077571</span></span>
+<span><span class="co">#&gt; 5            0.004017388  0.09077571</span></span>
+<span><span class="co">#&gt; 6            0.004017388  0.09077571</span></span></code></pre></div>
 <p>Therefore, we need to specify cross-loadings when using 2S-PA.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tspa_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tspa.html">tspa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"dem60 ~ ind60"</span>, data <span class="op">=</span> <span class="va">fs_dat</span>,</span>
-<span>                 vc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat</span>, <span class="st">"av_efs"</span><span class="op">)</span>, </span>
-<span>                 cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat</span>, <span class="st">"fsA"</span><span class="op">)</span><span class="op">)</span></span>
+<span>                 fsT <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat</span>, <span class="st">"fsT"</span><span class="op">)</span>, </span>
+<span>                 fsL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat</span>, <span class="st">"fsL"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">tspa_fit</span>, <span class="st">"tspaModel"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">#&gt;  ind60 =~ 0.955385785456617 * fs_ind60 + 0.0581699407736298 * fs_dem60</span></span>
-<span><span class="co">#&gt;  dem60 =~ 0.0183411131911884 * fs_ind60 + 0.868888868390615 * fs_dem60</span></span>
+<span><span class="co">#&gt;  ind60 =~ c(0.955385785456617) * fs_ind60 + c(0.0581699407736295) * fs_dem60</span></span>
+<span><span class="co">#&gt;  # latent variables (indicated by factor scores)</span></span>
+<span><span class="co">#&gt;  dem60 =~ c(0.0183411131911887) * fs_ind60 + c(0.868888868390616) * fs_dem60</span></span>
 <span><span class="co">#&gt;  # constrain the errors</span></span>
-<span><span class="co">#&gt;  fs_ind60 ~~ 0.034595517927198 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.00401738814566848 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.0907757082269275 * fs_dem60</span></span>
-<span><span class="co">#&gt;  # regressions</span></span>
+<span><span class="co">#&gt; fs_ind60 ~~ c(0.0345955179271981) * fs_ind60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem60 ~~ c(0.00401738814566851) * fs_ind60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem60 ~~ c(0.0907757082269278) * fs_dem60</span></span>
+<span><span class="co">#&gt;  </span></span>
+<span><span class="co">#&gt;  # structural model</span></span>
 <span><span class="co">#&gt;  dem60 ~ ind60</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/parameterEstimates.html" class="external-link">parameterestimates</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         lhs op      rhs   est    se     z pvalue ci.lower ci.upper</span></span>
@@ -248,40 +261,48 @@ is generally not diagonal, as the following shows:</p>
 <span><span class="co">#&gt; 4           0.53302         0.4010959        0.02951139         0.4160379</span></span>
 <span><span class="co">#&gt; 5           0.53302         0.4010959        0.02951139         0.4160379</span></span>
 <span><span class="co">#&gt; 6           0.53302         0.4010959        0.02951139         0.4160379</span></span>
-<span><span class="co">#&gt;   dem65_by_fs_dem65 evfs_ind60_ind60 evfs_dem60_ind60 evfs_dem60_dem60</span></span>
-<span><span class="co">#&gt; 1         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt; 2         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt; 3         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt; 4         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt; 5         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt; 6         0.4913338        0.0340105     0.0003881641       0.05868703</span></span>
-<span><span class="co">#&gt;   evfs_dem65_ind60 evfs_dem65_dem60 evfs_dem65_dem65</span></span>
-<span><span class="co">#&gt; 1      0.005026024       0.05337525        0.0515733</span></span>
-<span><span class="co">#&gt; 2      0.005026024       0.05337525        0.0515733</span></span>
-<span><span class="co">#&gt; 3      0.005026024       0.05337525        0.0515733</span></span>
-<span><span class="co">#&gt; 4      0.005026024       0.05337525        0.0515733</span></span>
-<span><span class="co">#&gt; 5      0.005026024       0.05337525        0.0515733</span></span>
-<span><span class="co">#&gt; 6      0.005026024       0.05337525        0.0515733</span></span></code></pre></div>
+<span><span class="co">#&gt;   dem65_by_fs_dem65 ev_fs_ind60 ecov_fs_dem60_fs_ind60 ev_fs_dem60</span></span>
+<span><span class="co">#&gt; 1         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt; 2         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt; 3         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt; 4         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt; 5         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt; 6         0.4913338   0.0340105           0.0003881641  0.05868703</span></span>
+<span><span class="co">#&gt;   ecov_fs_dem65_fs_ind60 ecov_fs_dem65_fs_dem60 ev_fs_dem65</span></span>
+<span><span class="co">#&gt; 1            0.005026024             0.05337525   0.0515733</span></span>
+<span><span class="co">#&gt; 2            0.005026024             0.05337525   0.0515733</span></span>
+<span><span class="co">#&gt; 3            0.005026024             0.05337525   0.0515733</span></span>
+<span><span class="co">#&gt; 4            0.005026024             0.05337525   0.0515733</span></span>
+<span><span class="co">#&gt; 5            0.005026024             0.05337525   0.0515733</span></span>
+<span><span class="co">#&gt; 6            0.005026024             0.05337525   0.0515733</span></span></code></pre></div>
 <p>Therefore, we need to specify cross-loadings when using 2S-PA.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tspa_fit_3fac</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tspa.html">tspa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="st">"dem60 ~ ind60</span></span>
 <span><span class="st">              dem65 ~ ind60 + dem60"</span>,</span>
 <span>              data <span class="op">=</span> <span class="va">fs_dat_3fac</span>,</span>
-<span>              vc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat_3fac</span>, <span class="st">"av_efs"</span><span class="op">)</span>,</span>
-<span>              cross_loadings <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat_3fac</span>, <span class="st">"fsA"</span><span class="op">)</span><span class="op">)</span></span>
+<span>              fsT <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat_3fac</span>, <span class="st">"fsT"</span><span class="op">)</span>,</span>
+<span>              fsL <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">fs_dat_3fac</span>, <span class="st">"fsL"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">tspa_fit_3fac</span>, <span class="st">"tspaModel"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # latent variables (indicated by factor scores)</span></span>
-<span><span class="co">#&gt;  ind60 =~ 0.950647742844845 * fs_ind60 + -0.0206972362902861 * fs_dem60 + 0.0986852834195757 * fs_dem65</span></span>
-<span><span class="co">#&gt;  dem60 =~ -0.00596712444175369 * fs_ind60 + 0.533020047181512 * fs_dem60 + 0.401095943690545 * fs_dem65</span></span>
-<span><span class="co">#&gt;  dem65 =~ 0.0295113941487127 * fs_ind60 + 0.416037872255944 * fs_dem60 + 0.491333767947424 * fs_dem65</span></span>
+<span><span class="co">#&gt;  ind60 =~ c(0.950647742844847) * fs_ind60 + c(-0.0206972362902851) * fs_dem60 + c(0.0986852834195767) * fs_dem65</span></span>
+<span><span class="co">#&gt;  # latent variables (indicated by factor scores)</span></span>
+<span><span class="co">#&gt;  dem60 =~ c(-0.00596712444175395) * fs_ind60 + c(0.533020047181513) * fs_dem60 + c(0.401095943690546) * fs_dem65</span></span>
+<span><span class="co">#&gt;  # latent variables (indicated by factor scores)</span></span>
+<span><span class="co">#&gt;  dem65 =~ c(0.0295113941487134) * fs_ind60 + c(0.416037872255944) * fs_dem60 + c(0.491333767947424) * fs_dem65</span></span>
 <span><span class="co">#&gt;  # constrain the errors</span></span>
-<span><span class="co">#&gt;  fs_ind60 ~~ 0.0340104951546674 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.00038816407039874 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.00502602420598859 * fs_ind60</span></span>
-<span><span class="co">#&gt;  fs_dem60 ~~ 0.0586870313996517 * fs_dem60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.0533752457536214 * fs_dem60</span></span>
-<span><span class="co">#&gt;  fs_dem65 ~~ 0.051573299369388 * fs_dem65</span></span>
-<span><span class="co">#&gt;  # regressions</span></span>
+<span><span class="co">#&gt; fs_ind60 ~~ c(0.0340104951546674) * fs_ind60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem60 ~~ c(0.00038816407039879) * fs_ind60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem65 ~~ c(0.00502602420598866) * fs_ind60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem60 ~~ c(0.0586870313996517) * fs_dem60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem65 ~~ c(0.0533752457536215) * fs_dem60</span></span>
+<span><span class="co">#&gt;  # constrain the errors</span></span>
+<span><span class="co">#&gt; fs_dem65 ~~ c(0.0515732993693881) * fs_dem65</span></span>
+<span><span class="co">#&gt;  </span></span>
+<span><span class="co">#&gt;  # structural model</span></span>
 <span><span class="co">#&gt;  dem60 ~ ind60</span></span>
 <span><span class="co">#&gt;               dem65 ~ ind60 + dem60</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/parameterEstimates.html" class="external-link">parameterestimates</a></span><span class="op">(</span><span class="va">tspa_fit_3fac</span><span class="op">)</span></span>

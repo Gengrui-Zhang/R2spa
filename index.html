@@ -13,8 +13,8 @@
     and has substantially less convergence problems in more complex models or small sample sizes. ">
 <title>An R package for two-stage path analysis (2S-PA) to adjust for measurement errors • R2spa</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.2.2/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.2.2/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="An R package for two-stage path analysis (2S-PA) to adjust for measurement errors">
 <meta property="og:description" content="`R2spa` is a free and open source R package that performs two-stage path analysis (2S-PA).
@@ -36,7 +36,7 @@
     
     <a class="navbar-brand me-2" href="index.html">R2spa</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,14 +46,23 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item">
+  <a class="nav-link" href="articles/R2spa.html">Get started</a>
+</li>
+<li class="nav-item">
   <a class="nav-link" href="reference/index.html">Reference</a>
 </li>
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="articles/categorical-interaction.html">Using Two-Stage Path Analysis with Definition Variables for Latent Interactions with Categorical Indicators</a>
+    <a class="dropdown-item" href="articles/corrected-se.html">Corrected Standard Errors</a>
+    <a class="dropdown-item" href="articles/correction-error.html">Correction to Measurement Error</a>
+    <a class="dropdown-item" href="articles/efa-score.html">EFA Scores</a>
     <a class="dropdown-item" href="articles/gr-std-coef.html">Grand Standardized Coefficients</a>
     <a class="dropdown-item" href="articles/multiple-factors.html">Multi-Factor Measurement Model</a>
-    <a class="dropdown-item" href="articles/tspa-vignette.html">Two-Stage Path Analysis (2S-PA) Model Examples</a>
+    <a class="dropdown-item" href="articles/tspa-growth-vignette.html">Linear Growth Modeling with Two-Stage Path Analysis</a>
+    <a class="dropdown-item" href="articles/tspa-plot-vignette.html">Diagnostic plots for `tspa` models</a>
+    <a class="dropdown-item" href="articles/tspa-vignette-mx.html">Multi-Factor Measurement Model (OpenMx)</a>
   </div>
 </li>
 <li class="nav-item">
@@ -112,26 +121,26 @@
 <span></span>
 <span><span class="co"># get_fs() gives a dataframe with factor scores and standard errors</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">fs_dat</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     fs_ind60 fs_ind60_se ind60_by_fs_ind60 evfs_ind60_ind60   fs_dem60</span></span>
-<span><span class="co">#&gt; 1 -0.5261683   0.1213615         0.9657673       0.01472862 -2.7487224</span></span>
-<span><span class="co">#&gt; 2  0.1436527   0.1213615         0.9657673       0.01472862 -3.0360803</span></span>
-<span><span class="co">#&gt; 3  0.7143559   0.1213615         0.9657673       0.01472862  2.6718589</span></span>
-<span><span class="co">#&gt; 4  1.2399257   0.1213615         0.9657673       0.01472862  2.9936997</span></span>
-<span><span class="co">#&gt; 5  0.8319080   0.1213615         0.9657673       0.01472862  1.9242932</span></span>
-<span><span class="co">#&gt; 6  0.2123845   0.1213615         0.9657673       0.01472862  0.9922798</span></span>
-<span><span class="co">#&gt;   fs_dem60_se dem60_by_fs_dem60 evfs_dem60_dem60</span></span>
-<span><span class="co">#&gt; 1   0.6756472         0.8868049        0.4564991</span></span>
-<span><span class="co">#&gt; 2   0.6756472         0.8868049        0.4564991</span></span>
-<span><span class="co">#&gt; 3   0.6756472         0.8868049        0.4564991</span></span>
-<span><span class="co">#&gt; 4   0.6756472         0.8868049        0.4564991</span></span>
-<span><span class="co">#&gt; 5   0.6756472         0.8868049        0.4564991</span></span>
-<span><span class="co">#&gt; 6   0.6756472         0.8868049        0.4564991</span></span></code></pre></div>
+<span><span class="co">#&gt;     fs_ind60 fs_ind60_se ind60_by_fs_ind60 ev_fs_ind60   fs_dem60 fs_dem60_se</span></span>
+<span><span class="co">#&gt; 1 -0.5261683   0.1213615         0.9657673  0.01472862 -2.7487224   0.6756472</span></span>
+<span><span class="co">#&gt; 2  0.1436527   0.1213615         0.9657673  0.01472862 -3.0360803   0.6756472</span></span>
+<span><span class="co">#&gt; 3  0.7143559   0.1213615         0.9657673  0.01472862  2.6718589   0.6756472</span></span>
+<span><span class="co">#&gt; 4  1.2399257   0.1213615         0.9657673  0.01472862  2.9936997   0.6756472</span></span>
+<span><span class="co">#&gt; 5  0.8319080   0.1213615         0.9657673  0.01472862  1.9242932   0.6756472</span></span>
+<span><span class="co">#&gt; 6  0.2123845   0.1213615         0.9657673  0.01472862  0.9922798   0.6756472</span></span>
+<span><span class="co">#&gt;   dem60_by_fs_dem60 ev_fs_dem60</span></span>
+<span><span class="co">#&gt; 1         0.8868049   0.4564991</span></span>
+<span><span class="co">#&gt; 2         0.8868049   0.4564991</span></span>
+<span><span class="co">#&gt; 3         0.8868049   0.4564991</span></span>
+<span><span class="co">#&gt; 4         0.8868049   0.4564991</span></span>
+<span><span class="co">#&gt; 5         0.8868049   0.4564991</span></span>
+<span><span class="co">#&gt; 6         0.8868049   0.4564991</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Stage 2: Perform 2S-PA</span></span>
 <span><span class="va">tspa_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tspa.html">tspa</a></span><span class="op">(</span></span>
 <span>  model <span class="op">=</span> <span class="st">"dem60 ~ ind60"</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">fs_dat</span>,</span>
-<span>  se <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ind60 <span class="op">=</span> <span class="fl">0.1213615</span>, dem60 <span class="op">=</span> <span class="fl">0.6756472</span><span class="op">)</span></span>
+<span>  se_fs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ind60 <span class="op">=</span> <span class="fl">0.1213615</span>, dem60 <span class="op">=</span> <span class="fl">0.6756472</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/lavaan/man/parameterEstimates.html" class="external-link">parameterestimates</a></span><span class="op">(</span><span class="va">tspa_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        lhs op      rhs   est    se     z pvalue ci.lower ci.upper</span></span>
