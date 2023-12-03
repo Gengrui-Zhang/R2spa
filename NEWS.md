@@ -23,6 +23,10 @@
 
 - Better error messages for `tspa()` (#53)
 
+- Support mean structure and growth model (#36, #19)
+
+- Clean up code with `lintr` (#33)
+
 # R2spa 0.0.2
 
 - Use `pkgdown` to create website, with GitHub action (#22)
