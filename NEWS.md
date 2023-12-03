@@ -8,6 +8,8 @@
 
 - New function `get_fs_lavaan()` for computing factor scores and relevant matrices directly from a `lavaan` output (#61)
 
+- Initial support for 2S-PA with *OpenMx* with `tspa_mx()`
+
 - Update naming of relevant matrices when computing factor scores:
     * `fsT`: error covariance of factor scores
     * `fsL`: loading matrix of factor scores
@@ -20,6 +22,7 @@
     * Using 2S-PA with EFA scores
     * Using 2S-PA with OpenMx and definition variables (PR #57)
     * Latent interaction with categorical indicators (#27)
+    * Growth modeling
 
 - Better error messages for `tspa()` (#53)
 
