@@ -87,27 +87,61 @@ get_fs_lavaan <- function(lavobj,
   } else {
     add_to_evfs <- rep(0, lavInspect(lavobj, what = "ngroups"))
   }
-  prepare_fs_dat <- function(y, est, add) {
-    fscore <- compute_fscore(y,
-                             lambda = est$lambda,
-                             theta = est$theta,
-                             psi = est$psi,
-                             nu = est$nu,
-                             alpha = est$alpha,
-                             method = method,
-                             fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "fsT") + add)
+  miss_pat <- lavobj@Data@Mp
+  prepare_fs_dat <- function(y, est, add, case_idx, mp) {
+    if (is.null(mp)) {
+      fscore <-
+        compute_fscore(y,
+          lambda = est$lambda,
+          theta = est$theta,
+          psi = est$psi,
+          nu = est$nu,
+          alpha = est$alpha,
+          method = method,
+          fs_matrices = TRUE
+        )
+    } else {
+      fscore <- matrix(NA, nrow = nrow(y), ncol = ncol(est$psi))
+      npat <- mp$npatterns
+      pats <- mp$pat
+      mis_idx <- mp$case.idx
+      for (m in seq_len(npat)) {
+        idx_m <- which(case_idx %in% mis_idx[[m]])
+        pat_m <- pats[m, ]
+        fs_m <-
+          compute_fscore(y[idx_m, pat_m, drop = FALSE],
+            lambda = est$lambda[pat_m, , drop = FALSE],
+            theta = est$theta[pat_m, pat_m, drop = FALSE],
+            psi = est$psi,
+            nu = est$nu[pat_m, , drop = FALSE],
+            alpha = est$alpha,
+            method = method,
+            fs_matrices = TRUE
+          )
+        fscore[idx_m, ] <- fs_m
+        if (m == 1) {
+          attributes(fscore) <- c(list(dim = dim(fscore)), attributes(fs_m)[-1])
+        }
+      }
+    }
+    augment_fs(est, fscore, attr(fscore, which = "fsT") + add)
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
-    out <- prepare_fs_dat(y, est, add_to_evfs[[1]])
+    out <- prepare_fs_dat(y, est, add_to_evfs[[1]],
+                          lavInspect(lavobj, what = "case.idx"),
+                          mp = miss_pat[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
       lavobj@Data@group.label
     )
     for (g in seq_along(fs_lst)) {
-      fs_lst[[g]] <- prepare_fs_dat(y[[g]], est[[g]], add_to_evfs[[g]])
+      fs_lst[[g]] <- prepare_fs_dat(
+        y[[g]], est[[g]], add_to_evfs[[g]],
+        lavInspect(lavobj, what = "case.idx")[[g]],
+        mp = miss_pat[[g]]
+      )
       fs_lst[[g]][[group]] <- names(est[g])
     }
     attr_names <- setdiff(names(attributes(fs_lst[[1]])),
