@@ -1,0 +1,238 @@
+---
+title: "Reliability of Factor Scores"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{reliability}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(lavaan)
+library(R2spa)
+```
+
+```{r}
+# Simulate small data with 6 items
+lambda <- seq(.3, .9, length.out = 6)
+theta <- 1 - lambda^2
+num_obs <- 100
+
+eta <- rnorm(num_obs)
+y <- t(
+  tcrossprod(lambda, eta) + rnorm(num_obs * length(lambda), sd = sqrt(theta))
+)
+# Run cfa
+fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
+  data = data.frame(y) |> setNames(paste0("y", seq_along(lambda))),
+  std.lv = TRUE
+)
+lavPredict(fit, fsm = TRUE)
+```
+
+$$
+\begin{aligned}
+  \tilde \eta & = \hat a (y - \hat \mu) = \hat a [\nu + \lambda \eta + e - \hat \nu] \\
+  & = \hat a \lambda \eta + \hat a (\nu - \hat \nu) + \hat a e
+\end{aligned}
+$$
+
+Assuming that the sample model has $\eta$ standardized so that $E(\eta)$ = 0 and $V(\eta)$ = 1, we also have $\hat \nu_j$ = $\bar y_j$ = $\sum_i^n y_{ij} / n$. For now, we'll neglect the mean structure first. 
+
+Using law of total variance, and that $E(\hat a) = a$ and $V(\hat a) = V_{\hat a}$,
+
+$$
+\begin{aligned}
+  V(\tilde \eta) & = E[V(\tilde \eta | \hat a)] + V[E(\tilde \eta | \hat a)] \\
+  & = E[\hat a' \Sigma \hat a] + V[\hat a' 0] \\
+  & = a' \Sigma a + Tr[V_{\hat a} \Sigma] \\
+  & = Tr[(a a' + V_{\hat a}) \Sigma]
+\end{aligned}
+$$
+
+$$
+V(\tilde \eta) = V(\hat a \lambda \eta) + V(\hat a (\nu - \hat \nu)) + Cov(\hat a \lambda \eta, \hat a (\nu - \hat \nu)) + V(\hat a e)
+$$
+
+Let's call $\hat a \lambda \eta$ as component A, $\hat a (\nu - \hat \nu)$ as component B, and $\hat a e$ as component C.
+
+# Simulation of each component
+
+```{r}
+# Population matrix
+true_sigma <- tcrossprod(lambda) + diag(theta)
+pop_fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
+  sample.cov = true_sigma |> `dimnames<-`(rep(list(paste0("y", 1:6)), 2)),
+  sample.nobs = num_obs,
+  std.lv = TRUE
+)
+(true_rel <- crossprod(lambda, solve(true_sigma, lambda)))
+# Sample expectation
+true_rel + sum(diag(solve(true_sigma, vcov(pop_fit)[1:6, 1:6])))
+```
+
+```{r}
+#| eval: false
+# num_sims <- 100000
+# out <- matrix(nrow = 6 * 6, ncol = num_sims)
+
+# for (i in seq_len(num_sims)) {
+#   # eta <- rnorm(num_obs)
+#   # err <- matrix(
+#   #   rnorm(num_obs * length(lambda), sd = sqrt(theta)),
+#   #   ncol = num_obs
+#   # )
+#   # y <- t(
+#   #   tcrossprod(lambda, eta) + err
+#   # )
+#   y <- MASS::mvrnorm(num_obs, mu = lambda * 0,
+#                      Sigma = true_sigma)
+#   inv_covy <- solve(cov(y) * (num_obs - 1) / num_obs)
+#   out[, i] <- inv_covy
+#   # covy <- cov(y)
+#   # out[, i] <- covy[lower.tri(covy, diag = TRUE)]
+# }
+# # rowMeans(out) / (true_sigma[lower.tri(true_sigma, diag = TRUE)])
+# mean(rowMeans(out) / solve(true_sigma))
+# # mean(rowMeans(out) / solve(true_sigma)[lower.tri(true_sigma, diag = TRUE)])
+# num_obs / (num_obs - length(lambda) - 2)
+```
+
+```{r}
+#| eval: false
+num_sims <- 2000
+out <- matrix(nrow = 5, ncol = num_sims)
+
+get_rel <- function(lam, dth, vc = NULL, method = c("adjust", "quad")) {
+  sigma <- tcrossprod(lam) + diag(dth)
+  if (is.null(vc)) {
+    # Formula 1 (no adjustment)
+    crossprod(lam, solve(sigma, lam))
+  } else {
+    method <- match.arg(method)
+    jac_a <- lavaan::lav_func_jacobian_complex(
+      function(x) {
+        R2spa:::compute_a_from_mat(
+          lambda = x[1:6],
+          theta = diag(x[7:12]),
+          psi = matrix(1)
+        )
+      },
+      c(lam, dth)
+    )
+    va <- jac_a %*% vc %*% t(jac_a)
+    ahat <- crossprod(lam, solve(sigma))
+    aa <- crossprod(ahat) + va
+    if (method == "adjust") {
+      # Formula 2: adjust for both error and true variances
+      sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
+    } else if (method == "quad") {
+      # Formula 3: solve quadratic equation with adjusted error
+      ev_fs <- sum(diag(diag(dth) %*% aa))
+      (1 + sqrt(1 - 4 * ev_fs)) / 2
+    }
+  }
+}
+
+bc_rel <- function(fit, nsim = 500, adjust = FALSE, ...) {
+  mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vcov(fit))
+  if (adjust) {
+    vc <- vcov(fit)
+  } else {
+    vc <- NULL
+  }
+  mc_rel <- apply(mc_sim, MARGIN = 1,
+                  FUN = \(x) get_rel(x[1:6], x[7:12], vc = vc, ...))
+  2 * with(
+    lavInspect(fit, what = "est"),
+    get_rel(lambda, dth = diag(theta), vc = vc, ...)
+  ) - mean(mc_rel) # bias-corrected
+} # Seems reasonable when n = 100
+
+# Function for getting all versions
+all_rel <- function(lam, th, vc) {
+  sigma <- tcrossprod(lam) + th
+  ahat <- crossprod(lam, solve(sigma))
+  rel1 <- ahat %*% lam
+
+  jac_a <- lavaan::lav_func_jacobian_complex(
+    function(x) {
+      R2spa:::compute_a_from_mat(
+        lambda = x[seq_along(lam)],
+        theta = diag(x[-(seq_along(lam))]),
+        psi = matrix(1)
+      )
+    },
+    c(lam, diag(th))
+  )
+  va <- jac_a %*% vcov(fit) %*% t(jac_a)
+  aa <- crossprod(ahat) + va
+  rel2 <- sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
+
+  ev_fs <- sum(diag(th %*% aa))
+  rel3 <- (1 + sqrt(1 - 4 * ev_fs)) / 2
+
+  c(rel1, rel2, rel3)
+}
+
+# Function for getting all bc versions
+all_bc_rel <- function(fit) {
+  vc <- vcov(fit)
+  mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vc)
+  mc_rel <- apply(mc_sim, MARGIN = 1,
+                  FUN = function(x) {
+                    all_rel(x[1:6], th = diag(x[7:12]), vc = vc)
+                  })
+  2 * with(
+    lavInspect(fit, what = "est"),
+    all_rel(lambda, th = theta, vc = vc)
+  ) - rowMeans(mc_rel) # bias-corrected
+}
+
+for (i in seq_len(num_sims)) {
+  eta <- rnorm(num_obs)
+  err <- matrix(
+    rnorm(num_obs * length(lambda), sd = sqrt(theta)),
+    ncol = num_obs
+  )
+  y <- t(
+    tcrossprod(lambda, eta) + err
+  )
+  # Run cfa
+  fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
+    data = data.frame(y) |> setNames(paste0("y", seq_along(lambda))),
+    std.lv = TRUE
+  )
+  pars_fit <- lavInspect(fit, what = "est")
+  tilde_eta <- lavPredict(fit, fsm = TRUE)
+  true_rel <- cor(tilde_eta, eta)^2
+  est_a <- attr(tilde_eta, "fsm")[[1]]
+  out[, i] <- c(
+    true_rel, # est_a %*% lambda, est_a %*% diag(theta) %*% t(est_a),
+    est_a %*% pars_fit$lambda,
+    # est_a %*% pars_fit$theta %*% t(est_a),
+    # all_bc_rel(fit)
+    all_rel(pars_fit$lambda, pars_fit$theta, vcov(fit))
+    # crossprod(pars_fit$lambda, solve(true_sigma, pars_fit$lambda)),
+    # crossprod(lambda, solve(lavInspect(fit, what = "sigma"), lambda)),
+    # sum(diag(vcov(pop_fit)[1:6, 1:6] %*% lavInspect(fit, what = "sigma")))
+    )
+}
+```
+
+TODO:
+
+- [ ] Implement the three reliability estimation (quadratic root method as experimental)
+- [ ] Perform a small-scale simulation
+- [ ] Write down math equations for all methods
+- [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
+
+Cov(\eta, a \lambda \eta) = (a \lambda)
