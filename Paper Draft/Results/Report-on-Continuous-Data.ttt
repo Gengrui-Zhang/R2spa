@@ -1,0 +1,178 @@
+\begin{table*}[hbt]
+\ifnextchar[{\eatarg}{}
+[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:standardized bias}Standardized Bias of $\rho$ from 2000 Replications}
+
+\begin{tabular}{cccccc}
+\toprule
+N & \multicolumn{1}{c}{$\rho$} & \multicolumn{1}{c}{Correlation} & \multicolumn{1}{c}{RAPI} & \multicolumn{1}{c}{UPI} & \multicolumn{1}{c}{2SPA}\\
+\midrule
+250 & 0.7 & 0 & 0.30 & -0.13 & 0.10\\
+ &  & 0.3 & 0.28 & -0.15 & 0.09\\
+ &  & 0.6 & 0.30 & -0.02 & 0.14\\
+250 & 0.8 & 0 & 0.16 & -0.22 & -0.01\\
+ &  & 0.3 & 0.18 & -0.17 & 0.01\\
+ &  & 0.6 & 0.20 & -0.16 & 0.02\\
+250 & 0.9 & 0 & 0.09 & -0.21 & -0.05\\
+ &  & 0.3 & 0.15 & -0.15 & 0.01\\
+ &  & 0.6 & 0.15 & -0.14 & 0.01\\
+500 & 0.7 & 0 & 0.26 & -0.27 & 0.09\\
+ &  & 0.3 & 0.25 & -0.32 & 0.08\\
+ &  & 0.6 & 0.20 & -0.28 & 0.04\\
+500 & 0.8 & 0 & 0.16 & -0.37 & 0.00\\
+ &  & 0.3 & 0.18 & -0.37 & 0.02\\
+ &  & 0.6 & 0.19 & -0.29 & 0.04\\
+500 & 0.9 & 0 & 0.13 & -0.28 & -0.01\\
+ &  & 0.3 & 0.15 & -0.24 & 0.01\\
+ &  & 0.6 & 0.12 & -0.24 & -0.01\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} The results were based on $\beta$ = (1, 0.9, 0.75).}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table*}
+\efloatseparator
+ 
+\begin{table*}[hbt]
+\ifnextchar[{\eatarg}{}
+[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:unnamed-chunk-2}Relative SE Bias ($\%$) of $\rho$ from 2000 Replications}
+
+\begin{tabular}{cccccc}
+\toprule
+N & \multicolumn{1}{c}{$\rho$} & \multicolumn{1}{c}{Correlation} & \multicolumn{1}{c}{RAPI} & \multicolumn{1}{c}{UPI} & \multicolumn{1}{c}{2SPA}\\
+\midrule
+250 & 0.7 & 0 & -18.40 & -36.10 & -10.70\\
+ &  & 0.3 & -22.70 & -37.60 & -13.20\\
+ &  & 0.6 & -21.80 & -70.20 & -14.20\\
+250 & 0.8 & 0 & -11.00 & -22.50 & -7.40\\
+ &  & 0.3 & -15.40 & -28.70 & -8.30\\
+ &  & 0.6 & -14.30 & -23.70 & -11.70\\
+250 & 0.9 & 0 & -3.30 & -10.70 & -1.60\\
+ &  & 0.3 & -5.60 & -10.20 & -5.30\\
+ &  & 0.6 & -7.10 & -11.30 & -8.90\\
+500 & 0.7 & 0 & -17.10 & -33.50 & -10.10\\
+ &  & 0.3 & -16.90 & -30.20 & -8.30\\
+ &  & 0.6 & -19.00 & -33.50 & -12.10\\
+500 & 0.8 & 0 & -9.30 & -20.10 & -5.70\\
+ &  & 0.3 & -8.40 & -20.40 & -4.70\\
+ &  & 0.6 & -17.40 & -26.50 & -12.80\\
+500 & 0.9 & 0 & -6.40 & -9.60 & -7.10\\
+ &  & 0.3 & -5.90 & -11.40 & -5.10\\
+ &  & 0.6 & -6.60 & -12.50 & -8.90\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} The results were based on $\beta$ = (1, 0.9, 0.75).}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table*}
+\efloatseparator
+ 
+\begin{table*}[hbt]
+\ifnextchar[{\eatarg}{}
+[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:unnamed-chunk-3}Coverage Rate of 95$\%$ CI of $\rho$ from 2000 Replications}
+
+\begin{tabular}{cccccc}
+\toprule
+N & \multicolumn{1}{c}{$\rho$} & \multicolumn{1}{c}{Correlation} & \multicolumn{1}{c}{RAPI} & \multicolumn{1}{c}{UPI} & \multicolumn{1}{c}{2SPA}\\
+\midrule
+250 & 0.7 & 0 & 92.40 & 77.60 & 93.80\\
+ &  & 0.3 & 90.40 & 76.30 & 92.30\\
+ &  & 0.6 & 90.10 & 78.30 & 91.40\\
+250 & 0.8 & 0 & 92.70 & 83.70 & 93.30\\
+ &  & 0.3 & 91.90 & 83.30 & 93.00\\
+ &  & 0.6 & 91.40 & 83.70 & 91.50\\
+250 & 0.9 & 0 & 94.50 & 91.30 & 94.40\\
+ &  & 0.3 & 94.30 & 90.50 & 93.80\\
+ &  & 0.6 & 93.00 & 90.80 & 92.40\\
+500 & 0.7 & 0 & 91.20 & 76.30 & 92.80\\
+ &  & 0.3 & 90.40 & 75.80 & 92.90\\
+ &  & 0.6 & 88.90 & 75.40 & 92.00\\
+500 & 0.8 & 0 & 93.00 & 83.10 & 94.60\\
+ &  & 0.3 & 93.10 & 82.40 & 93.80\\
+ &  & 0.6 & 89.70 & 81.70 & 91.20\\
+500 & 0.9 & 0 & 93.80 & 90.30 & 92.50\\
+ &  & 0.3 & 94.00 & 89.60 & 94.10\\
+ &  & 0.6 & 92.90 & 89.80 & 92.40\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} The results were based on $\beta$ = (1, 0.9, 0.75).}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table*}
+\efloatseparator
+ 
+\begin{table*}[hbt]
+\ifnextchar[{\eatarg}{}
+[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:unnamed-chunk-4}RMSE of $\rho$ from 2000 Replications}
+
+\begin{tabular}{cccccc}
+\toprule
+N & \multicolumn{1}{c}{$\rho$} & \multicolumn{1}{c}{Correlation} & \multicolumn{1}{c}{RAPI} & \multicolumn{1}{c}{UPI} & \multicolumn{1}{c}{2SPA}\\
+\midrule
+250 & 0.7 & 0 & 0.14 & 0.18 & 0.11\\
+ &  & 0.3 & 0.14 & 0.17 & 0.10\\
+ &  & 0.6 & 0.11 & 0.33 & 0.09\\
+250 & 0.8 & 0 & 0.10 & 0.10 & 0.08\\
+ &  & 0.3 & 0.09 & 0.11 & 0.08\\
+ &  & 0.6 & 0.08 & 0.08 & 0.07\\
+250 & 0.9 & 0 & 0.07 & 0.08 & 0.07\\
+ &  & 0.3 & 0.07 & 0.07 & 0.06\\
+ &  & 0.6 & 0.06 & 0.06 & 0.06\\
+500 & 0.7 & 0 & 0.09 & 0.11 & 0.08\\
+ &  & 0.3 & 0.08 & 0.10 & 0.07\\
+ &  & 0.6 & 0.07 & 0.08 & 0.06\\
+500 & 0.8 & 0 & 0.06 & 0.07 & 0.06\\
+ &  & 0.3 & 0.06 & 0.07 & 0.05\\
+ &  & 0.6 & 0.05 & 0.06 & 0.05\\
+500 & 0.9 & 0 & 0.05 & 0.05 & 0.05\\
+ &  & 0.3 & 0.05 & 0.05 & 0.04\\
+ &  & 0.6 & 0.04 & 0.04 & 0.04\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} The results were based on $\beta$ = (1, 0.9, 0.75).}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table*}

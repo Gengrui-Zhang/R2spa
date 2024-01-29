@@ -1,0 +1,235 @@
+---
+title             : "Methods Outline"
+
+author: 
+  - name          : "Jimmy"
+
+bibliography      : "r-references.bib"
+
+floatsintext      : no
+linenumbers       : yes
+draft             : no
+mask              : no
+
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+
+classoption       : "man"
+header-includes   :
+  - |
+    \makeatletter
+    \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-1em}%
+      {\normalfont\normalsize\bfseries\typesectitle}}
+    
+    \renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-\z@\relax}%
+      {\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+    \makeatother
+
+csl               : "`r system.file('rmd', 'apa7.csl', package = 'papaja')`"
+documentclass     : "apa7"
+output            : papaja::apa6_pdf
+---
+
+```{r setup, include = FALSE}
+library("papaja")
+r_refs("r-references.bib")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+# Introduction (Three Methods)
+
+Suppose there are two latent predictors (e.g., X and M) and one latent interaction term, XM, in the simplest case. Both the seminal work of Busemeyer and Jones (1983) and Kenny and Judd (1984) provided a classical structural model for estimating latent interaction and nonlinear terms:
+
+\begin{equation}
+y (\eta) = \alpha + \gamma_{1}\xi_{X} + \gamma_{2}\xi_{M} + \gamma_{3}\xi_{X}\xi_{M} + \zeta.
+\end{equation}
+
+In this equation, $\xi_{X}$ and $\xi_{M}$ are two latent predictors and their product $\xi_{X}\xi_{M}$ form the interaction term, where $\alpha$ represents the intercept. The $\zeta$ is the disturbance of regression model with a distribution of $\zeta \sim N(0, \Psi)$ and $\Psi$ is residual variance. The coefficients $\gamma_{1}$ and $\gamma_{2}$ represent the main effects, while $\gamma_{3}$ represents the interaction effect. The dependent variable can be either observed scores $y$ or latent variables $\eta$ composed of observed items. The measurement models for $\xi$ (s) follow the traditional confirmatory factor analysis (CFA) model:
+
+\begin{equation}
+\textbf{X} = \boldsymbol{\tau_{X}} + \boldsymbol{\Lambda_{X}\xi_{X}} + \boldsymbol{\delta_{X}},
+\end{equation}
+
+\begin{equation}
+\textbf{M} = \boldsymbol{\tau_{M}} + \boldsymbol{\Lambda_{M}\xi_{M}} + \boldsymbol{\delta_{M}},
+\end{equation}
+
+where $\textbf{X}$ and $\textbf{M}$ are vectors of observed exogenous variables, $\boldsymbol{\xi_{X}}$ and $\boldsymbol{\xi_{M}}$ are the latent variables represented as scalars, $\boldsymbol{{\tau}}$ is a vector of constant intercept terms, $\boldsymbol{\Lambda}$ is a matrix of factor loadings, and $\boldsymbol{\delta}$ is a vector of measurement errors at the indicator-level. Moreover, the variance of latent predictor is represented by $Var(\xi)$ and measurement error for the ith indicator is represented by $Var(\delta)$. The relations among measurement errors of all indicators construct a square variance-covariance matrix, $\Theta_{\delta}$, in which the diagonal is filled with elements from the vector $\boldsymbol{\delta}$, and off-diagonal elements are fixed at 0.
+
+The assumptions of latent interactions model are concerned with normal distribution and autocorrelation: (1) The terms $\xi_{X}$, $\xi_{X}$, $\delta_{X}$, $\delta_{M}$, $\zeta$ are random variables with normal distributions; (2) The terms $\zeta$, $\delta_{X}$ and $\delta_{M}$ are homogeneously distributed with means of 0 and uncorrelated with each other, and independently distributed of $\xi_{X}$ and $\xi_{M}$. Note that the correlation between two latent predictors (i.e., $\rho_{\xi_{X}\xi_{M}}$) is freely estimated.
+
+In the classical latent interaction model, mean-centering is applied as a strategic method to enhance the interpretability of parameter estimates and facilitate accuracy and reduce bias on the estimation of interaction effects. Mean-centering involves subtracting the mean of a variable from its individual values, thereby centering the variable around its average. By mean-centering the constituent variables involved in the interaction, researchers can reduce multicollinearity, making it easier to discern the unique contributions of each variable and their joint impact. This practice aligns with recommendations from seminal works such as Busemeyer and Jones (1983) and Kenny and Judd (1984), who have advocated for mean-centering on mean-centering all indcators of independent latent variables to improve the precision of interaction estimates and to mitigate potential issues arising from the correlation between main effects and interaction terms. Recently a more refined method, Double mean centering (DMC), was proposed to account for non-normally distribution indicators (e.g., categorical data). 
+After calculating product indicators, an additional step of mean-centering again on the product indicators is simply added. By doing so, product indicators with DMC always measure the latent product term and can account for skewed and heterogeneous indicators (Lin et al., 2010).
+
+Busemeyer and Jones (1983) proposed that one major advantage of modeling nonlinear effects under the latent variable framework was that it could correct biased estimates of path coefficients and corresponding standard errors by controlling the reliability of indicators (i.e., the amount of measurement error), where as multiple regression analyses using ordinary least squared estimator assumed error-free measurement on predicting variables. Practically it is very restrictive to hold such an assumption in data analytics. Failure to incorporate measurement error typically leads to substantially erroneous inferences of structural parameters that cannot be remedied by increasing the sample size (Busemeyer $\&$ Jones, 1983). 
+
+## Unconstrained Product Indicator (UPI) [Need a diagram]
+
+Based on the structural model, Kenny and Judd (1984) proposed a product indicator (PI) method to implement latent interaction modeling. The latent interaction term, $\xi_{XM}$ could be indicated by a set of product indicators from $\xi_{X}$ and $\xi_{M}$. For a demonstrative example of measurement model, suppose $\xi_{X}$ and $\xi_{M}$ are related to three indicators respectively. 
+
+\begin{align}
+    x_{1} = \tau_{X_{1}} + \lambda_{X_{1}}\xi_{X} + \delta_{X_{1}};\notag\\
+    x_{2} = \tau_{X_{2}} + \lambda_{X_{2}}\xi_{X} + \delta_{X_{2}};\\
+    x_{3} = \tau_{X_{3}} + \lambda_{X_{3}}\xi_{X} + \delta_{X_{3}},\notag
+\end{align}
+
+\begin{align}
+    m_{1} = \tau_{M_{1}} + \lambda_{M_{1}}\xi_{M} + \delta_{M_{1}};\notag\\
+    m_{2} = \tau_{M_{2}} + \lambda_{M_{2}}\xi_{M} + \delta_{M_{2}};\\
+    m_{3} = \tau_{M_{3}} + \lambda_{M_{3}}\xi_{M} + \delta_{M_{3}},\notag
+\end{align}
+
+\begin{equation}
+\begin{gathered}
+    x_{1}m_{1} = \tau_{X_{1}M_{1}} + \lambda_{X_{1}M_{1}}\xi_{XM} + \delta_{X_{1}M_{1}};\\
+    x_{1}m_{2} = \tau_{X_{1}M_{2}} + \lambda_{X_{1}M_{2}}\xi_{XM} + \delta_{X_{1}M_{2}};\\
+    ...\\
+    x_{3}m_{3} = \tau_{X_{3}M_{3}} + \lambda_{X_{3}M_{3}}\xi_{XM} + \delta_{X_{3}M_{3}};
+\end{gathered}
+\end{equation}
+
+where $\xi_{XM}$ represents the configuration of the indicators (i.e., $x_{1}m_{1}$, $x_{1}m_{2}$, $x_{1}m_{3}$, $x_{2}m_{1}$, $x_{2}m_{2}$, $x_{2}m_{3}$, $x_{3}m_{1}$, $x_{3}m_{2}$, $x_{3}m_{3}$). There are three observed items (i.e., $x_{1}$ to $x_3$; $m_{1}$ to $m_3$) indicating two latent exogenous variable (i.e., $\xi_{X}$ and $\xi_{M}$) separately. Then nine observed product indicators of all possible configuration of pairs (i.e., from $x_{1}m_{1}$ to $x_{3}m_{3}$) form to indicate the latent interaction term $\xi_{XM}$. Each observed item has their individual parameter estimation of intercept, factor loading, and residual term.  
+
+Kenny and Judd (1984) provided theoretical ground with mathematical derivation and empirical demonstration with a concrete example, but some inherent problems resulted in limited use in psychology research at early stage. Marsh, Wen, and Hau (2004) pointed out that the original PI approach required very complicated nonlinear constraints regarding the SEM model specification, which usually caused statistical issue such as convergence problem and extraordinarily large model. These nonlinear constraints are derived based on the formula of indicators of separate latent variables, and used to specify factor loadings and variances associated with items indicating interaction terms. The final constraints of the interaction term are linear combinations of products of factor loadings, latent varaibles, and error terms (Li et al., 1998). Besides, researchers need to fully understand where and how to specify constraints and select indicators for the interaction term, which was challenging and resource-consuming for those without strong background in relative fields. These obstacles led Marsh, Wen, and Hau (2004) to develop the "UPI" approach that does not require most constraints. Cham et al. (2012) summarized PI approaches and listed two constraints the UPI kept: (1) mean structure of $\boldsymbol{\xi}$s; (2) uncorrelated unique factors of $\delta_{X}$, $\delta_{M}$, $\delta_{XM}$. Since $\xi_{X}$ and $\xi_{M}$ are assumed to have expected values of 0, $E(\xi_{XM})$ can be represented by the covariance between $\xi_{X}$ and $\xi_{M}$ (i.e., $E[\xi_{XM}] = cov[\xi_{X}, \xi_{M}] + E[\xi_{X}]E[\xi_{M}]$ where $E[\xi_{X}] = 0$ and $E[\xi_{M} = 0]$). Adding the mean structure that could be derived from existing model parameters therefore has no impact on the complexity of model but provides more information of parameter estimation. Nevertheless, it turns out that the mean structure is not necessary if using the DMC strategy, further simplifying the model. 
+
+The UPI method, compared to the constrained one, is more robust to the violation of multivariate normality assumptions of latent predictors as it omits to constrain loadings and variances. More importantly, Marsh, Wen, and Hau (2004) demonstrated that the UPI and the constrained PI had parallel performance under the normality assumptions, while the UPI did even better on the simulated non-normal data in which such assumptions were violated. Nevertheless the challenge of choosing indicators was still yet to clear. Foldness and Hagtvet (2014)
+then conducted a large-scale simulation study in which they studied more than 4,000 possible configurations of indicators within a model with two first-order latent predictors. In general, they concluded that the all-pairs configuration (i.e., using all possible combinations of indicators from stemming latent variables) has the best statistical properties especially for heavily non-normal data (Foldness $\&$ Hagtvet, 2014).
+
+In our simulation study, we used the all-paired with double-centering strategy for its simplicity and unbiased parameter estimation on the non-normal data with skewed and heterogeneous distribution (Cham et al., 2013).
+
+## Reliability Adjusted Product Indicator (RAPI) [Need a diagram]
+
+The major difference between the RAPI and the UPI method happens in the measurement model. The RAPI method uses composite scores (e.g., mean score, sum score, etc.) as the single indicator for the latent predictors instead of multiple product indicators:
+
+\begin{equation}
+\begin{gathered}
+  X = \tau_{X} + 1\cdot\xi_{X} + \delta_{X};\\
+  M = \tau_{X} + 1\cdot\xi_{M} + \delta_{M};\\
+  XM = \tau_{XM} + 1\cdot\xi_{XM} + \delta_{XM},
+\end{gathered}
+\end{equation}
+
+where $X$ and $M$ are the single indicators of their corresponding latent predictors (i.e., $\xi_{X}$ and $\xi_{M}$), and the latent interaction factor, $\xi_{XM}$, is indicated by the product of the observed items $X$ and $M$ (i.e., $XM$). Each observed item has their own estimated intercept and residual term. The observed predictors $X$ and $M$ are one type of double-centered composite scores, for example sum score (i.e, $X = \Sigma{X_{i}}$ and $M = \Sigma{M_{i}}$) in this case. It should be noted that the factor loadings of two predictors and one interaction term are constrained to 1 receptively due to identification issues for SEM models. 
+
+A significant feature of the RAPI method is that it can account for measurement errors of observed indicators when the original items that produce the composite scores are unreliable, by placing error-variance constraints in the model. Since the factor loadings are all 1, the reliability of the predictors (e.g., $X$) can be simplified to: 
+
+\begin{equation}
+\rho_{XX'} = \frac{Var(\xi_{X})}{Var(\xi_{X}) + Var(\delta_{X})},
+\end{equation}
+
+in which $\rho_{XX'}$ is the reliability index and $Var(\xi_{X})$ and $Var(\delta_{X})$ represent the variance of latent factor and error term. With simple algebra transformation, the error variance can be represented as a function of the reliability (Bollen, 1989):
+
+\begin{equation}
+Var(\delta_{X}) = (1 - \rho_{XX'})Var(X),
+\end{equation}
+
+and the variance of the latent variable is:
+
+\begin{equation}
+Var(\xi_{X}) = \rho_{XX'}Var(X),
+\end{equation}
+
+in which $Var(X) = Var(\xi_{X}) + Var(\delta_{X})$.
+
+Under the assumption of independently and identically distributed measurement error, Hsiao, Kwok, and Lai (2018) derived the equations for the error-variance constraint of the interaction term:
+
+\begin{equation}
+\begin{aligned}
+   Var(\delta_{XM}) = & \rho_{XX'}Var(X)(1 - \rho_{MM'}Var(M) + \\&
+                        \rho_{MM'}Var(M)(1-\rho_{XX'})Var(X) + \\&
+                        (1 - \rho_{XX'})Var(X)(1 - \rho_{MM'})Var(M).
+\end{aligned}
+\end{equation}
+
+This equation is used to preset the constraint for the error variance of the latent interaction effect in the RAPI method. More derivation details can be found in Appdendix A of Hsiao, Kwok, and Lai (2018).
+
+## Two-stage Path Analysis with Interaction (2SPA) [Need a diagram]
+
+The 2SPA was first proposed by Lai and Hsiao (2022), which similarly uses reliability-adjustment technique to account for measurement error in multiple congeneric items. One major improvement of the 2SPA method is that it allows the estimated reliability to be observation-specific and therefore can apply to ordered categorical items that are typically not normally distributed (Lai $\&$ Hsiao 2022; Lai et al., 2023). 
+
+In the first stage of 2SPA model, researchers obtain factor scores for each observation $p$ on each latent predictor, $\widehat{\xi_{p}}$, and individual-specific reliability, $\widehat{\rho_{p}}$. Then, a similar structural model to the RAPI method is applied with reliability-adjusted error constraints.
+
+\begin{equation}
+\begin{gathered}
+  \widehat{F}_{X_{p}} = \tau_{X_{p}} + \lambda_{X_{p}}\xi_{X_{p}} + \delta_{X_{p}};\\
+  \widehat{F}_{M_{p}} = \tau_{M_{p}} + \lambda_{M_{p}}\xi_{M_{p}} + \delta_{M_{p}};\\
+  \widehat{F}_{XM_{p}} = \tau_{XM_{p}} + \lambda_{XM_{p}}\xi_{XM_{p}} + \delta_{XM_{p}},
+\end{gathered}
+\end{equation}
+
+in which $\widehat{F}_{X_{p}}$ and $\widehat{F}_{M_{p}}$ are estimated factors scores for the $p$th individual from the measurement model, and their product, $\widehat{F}_{XM_{p}}$, is a single indicator of the latent interaction effect. 
+
+For continuous items, the error-variance constraints are $(1 - \rho_{XX'})Var(\widehat{F}_{X})$ in which $Var(\widehat{F}_{X})$ is the constant variance of factor score for all observations. Similar constraints are applied to the other latent variable $Var(\widehat{F}_{M})$. The error variance constraint for the interaction term, $Var(\widehat{FM})$, is define in the same way as RAPI, such as a linear combination of variance and disturbance of two latent variables and reliability. Alternatively speaking, the RAPI method is a special case of 2SPA where the composite scores are used for continuous items (Lai $\&$ Hsiao, 2022). As for categorical items with non-normality, the reliability becomes $\rho_{XX_{p}'} = 1 - \widehat{\sigma}_{\widehat{F}_{X_{p}}}^2$ where the $\rho_{XX_{p}'}$ is individual-specific reliability and the $\widehat{\sigma}_{\widehat{F}_{X_{p}}}$ is the estimated standard error of the factor score for the $i$th individual. In this case, the factor loading needs to be fixed individually to the corresponding reliability $\rho_{XX_{p}'}$, and the error variance should be set to $\widehat{\sigma}_{\widehat{F}_{X_{p}}}^2 \cdot \rho_{XX_{p}'}$.
+
+# Method
+
+## Design of the Simulation
+
+The design of our simulation study was adapted from Hsiao, Kwok, and Lai (2021). We proposed a new method (i.e., 2SPA) for estimating latent interaction effects and compared it to two other approaches (i.e., UPI, RAPI). The simulated population data were generated from a model with preset parameter values:
+
+\begin{equation}
+\begin{gathered}
+X_{i} = \tau_{X_{i}} + \lambda_{X_{i}}\xi_{X} + \delta_{X_{i}};\\
+M_{i} = \tau_{M_{i}} + \lambda_{M_{i}}\xi_{M} + \delta_{M_{i}};\\
+Y_{i} = \tau_{Y_{i}} + 0.3\xi_{X} + 0.3\xi_{M} + 0.3\xi_{XM} + \zeta_{i},
+\end{gathered}
+\end{equation}
+
+where the path coefficients of the structural model with two latent predictors and their interaction term being 0.3. The latent variables $\xi_{X}$ and $\xi_{XM}$ were simulated from standard normal distribution with means of 0 and variances fixed at 1, each indicated by three items (i.e., $\xi_{X}$ with [$X_{1}$, $X_{2}$, $X_{3}$]; $\xi_{M}$ with [$M_{1}$, $M_{2}$, $M_{3}$]). The $X_{i}$ and $M_{i}$ indicators and the dependent variable $Y_{i}$ were all observed continuous variables with normally distributed errors. The $\tau_{X_{i}}$, $\tau_{M_{i}}$, and $\tau_{Y_{i}}$ were their corresponding constant intercepts.
+
+In the measurement model, the $\lambda_{X_{i}}$ and $\lambda_{M_{i}}$ represent the factor loadings of the $i$th 
+indicator on $\xi_{X}$ and $\xi_{M}$ respectively. Specifically, the first two loadings of the latent predictors were set to fixed values of 1.0 and 0.9 (i.e., $\lambda_{X_{1}} = \lambda_{M_{1}} = 1.0$, $\lambda_{X_{2}} = \lambda_{M_{2}} = 0.9$), whereas the third loading varies with three levels (i.e., $\lambda_{X_{3}} = \lambda_{M_{3}} = [0.75, 0.80, 0.85]$). Then, the third indicator should reflect three levels of loading differences with the first and second indicators (i.e., large difference: [1.0, 0.9, 0.75]; medium difference: [1.0, 0.9, 0.8]; small difference: [1.0, 0.9, 0.85]). We included these three conditions to explore the impact of loading differences on simulation results. 
+
+The $\delta_{X_{i}}$ and $\delta_{M_{i}}$ were the residual factors of the $i$th indicator with variances $\theta_{X_{i}}$ and $\theta_{M_{i}}$ respective, whereas the $\zeta$ was the error term for $Y$ with variance $\Psi_{Y_{i}}$. All of them followed normal distribution with means of 0. They all have homogeneous distribution with central location at 0 and independent of each other, and further independently distributed of two latent variables $\xi_{X}$ and $\xi_{M}$. 
+
+For the UPI method, the $\xi_{XM}$ was indicated by the all-pair configuration of the indicators: $x_{1}m_{1}$, $x_{1}m_{2}$, $x_{1}m_{3}$, $x_{2}m_{1}$, $x_{2}m_{2}$, $x_{2}m_{3}$, $x_{3}m_{1}$, $x_{3}m_{2}$, $x_{3}m_{3}$. As for the RAPI and 2SPA method, the $\xi_{XM}$ was loaded by a single indicator depending on the procedure of each method. Specifically, the indicator of the RAPI method was composite scores of indicators of $\xi_{X}$ and $\xi_{M}$ respectively, while that of the 2SPA method was pre-computed factor scores using corresponding indicators.
+
+The range of researcher-manipulated sample sizes choices covered in published research reports about latent interaction methods spanned from 20 to 5,000 (Chin, Marcolin, $\&$ Newsted, 2003; Lin et al., 2010; Cham et al., 2012; Marsh et al., 2014), with commonly seen choices spanning from 100 to 500. In Hsiao et al. (2018), Hsiao, Kwok, $\&$ Lai (2021), and Chin, Marcolin, $\&$ Newsted (2003), the UPI and RAPI methods reached relatively unbiased estimates of the interaction effects at $N \ge 500$, whereas the performance under small sample sizes deserved more evaluations and comparisons. Hence we chose N = 250 and 500 as our sample size conditions. 
+
+As adapted from the study in Hsiao, Kwok, $\&$ Lai (2021), we pre-specified three population correlations between latent predictors ($\rho_{\xi_{X}\xi_{M}}$): 0, 0.3, 0.6, in which the error variance of Y, $\Psi_{Y}$, is 0.82, 0.766, 0.712 at $\rho_{\xi_{X}\xi_{M}}$ = 0, 0.3, 0.6. For the RAPI methods, we manipulated the reliability of indicators with three levels: 0.7, 0.8, and 0.9. Varied reliability level resulted in three levels of error variance of the exogenous variables. Then, congeneric items were formed from manipulating error variances of the three indicators proportionally for the corresponding latent variables. We kept the proportions of constrained error variances of three indicators from Hsiao, Kwok, $\&$ Lai (2021) the same, such that the first indicator covered 44$\%$ of the total error variances, the second indicator covered 33$\%$, and 23$\%$ of the last indicator. Hence, the current study has a $2 \times 3 \times 3 \times 3$ design with two sample size choices, three factor loading combinations, three correlation levels between latent predictors, and three levels of reliability.
+
+## Evaluation Criteria
+
+We applied four evaluation criteria to evaluate the performance of the three methods on accuracy and precision in estimating the interaction effects (i.e., $\gamma_{3}$). 
+
+The standardized bias and 95$\%$ confidence interval (CI) coverage rate were used to evaluate the bias, and measure the accuracy, of the interaction effect estimates. The bias (B) is defined as the average difference between the sample estimator and the preset population parameter:
+
+\begin{equation}
+B(\gamma_{3}) = R^{-1}\Sigma^{R}_{r = 1}(\hat{\gamma_{3r}} - \gamma_{3}),
+\end{equation}
+
+where R is the total number of replications that counts from 1 to 2,000. The $\hat{\gamma_{3r}}$ denotes the estimated interaction effect in each replication r and the $\gamma_{3}$ denotes the population parameter (0.3). To calculate the standardized bias (SB), the standard error of sample estimated parameter should be obtained from replications and divided by calculated bias:
+
+\begin{equation}
+SB = \frac{B(\gamma_{3})}{SE_{\gamma_{3}}},
+\end{equation}
+
+where $SE_{\gamma_{3}}$ is the standard error of interaction parameter. Collins, Schafer, and Kam (2001) suggested that an absolute value of $\le 0.40$ would be considered acceptable for each condition.
+
+As for the 95$\%$CI coverage rate, it was calculated as the proportion of replications in which the Wald CI for each replication captures the $\gamma_{3}$. A coverage rate of $> 91\%$ is considered acceptable (Muthén $\&$ Muthén, 2002).
+
+Next, the relative standard error (SE) bias was used to evaluate the precision of the interaction effect estimates. This criterion compared the empirical standard deviation of the interaction estimates with the average standard error across replications:
+
+\begin{equation}
+Relative\ SE\ Bias = \frac{R^{-1}\Sigma^{R}_{r = 1}(\widehat{SE_{r}} - SD)}{SD},
+\end{equation}
+
+where $\widehat{SE_{r}}$ is the standard error of interaction effect estimate in a single replication cycle and $SD$ is the empirical standard deviation of the interaction estimates obtained from all replications. Smaller relative SE bias represents less variability across replications in each simulation condition, which is more desired. Estimators with absolute values of RSE bias $\le 10\%$ would be regarded acceptable and indicate that the standard error is reasonably unbiased (Hoogland $\&$ Boomsma, 1998).
+
+The last criterion was the root mean squre error (RMSE), calculated by taking the squared root of the sum of squared bias:
+
+\begin{equation}
+RMSE = \sqrt{R^{-1}\Sigma^{R}_{r = 1}(\hat{\gamma_{3r}} - \gamma_{3})^2}.
+\end{equation}
+
+It quantifies both the bias and variability of the interaction effect estimates across replications. A smaller RMSE value would indicate that the replication result of one condition across 2,000 replications had relatively more accuracy and precision.
