@@ -24,38 +24,39 @@ library(semTools)
 library(R2spa)
 library(dplyr)
 library(nlsem)
-dat <- read.csv("https://osf.io/download/grwn2/")
 ```
 
 # Unconstrained Product Indicator
 
 ```{r}
-modME <- '
-tvalue =~ t1 + t2 + t3 + t4
-sources =~ s1 + s2 + s3 + s4 + s5
-tip =~ tip1 + tip2 + tip3
-
-
-tip ~ tvalue + sources 
-
-'
-
-fitME <- sem(modME, data = dat, std.lv = TRUE, estimator = "mlr")
-summary(fitME, fit.measure = TRUE)
-
-## Compute product indicators (double mean centering)
-
 #create names
 #not required, but makes syntax easier to write
+dat <- read.csv("https://osf.io/download/grwn2/")
 tvalue <- paste0("t", 1:4)
 sources <- paste0("s", 1:5)
 
 intNames <- paste0(rep(tvalue, each = length(sources)), sources)
 
-dat3 <- indProd(dat, var1 = c("t1", "t2", "t3", "t4"),
+ # dat_comp <- int_prod(dat, var_1 = c("t1", "t2", "t3", "t4"),
+ #                 var_2 = c("s1", "s2", "s3", "s4", "s5"),
+ #                 prod_name = intNames)
+
+dat3 <- indProd(dat, 
+                var1 = c("t1", "t2", "t3", "t4"),
                 var2 = c("s1", "s2", "s3", "s4", "s5"),
-                match = FALSE, doubleMC = TRUE,
+                match = FALSE, meanC = T, 
+                residualC = F, doubleMC = T,
                 namesProd = intNames)
+
+dat4 <- int_prod(dat, 
+                var_1 = c("t1", "t2", "t3", "t4"),
+                var_2 = c("s1", "s2", "s3", "s4", "s5"),
+                prod_name = intNames)
+
+# int_prod(data = dat,
+#          var_1 = c("t1", "t2", "t3", "t4"),
+#          var_2 = c("s1", "s2", "s3", "s4", "s5"),
+#          prod_name = intNames)
 
 ## Mean Centering interaction model
 
@@ -173,29 +174,6 @@ summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
 
 ```
 
-
-```{r upi function}
-# Testing
-df <- read.csv("https://osf.io/download/grwn2/")
-model <- '
-  tvalue =~ t1 + t2 + t3 + t4
-  sources =~ s1 + s2 + s3 + s4 + s5
-  tip =~ tip1 + tip2 + tip3
-  tip ~ b1*tvalue + b2*sources + b3*tvalue:sources
-  
-  tvalue ~~ v1*tvalue
-  sources ~~ v2*sources
-              
-  beta1 := b1*sqrt(v1)
-  beta2 := b2*sqrt(v2)
-  beta3 := b3*sqrt(v1)*sqrt(v2)
-'
-summary(upi(data = df,
-            model = model),
-        fit.measure = TRUE,
-        standardized = TRUE)
-```
-
 ```{r test data generation function}
 
 # Test function
@@ -304,16 +282,16 @@ model_rapi <- "
               
               # regressions
               tip ~ b1*tvalue + b2*sources + b3*product_ind
-              
-              tvalue ~~ v1*tvalue
-              sources ~~ v2*sources
-              product_ind ~~ v3*product_ind
-              
-              # Define Standardized Coefficients
-              beta1 := b1 * sqrt(v1)
-              beta2 := b2 * sqrt(v2)
-              beta3 := b3 * sqrt(v1) * sqrt(v2)
               "
+
+              # tvalue ~~ v1*tvalue
+              # sources ~~ v2*sources
+              # product_ind ~~ v3*product_ind
+              # 
+              # # Define Standardized Coefficients
+              # beta1 := b1 * sqrt(v1)
+              # beta2 := b2 * sqrt(v2)
+              # beta3 := b3 * sqrt(v1) * sqrt(v2)
 
 fit_rapi <- sem(model_rapi, 
                 data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
