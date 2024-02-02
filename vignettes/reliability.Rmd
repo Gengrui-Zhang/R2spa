@@ -110,7 +110,7 @@ true_rel + sum(diag(solve(true_sigma, vcov(pop_fit)[1:6, 1:6])))
 
 ```{r}
 #| eval: false
-num_sims <- 2000
+num_sims <- 10
 out <- matrix(ncol = 7, nrow = num_sims)
 
 # get_rel <- function(lam, dth, vc = NULL, method = c("adjust", "quad")) {
@@ -188,7 +188,7 @@ all_rel <- function(lam, th, vc) {
   c(rel1, rel2, rel3)
 }
 
-# Function for getting all bc versions
+# Function for getting all bias-corrected versions
 all_bc_rel <- function(fit, nsim = 100) {
   vc <- vcov(fit)
   mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vc)
@@ -264,6 +264,15 @@ bias_tab |>
   geom_hline(yintercept = 0)
 ```
 
+1. Assuming no sampling errors in the weights
+
+$$\rho = \frac{(a'\lambda)^2}{(a'\lambda)^2 + a\Theta a}$$
+
+2. XXX
+
+3. XXX
+
+Derivation for the reliability formula that accounts for sampling errors in the weights:
 
 
 TODO:
