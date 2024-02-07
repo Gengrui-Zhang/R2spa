@@ -1,0 +1,203 @@
+---
+title             : "Introduction Draft"
+
+author: 
+  - name          : "Jimmy"
+
+bibliography      : "r-references.bib"
+
+floatsintext      : no
+linenumbers       : yes
+draft             : no
+mask              : no
+
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+
+classoption       : "man"
+header-includes   :
+  - |
+    \makeatletter
+    \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-1em}%
+      {\normalfont\normalsize\bfseries\typesectitle}}
+    
+    \renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-\z@\relax}%
+      {\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+    \makeatother
+
+csl               : "`r system.file('rmd', 'apa7.csl', package = 'papaja')`"
+documentclass     : "apa7"
+output            : papaja::apa6_pdf
+---
+
+```{r setup, include = FALSE}
+library("papaja")
+r_refs("r-references.bib")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+Increasing numbers of recent social science research rarely focus on bivariate relations among variables; instead, more sophisticated theories with assumptions of intricate effects such as nonlinear and moderation effects are studied because the real world is rarely simple and straightforward (Carte & Russell, 2003; MacKinnon & Luecken, 2008; Cunningham & Ahn, 2019). Numerous research conclude that exercising may help people lose weight, but people may be interested in how, when, for whom, and under what conditions that exercising can do for losing weight. Moderation (or interaction) research can answer such questions by investigating how a third variable (or a groups of additional variables) modifies relations among variables of interest. 
+
+In regression models, moderation effects are represented by an interaction term created by multiplying two predictors:
+
+\begin{equation}
+Y = b_{0} + b_{1}X + b_{2}Z + b_{3}XZ + \epsilon,
+\end{equation}
+
+where $b_{0}$ is the intercept, $b_{1}$ and $b_{2}$ are coefficients for two predictors $X$ and $Z$, $b_{3}$ is the coefficient for the interaction term $XZ$, and $\epsilon$ is the residual term. This general regression model with interaction term is widely used in most moderation research on observed variables, which means that $X$ and $Z$ are variables that can be directly measured with tangible tools, such as height and weight. Since classical regression model assumes that variables are error-free (i.e., not contaminated by measurement error), parameter estimates (especially the interaction effect) are usually biased when variables are measured with error, which is not uncommon in empirical research. To overcome such problem, latent interaction models based on the structural equation modeling (SEM) framework are developed to accommodate and control measurement error in observed indicators and provide reliably true relations among latent constructs (Mueller, 1997; Steinmetz et al., 2011; Cham et al., 2012; Maslowsky et al., 2015).
+
+Kenny and Judd (1984) first proposed a classical structural model for estimating latent interaction effects. Suppose a simplest case in which two latent predictors and one latent interaction term exist:
+
+\begin{equation}
+y (\eta) = \alpha + \gamma_{1}\xi_{X} + \gamma_{2}\xi_{M} + \gamma_{3}\xi_{X}\xi_{M} + \zeta,
+\end{equation}
+
+where $\xi_{X}$ and $\xi_{M}$ are two latent predictors and their product $\xi_{X}\xi_{M}$ forms the interaction term, and $\alpha$ represents the intercept. The $\zeta$ term is the disturbance of regression model with a distribution of $\zeta \sim N(0, \Psi)$, which captures unobserved factors influencing the dependent variable. The $\Psi$ is the variance-covariance matrix of $\zeta$. The coefficients $\gamma_{1}$ and $\gamma_{2}$ represent the main effects, while $\gamma_{3}$ represents the interaction effect. The endogenous variable can be either observed (i.e., $y$) or latent (i.e., $\eta$). The measurement models for $\xi$ (s) in which observed variables are not in mean-deviated form follow a traditional confirmatory factor analysis (CFA) model:
+
+\begin{equation}
+\textbf{X} = \boldsymbol{\tau_{X}} + \boldsymbol{\Lambda_{X}\xi_{X}} + \boldsymbol{\delta_{X}},
+\end{equation}
+
+\begin{align}
+    \begin{bmatrix}
+        x_{1} \\
+        x_{2} \\ 
+        x_{3}
+    \end{bmatrix} =
+    \begin{bmatrix}
+        \tau_{1} \\
+        \tau_{2} \\ 
+        \tau_{3}
+    \end{bmatrix} +
+    \begin{bmatrix}
+        \lambda_{1} \\
+        \lambda_{2} \\ 
+        \lambda_{3}
+    \end{bmatrix}
+    \begin{bmatrix}
+        \xi_{X} \\
+    \end{bmatrix} +
+    \begin{bmatrix}
+        \delta_{1} \\
+        \delta_{2} \\ 
+        \delta_{3}
+    \end{bmatrix}.
+\end{align}
+
+Suppose that three indicators are related to the latent predictor $\xi_{X}$. The $\textbf{X}$ is a $q \times 1$ vector of observed exogenous indicators; the $\boldsymbol{\xi_{X}}$ is a $1 \times 1$ scalar representing the latent variable; the $\boldsymbol{{\tau}}$ is a $q \times 1$ vector of intercept terms; the $\boldsymbol{\Lambda}_{X}$ is a $q \times 1$ vector of factor loadings, and the $\boldsymbol{\delta}$ is a $q \times 1$ vector of measurement errors at the indicator-level. The measurement error for each indicator, say $\delta_{1}$, follows a multivariate normal distribution with a mean of 0 and a variance of $\theta_{1}$. The variance-covariance structure of measurement error of all indicators is a diagonal matrix represented by $\mathbf{\Theta_{\delta}}$, where $\mathbf{\Theta_{\delta}} = diag(\theta_{1}, \theta_{2}, \theta_{3})$. The measurement model and relevant parameters are the same for $\xi_{M}$.
+
+A few assumptions of the latent interaction model above are commonly imposed with regard to multivariate normal distribution and independence: (1) The measurement errors of indicators, the latent predictor, and the disturbance term in the structural model are multivariate normal, uncorrelated, and independent to each other (i.e., $\rho(\delta, \xi) = 0$; $\rho(\zeta, \xi) = 0$; $\rho(\delta, \zeta) = 0$); (2) All measurement errors are mutually independent and uncorrelated to each other (i.e., $\rho(\delta_{1}, \delta_{2}) = 0$; $\rho(\delta_{1}, \delta_{3}) = 0$; $\rho(\delta_{2}, \delta_{3}) = 0$); (3) The covariance between the two latent predictors (i.e., $\phi(\xi_{X}, \zeta_{M})$) is assumed to be freely estimated because $\xi_{XM}$ may have a non-zero distribution even though $\xi_{X}$ and $\xi_{M}$ are normally distributed (Jöreskog & Yang, 1996); (4) A mean structure of latent variables is included in the model because $E(\xi_{XM}) \neq 0$ (Moulder & Algina, 2002).
+
+In the classical latent interaction model, mean-centering was used as strategy to enhance the interpretability of parameter estimates, facilitate model accuracy, and reduce bias on the estimation of interaction effects (Busemeyer and Jones, 1983; Kenny and Judd 1984; Moulder & Algina, 2002; Marsh et al., 2004; Lin et al., 2010). By mean-centering the constituent variables in the interaction term, researchers can reduce multicollinearity, making it easier to discern the unique contributions of each variable and their joint impact. Recently a more refined method, Double mean centering (DMC), was proposed and shown to eliminate the necessity of including a mean structure, simplify the procedure of model specification and estimation, and demonstrate outstanding performance under violation of normality assumption (Lin et al., 2010). This method begins with centering all indicators of the latent interaction term, and continues centering the latent interaction scores. Schoemann & Jorgensen (2021) applied DMC to their demonstrative example of latent interaction method by stating that DMC always measures the latent product term and can account for skewed and heterogeneous indicators.
+
+This study focused on three approaches for estimating latent interaction effects in which two approaches have been researched in simulated study design and applied in substantive research. One was Unconstrained Product Indicator (UPI; Marsh et al., 2004) and the other was Reliability-Adjusted Product Indicator (RAPI; Hsiao et al., 2018). A new method developed from the Two-Stage Path Analysis (2S-PA) method was introduced in this study. Results from a simulation study were used to evaluate and compare three methods, and demonstrate that the 2S-PA method showcased a superior performance and easier application for practical research.  
+
+## Unconstrained Product Indicator (UPI) [Need a diagram]
+
+Based on the structural model, Kenny and Judd (1984) proposed a product indicator (PI) method to implement latent interaction modeling. The latent interaction term, $\xi_{XM}$ could be indicated by a set of product indicators from $\xi_{X}$ and $\xi_{M}$. For a demonstrative example of measurement model, suppose $\xi_{X}$ and $\xi_{M}$ are related to three indicators respectively. 
+
+\begin{align}
+    x_{1} = \tau_{X_{1}} + \lambda_{X_{1}}\xi_{X} + \delta_{X_{1}};\notag\\
+    x_{2} = \tau_{X_{2}} + \lambda_{X_{2}}\xi_{X} + \delta_{X_{2}};\\
+    x_{3} = \tau_{X_{3}} + \lambda_{X_{3}}\xi_{X} + \delta_{X_{3}},\notag
+\end{align}
+
+\begin{align}
+    m_{1} = \tau_{M_{1}} + \lambda_{M_{1}}\xi_{M} + \delta_{M_{1}};\notag\\
+    m_{2} = \tau_{M_{2}} + \lambda_{M_{2}}\xi_{M} + \delta_{M_{2}};\\
+    m_{3} = \tau_{M_{3}} + \lambda_{M_{3}}\xi_{M} + \delta_{M_{3}},\notag
+\end{align}
+
+\begin{equation}
+\begin{gathered}
+    x_{1}m_{1} = \tau_{X_{1}M_{1}} + \lambda_{X_{1}M_{1}}\xi_{XM} + \delta_{X_{1}M_{1}};\\
+    x_{1}m_{2} = \tau_{X_{1}M_{2}} + \lambda_{X_{1}M_{2}}\xi_{XM} + \delta_{X_{1}M_{2}};\\
+    ...\\
+    x_{3}m_{3} = \tau_{X_{3}M_{3}} + \lambda_{X_{3}M_{3}}\xi_{XM} + \delta_{X_{3}M_{3}};
+\end{gathered}
+\end{equation}
+
+where $\xi_{XM}$ represents the configuration of the indicators (i.e., $x_{1}m_{1}$, $x_{1}m_{2}$, $x_{1}m_{3}$, $x_{2}m_{1}$, $x_{2}m_{2}$, $x_{2}m_{3}$, $x_{3}m_{1}$, $x_{3}m_{2}$, $x_{3}m_{3}$). There are three observed items (i.e., $x_{1}$ to $x_3$; $m_{1}$ to $m_3$) indicating two latent exogenous variable (i.e., $\xi_{X}$ and $\xi_{M}$) separately. Then nine observed product indicators of all possible configuration of pairs (i.e., from $x_{1}m_{1}$ to $x_{3}m_{3}$) form to indicate the latent interaction term $\xi_{XM}$. Each observed item has their individual parameter estimation of intercept, factor loading, and residual term.  
+
+Kenny and Judd (1984) provided theoretical ground with mathematical derivation and empirical demonstration with a concrete example, but some inherent problems resulted in limited use in psychology research at early stage. Marsh, Wen, and Hau (2004) pointed out that the original PI approach required very complicated nonlinear constraints regarding the SEM model specification, which usually caused statistical issue such as convergence problem and extraordinarily large model. These nonlinear constraints are derived based on the formula of indicators of separate latent variables, and used to specify factor loadings and variances associated with items indicating interaction terms. The final constraints of the interaction term are linear combinations of products of factor loadings, latent varaibles, and error terms (Li et al., 1998). Besides, researchers need to fully understand where and how to specify constraints and select indicators for the interaction term, which was challenging and resource-consuming for those without strong background in relative fields. These obstacles led Marsh, Wen, and Hau (2004) to develop the "UPI" approach that does not require most constraints. Cham et al. (2012) summarized PI approaches and listed two constraints the UPI kept: (1) mean structure of $\boldsymbol{\xi}$s; (2) uncorrelated unique factors of $\delta_{X}$, $\delta_{M}$, $\delta_{XM}$. Since $\xi_{X}$ and $\xi_{M}$ are assumed to have expected values of 0, $E(\xi_{XM})$ can be represented by the covariance between $\xi_{X}$ and $\xi_{M}$ (i.e., $E[\xi_{XM}] = cov[\xi_{X}, \xi_{M}] + E[\xi_{X}]E[\xi_{M}]$ where $E[\xi_{X}] = 0$ and $E[\xi_{M} = 0]$). Adding the mean structure that could be derived from existing model parameters therefore has no impact on the complexity of model but provides more information of parameter estimation. Nevertheless, it turns out that the mean structure is not necessary if using the DMC strategy, further simplifying the model. 
+
+The UPI method, compared to the constrained one, is more robust to the violation of multivariate normality assumptions of latent predictors as it omits to constrain loadings and variances. More importantly, Marsh, Wen, and Hau (2004) demonstrated that the UPI and the constrained PI had parallel performance under the normality assumptions, while the UPI did even better on the simulated non-normal data in which such assumptions were violated. Nevertheless the challenge of choosing indicators was still yet to clear. Foldness and Hagtvet (2014)
+then conducted a large-scale simulation study in which they studied more than 4,000 possible configurations of indicators within a model with two first-order latent predictors. In general, they concluded that the all-pairs configuration (i.e., using all possible combinations of indicators from stemming latent variables) has the best statistical properties especially for heavily non-normal data (Foldness $\&$ Hagtvet, 2014).
+
+In our simulation study, we used the all-paired with double-centering strategy for its simplicity and unbiased parameter estimation on the non-normal data with skewed and heterogeneous distribution (Cham et al., 2013).
+
+## Reliability Adjusted Product Indicator (RAPI) [Need a diagram]
+
+The major difference between the RAPI and the UPI method happens in the measurement model. The RAPI method uses composite scores (e.g., mean score, sum score, etc.) as the single indicator for the latent predictors instead of multiple product indicators:
+
+\begin{equation}
+\begin{gathered}
+  X = \tau_{X} + 1\cdot\xi_{X} + \delta_{X};\\
+  M = \tau_{X} + 1\cdot\xi_{M} + \delta_{M};\\
+  XM = \tau_{XM} + 1\cdot\xi_{XM} + \delta_{XM},
+\end{gathered}
+\end{equation}
+
+where $X$ and $M$ are the single indicators of their corresponding latent predictors (i.e., $\xi_{X}$ and $\xi_{M}$), and the latent interaction factor, $\xi_{XM}$, is indicated by the product of the observed items $X$ and $M$ (i.e., $XM$). Each observed item has their own estimated intercept and residual term. The observed predictors $X$ and $M$ are one type of double-centered composite scores, for example sum score (i.e, $X = \Sigma{X_{i}}$ and $M = \Sigma{M_{i}}$) in this case. It should be noted that the factor loadings of two predictors and one interaction term are constrained to 1 receptively due to identification issues for SEM models. 
+
+A significant feature of the RAPI method is that it can account for measurement errors of observed indicators when the original items that produce the composite scores are unreliable, by placing error-variance constraints in the model. Since the factor loadings are all 1, the reliability of the predictors (e.g., $X$) can be simplified to: 
+
+\begin{equation}
+\rho_{XX'} = \frac{Var(\xi_{X})}{Var(\xi_{X}) + Var(\delta_{X})},
+\end{equation}
+
+in which $\rho_{XX'}$ is the reliability index and $Var(\xi_{X})$ and $Var(\delta_{X})$ represent the variance of latent factor and error term. With simple algebra transformation, the error variance can be represented as a function of the reliability (Bollen, 1989):
+
+\begin{equation}
+Var(\delta_{X}) = (1 - \rho_{XX'})Var(X),
+\end{equation}
+
+and the variance of the latent variable is:
+
+\begin{equation}
+Var(\xi_{X}) = \rho_{XX'}Var(X),
+\end{equation}
+
+in which $Var(X) = Var(\xi_{X}) + Var(\delta_{X})$.
+
+Under the assumption of independently and identically distributed measurement error, Hsiao, Kwok, and Lai (2018) derived the equations for the error-variance constraint of the interaction term:
+
+\begin{equation}
+\begin{aligned}
+   Var(\delta_{XM}) = & \rho_{XX'}Var(X)(1 - \rho_{MM'}Var(M) + \\&
+                        \rho_{MM'}Var(M)(1-\rho_{XX'})Var(X) + \\&
+                        (1 - \rho_{XX'})Var(X)(1 - \rho_{MM'})Var(M).
+\end{aligned}
+\end{equation}
+
+This equation is used to preset the constraint for the error variance of the latent interaction effect in the RAPI method. More derivation details can be found in Appdendix A of Hsiao, Kwok, and Lai (2018).
+
+## Two-stage Path Analysis with Interaction (2SPA) [Need a diagram]
+
+The 2SPA was first proposed by Lai and Hsiao (2022), which similarly uses reliability-adjustment technique to account for measurement error in multiple congeneric items. One major improvement of the 2SPA method is that it allows the estimated reliability to be observation-specific and therefore can apply to ordered categorical items that are typically not normally distributed (Lai $\&$ Hsiao 2022; Lai et al., 2023). 
+
+In the first stage of 2SPA model, researchers obtain factor scores for each observation $p$ on each latent predictor, $\widehat{\xi_{p}}$, and individual-specific reliability, $\widehat{\rho_{p}}$. Then, a similar structural model to the RAPI method is applied with reliability-adjusted error constraints.
+
+\begin{equation}
+\begin{gathered}
+  \widehat{F}_{X_{p}} = \tau_{X_{p}} + \lambda_{X_{p}}\xi_{X_{p}} + \delta_{X_{p}};\\
+  \widehat{F}_{M_{p}} = \tau_{M_{p}} + \lambda_{M_{p}}\xi_{M_{p}} + \delta_{M_{p}};\\
+  \widehat{F}_{XM_{p}} = \tau_{XM_{p}} + \lambda_{XM_{p}}\xi_{XM_{p}} + \delta_{XM_{p}},
+\end{gathered}
+\end{equation}
+
+in which $\widehat{F}_{X_{p}}$ and $\widehat{F}_{M_{p}}$ are estimated factors scores for the $p$th individual from the measurement model, and their product, $\widehat{F}_{XM_{p}}$, is a single indicator of the latent interaction effect. 
+
+For continuous items, the error-variance constraints are $(1 - \rho_{XX'})Var(\widehat{F}_{X})$ in which $Var(\widehat{F}_{X})$ is the constant variance of factor score for all observations. Similar constraints are applied to the other latent variable $Var(\widehat{F}_{M})$. The error variance constraint for the interaction term, $Var(\widehat{FM})$, is define in the same way as RAPI, such as a linear combination of variance and disturbance of two latent variables and reliability. Alternatively speaking, the RAPI method is a special case of 2SPA where the composite scores are used for continuous items (Lai $\&$ Hsiao, 2022). As for categorical items with non-normality, the reliability becomes $\rho_{XX_{p}'} = 1 - \widehat{\sigma}_{\widehat{F}_{X_{p}}}^2$ where the $\rho_{XX_{p}'}$ is individual-specific reliability and the $\widehat{\sigma}_{\widehat{F}_{X_{p}}}$ is the estimated standard error of the factor score for the $i$th individual. In this case, the factor loading needs to be fixed individually to the corresponding reliability $\rho_{XX_{p}'}$, and the error variance should be set to $\widehat{\sigma}_{\widehat{F}_{X_{p}}}^2 \cdot \rho_{XX_{p}'}$.
+
+
