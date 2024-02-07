@@ -268,18 +268,41 @@ bias_tab |>
 
 $$\rho = \frac{(a'\lambda)^2}{(a'\lambda)^2 + a\Theta a}$$
 
-2. XXX
+2. Accounting for sampling error in the weights
 
-3. XXX
+$$\rho = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a\Theta a + \lambda'V_{\tilde{a}}\lambda + tr(\Theta V_{\tilde{a}})}$$
+
+3. Derived using a quadratic formula
+
+$$\rho = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
 
 Derivation for the reliability formula that accounts for sampling errors in the weights:
+
+Given $$E(\tilde{a}=a, y=\lambda\eta+\varepsilon),V(\eta)=1,E(\eta)=0,V(\varepsilon)=\Theta,\eta\perp\varepsilon,$$
+
+
+$$
+\begin{aligned}
+V(\tilde{a}'y) 
+  & = E[V(\tilde{a}'y|\eta)] + V[E(\tilde{a}'y|\eta)] \\
+  & = E[V(\tilde{a}'\lambda\eta + \tilde{a}'\varepsilon|\eta)]+V[E(\tilde{a}'\lambda\eta|\eta + E(\tilde{a}'\varepsilon)] \\
+  & = E[\eta^2\lambda^2V_{\tilde a} + a'\Theta a+tr(\Theta V_{\tilde a})] + V[a'\lambda\eta] \\
+  & = \lambda'V_{\tilde a}\lambda+a'\Theta a + tr(\Theta V_{\tilde a} + (a'\lambda)^2) \\
+  \\
+  \\
+  & Rel = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + tr(\Theta V_{\tilde{a}}) + (a'\lambda)^2} \\
+  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda\lambda\Sigma^{-1}\lambda + \lambda'\Sigma^{-1}\Theta\Sigma^{-1}\lambda} \\
+  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}(\lambda\lambda'+\Theta)\Sigma^{-1}\lambda} \\
+  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda}
+\end{aligned}
+$$
 
 
 TODO:
 
 - [ ] Implement the three reliability estimation (quadratic root method as experimental)
 - [ ] Perform a small-scale simulation
-- [ ] Write down math equations for all methods
+- [√] Write down math equations for all methods
 - [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
 
 Cov(\eta, a \lambda \eta) = (a \lambda)
