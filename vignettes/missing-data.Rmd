@@ -1,0 +1,67 @@
+---
+title: "2S-PA with Missing Data"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{missing-data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+For illustration, we will create an artificial data set with two missing data pattern:
+
+```{r}
+set.seed(2225)
+library(lavaan)
+data(PoliticalDemocracy)
+pd2 <- PoliticalDemocracy[9:11]  # x1, x2, x3
+# Add MCAR missing data
+pd2[!rbinom(75, size = 1, prob = 0.7), 1] <- NA
+```
+
+Factor scores with `lavaan::lavPredict()`:
+
+```{r}
+fit <- cfa("ind60 =~ x1 + x2 + x3", data = pd2, missing = "fiml")
+fs_lavaan <- lavPredict(fit, method = "Bartlett", se = TRUE, fsm = TRUE)
+# # extract scoring matrix
+# fsm <- attr(fs_lavaan, "fsm")[[1]]
+# # se for observations with complete data
+# th <- lavInspect(fit, what = "est")$theta
+# sqrt(diag(fsm %*% th %*% t(fsm)))
+# # se for observations missing item 1 (need conditional normal)
+# fsm_mis1 <- with(lavInspect(fit, what = "est"), {
+#     lambda <- lambda[2:3, , drop = FALSE]
+#     theta <- theta[2:3, 2:3, drop = FALSE]
+#     # covy <- (lambda %*% psi %*% t(lambda) + theta)
+#     # ginvcovy <- MASS::ginv(covy)
+#     # tlam_invcov <- crossprod(lambda, ginvcovy)
+#     # psi %*% tlam_invcov
+#     lamt_th_lam <- crossprod(lambda, solve(theta, lambda))
+#     solve(lamt_th_lam, crossprod(lambda, solve(theta)))
+# })
+# sqrt(diag(fsm_mis1 %*% th[2:3, 2:3, drop = FALSE] %*% t(fsm_mis1)))
+# From R2spa
+fs <- R2spa::get_fs_lavaan(fit, method = "Bartlett")
+# Compare factor scores
+plot(fs_lavaan, fs$fs_ind60)
+abline(a = 0, b = 1)
+```
+
+Multiple group
+
+```{r}
+mg_fit <- cfa("ind60 =~ x1 + x2 + x3",
+              data = cbind(pd2, group = rep(1:2, c(40, 35))),
+              missing = "fiml",
+              group = "group")
+# R2spa::get_fs_lavaan(mg_fit)  # currently not working
+```
