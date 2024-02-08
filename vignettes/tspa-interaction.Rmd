@@ -1,6 +1,6 @@
 ---
 title: "2S-PA with Interaction"
-author: "Hok Chio (Mark) Lai"
+author: "Jimmy Zhang, Hok Chio (Mark) Lai"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -24,363 +24,268 @@ library(semTools)
 library(R2spa)
 library(dplyr)
 library(nlsem)
+devtools::load_all(".")
 ```
 
-# Unconstrained Product Indicator
+# UPI (Unconstrained Product Indicator)
+
+An example of using UPI to conduct latent interaction estimation below is based on the example from Schoemann $\&$ Jorgensen (2021):
 
 ```{r}
-#create names
-#not required, but makes syntax easier to write
-dat <- read.csv("https://osf.io/download/grwn2/")
-tvalue <- paste0("t", 1:4)
-sources <- paste0("s", 1:5)
-
-intNames <- paste0(rep(tvalue, each = length(sources)), sources)
-
- # dat_comp <- int_prod(dat, var_1 = c("t1", "t2", "t3", "t4"),
- #                 var_2 = c("s1", "s2", "s3", "s4", "s5"),
- #                 prod_name = intNames)
-
-dat3 <- indProd(dat, 
-                var1 = c("t1", "t2", "t3", "t4"),
-                var2 = c("s1", "s2", "s3", "s4", "s5"),
-                match = FALSE, meanC = T, 
-                residualC = F, doubleMC = T,
-                namesProd = intNames)
-
-dat4 <- int_prod(dat, 
-                var_1 = c("t1", "t2", "t3", "t4"),
-                var_2 = c("s1", "s2", "s3", "s4", "s5"),
-                prod_name = intNames)
-
-# int_prod(data = dat,
-#          var_1 = c("t1", "t2", "t3", "t4"),
-#          var_2 = c("s1", "s2", "s3", "s4", "s5"),
-#          prod_name = intNames)
-
-## Mean Centering interaction model
-
-modintMC <- '
-
-tvalue =~ t1 + t2 + t3 + t4
-sources =~ s1 + s2 + s3 + s4 + s5
-tip =~ tip1 + tip2 + tip3
-
-int =~ t1s1 + t1s2 + t1s3 + t1s4 + t1s5 +        
-       t2s1 + t2s2 + t2s3 + t2s4 + t2s5 + 
-       t3s1 + t3s2 + t3s3 + t3s4 + t3s5 + 
-       t4s1 + t4s2 + t4s3 + t4s4 + t4s5 
-
-
-tip ~ b1*tvalue + b2*sources + b3*int
-
-#Residual covariances between terms from the same indicator 
-#covariances between the same indicator are constrained to equality
-t1s1 ~~ th1*t1s2 + th1*t1s3 + th1*t1s4 + th1*t1s5
-t1s2 ~~ th1*t1s3 + th1*t1s4 + th1*t1s5
-t1s3 ~~ th1*t1s4 + th1*t1s5
-t1s4 ~~ th1*t1s5
-
-t2s1 ~~ th2*t2s2 + th2*t2s3 + th2*t2s4 + th2*t2s5
-t2s2 ~~ th2*t2s3 + th2*t2s4 + th2*t2s5
-t2s3 ~~ th2*t2s4 + th2*t2s5
-t2s4 ~~ th2*t2s5
-
-t3s1 ~~ th3*t3s2 + th3*t3s3 + th3*t3s4 + th3*t3s5
-t3s2 ~~ th3*t3s3 + th3*t3s4 + th3*t3s5
-t3s3 ~~ th3*t3s4 + th3*t3s5
-t3s4 ~~ th3*t3s5
-
-t4s1 ~~ th4*t4s2 + th4*t4s3 + th4*t4s4 + th4*t4s5
-t4s2 ~~ th4*t4s3 + th4*t4s4 + th4*t4s5
-t4s3 ~~ th4*t4s4 + th4*t4s5
-t4s4 ~~ th4*t4s5
-
-t1s1 ~~ th5*t2s1 + th5*t3s1 + th5*t4s1 
-t2s1 ~~ th5*t3s1 + th5*t4s1 
-t3s1 ~~ th5*t4s1 
-
-t1s2 ~~ th6*t2s2 + th6*t3s2 + th6*t4s2 
-t2s2 ~~ th6*t3s2 + th6*t4s2 
-t3s2 ~~ th6*t4s2 
-
-t1s3 ~~ th7*t2s3 + th7*t3s3 + th7*t4s3 
-t2s3 ~~ th7*t3s3 + th7*t4s3 
-t3s3 ~~ th7*t4s3 
-
-t1s4 ~~ th8*t2s4 + th8*t3s4 + th8*t4s4 
-t2s4 ~~ th8*t3s4 + th8*t4s4 
-t3s4 ~~ th8*t4s4 
-
-t1s5 ~~ th9*t2s5 + th9*t3s5 + th9*t4s5 
-t2s5 ~~ th9*t3s5 + th9*t4s5 
-t3s5 ~~ th9*t4s5 
-'
-
-fitintMC <- sem(modintMC, data = dat3, std.lv = TRUE, meanstructure = TRUE)
-summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
-```
-
-```{r Simulated Data}
-
-df <- GenData(condition = condition, fixed_objects = fixed_objects)
-
-model <- '
-  lat_x =~ x1 + x2 + x3
-  lat_m =~ m1 + m2 + m3
-  Y ~ lat_x + lat_m
-'
-
-fitME <- sem(model, data = df, std.lv = TRUE, estimator = "mlr")
-summary(fitME, fit.measure = TRUE)
-
-## Compute product indicators (double mean centering)
-
-#create names
-#not required, but makes syntax easier to write
-lat_x <- paste0("x", 1:3)
-lat_m <- paste0("m", 1:3)
-
-intNames <- paste0(rep(lat_x, each = length(lat_m)), lat_m)
-
-df_ind <- indProd(df, var1 = c("x1", "x2", "x3"),
-                var2 = c("m1", "m2", "m3"),
-                match = FALSE, doubleMC = TRUE,
-                namesProd = intNames)
-
-## Mean Centering interaction model
-
-mod_ind <- '
-
-  lat_x =~ x1 + x2 + x3
-  lat_m =~ m1 + m2 + m3
-
-  int =~ x1m1 + x2m2 + x3m3 
-         
-  Y ~  b1*lat_x + b2*lat_m + b3*int
+  # Extract example data file online
+  df <- read.csv("https://osf.io/download/grwn2/")
+  df <- df[,-1]
   
-  lat_x ~~ v1*lat_x
-  lat_m ~~ v2*lat_m
-  int ~~ v3*int
-            
-  # Define Standardized Coefficients
-  beta1 := b1 * sqrt(v1)
-  beta2 := b2 * sqrt(v2)
-  beta3 := b3 * sqrt(v1) * sqrt(v2)
-'
+  # Create product indicators using DMC
+  tvalue <- paste0("t", 1:4)
+  sources <- paste0("s", 1:5)
+  intNames <- paste0(rep(tvalue, each = length(sources)), sources)
+  mod_df <- indProd(df, 
+                  var1 = c("t1", "t2", "t3", "t4"),
+                  var2 = c("s1", "s2", "s3", "s4", "s5"),
+                  match = FALSE, meanC = T, 
+                  residualC = F, doubleMC = T,
+                  namesProd = intNames)
+  
+  # Create the model syntax with local independence
+  mod_upi <- '
+  tvalue =~ t1 + t2 + t3 + t4
+  sources =~ s1 + s2 + s3 + s4 + s5
+  tip =~ tip1 + tip2 + tip3
+  
+  int =~ t1s1 + t1s2 + t1s3 + t1s4 + t1s5 +        
+         t2s1 + t2s2 + t2s3 + t2s4 + t2s5 + 
+         t3s1 + t3s2 + t3s3 + t3s4 + t3s5 + 
+         t4s1 + t4s2 + t4s3 + t4s4 + t4s5 
+  
+  tip ~ b1*tvalue + b2*sources + b3*int
+  
+  #Residual covariances between terms from the same indicator 
+  #covariances between the same indicator are constrained to equality
+  t1s1 ~~ th1*t1s2 + th1*t1s3 + th1*t1s4 + th1*t1s5
+  t1s2 ~~ th1*t1s3 + th1*t1s4 + th1*t1s5
+  t1s3 ~~ th1*t1s4 + th1*t1s5
+  t1s4 ~~ th1*t1s5
+  
+  t2s1 ~~ th2*t2s2 + th2*t2s3 + th2*t2s4 + th2*t2s5
+  t2s2 ~~ th2*t2s3 + th2*t2s4 + th2*t2s5
+  t2s3 ~~ th2*t2s4 + th2*t2s5
+  t2s4 ~~ th2*t2s5
+  
+  t3s1 ~~ th3*t3s2 + th3*t3s3 + th3*t3s4 + th3*t3s5
+  t3s2 ~~ th3*t3s3 + th3*t3s4 + th3*t3s5
+  t3s3 ~~ th3*t3s4 + th3*t3s5
+  t3s4 ~~ th3*t3s5
+  
+  t4s1 ~~ th4*t4s2 + th4*t4s3 + th4*t4s4 + th4*t4s5
+  t4s2 ~~ th4*t4s3 + th4*t4s4 + th4*t4s5
+  t4s3 ~~ th4*t4s4 + th4*t4s5
+  t4s4 ~~ th4*t4s5
+  
+  t1s1 ~~ th5*t2s1 + th5*t3s1 + th5*t4s1 
+  t2s1 ~~ th5*t3s1 + th5*t4s1 
+  t3s1 ~~ th5*t4s1 
+  
+  t1s2 ~~ th6*t2s2 + th6*t3s2 + th6*t4s2 
+  t2s2 ~~ th6*t3s2 + th6*t4s2 
+  t3s2 ~~ th6*t4s2 
+  
+  t1s3 ~~ th7*t2s3 + th7*t3s3 + th7*t4s3 
+  t2s3 ~~ th7*t3s3 + th7*t4s3 
+  t3s3 ~~ th7*t4s3 
+  
+  t1s4 ~~ th8*t2s4 + th8*t3s4 + th8*t4s4 
+  t2s4 ~~ th8*t3s4 + th8*t4s4 
+  t3s4 ~~ th8*t4s4 
+  
+  t1s5 ~~ th9*t2s5 + th9*t3s5 + th9*t4s5 
+  t2s5 ~~ th9*t3s5 + th9*t4s5 
+  t3s5 ~~ th9*t4s5 
+  '
 
-fitintMC <- sem(mod_ind, data = df_ind, std.lv = FALSE, meanstructure = TRUE)
-summary(fitintMC, fit.measure = TRUE, standardized = TRUE)
-
+  # Fit the model and summarize the result
+  fit_upi <- sem(mod_upi, mod_df)
+  summary(fit_upi, fit.measure = TRUE, standardized = TRUE)
 ```
 
-```{r test data generation function}
+Fitting the same model with `upi()` function:
 
-# Test function
-# cor_xm = 0.3, beta_3 = 0.8, rel = 0.7
-
-   # Generate scores for observed items: x1 - x3, m1 - m3
-   eta_scores <- rmnorm(50000, mean = c(0, 0), varcov = matrix(c(1, 0.3,
-                                    0.3, 1), nrow = 2)) # Factor scores
-   # Generate eta scores with interaction
-   eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
-   delta <- rmnorm(50000, varcov = diag(c(1.32, 0.99, 0.69),
-                                  nrow = 6)) # Errors/Residuals of Indicators
-   item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
-
-   y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, sqrt(0.766)) # Y scores / DV scores
-   
-   df <- cbind(y_scores, eta_scores_int)
-
-model ='
-        # Structural Model
-            Y ~ X + M + XM'
-
-colnames(df) <- c("Y", "X", "M", "XM")
-
-fit <- sem(model = model, data = df)
-summary(fit, standardized = TRUE)
-
-# cor_xm = 0.6, beta_3 = 0.75, rel = 0.9
-
-# Generate scores for observed items: x1 - x3, m1 - m3
-   eta_scores <- rmnorm(5000, mean = c(0, 0), varcov = matrix(c(1, 0.6,
-                                    0.6, 1), nrow = 2)) # Factor scores
-   # Generate eta scores with interaction
-   eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
-   delta <- rmnorm(N, varcov = diag(c(0.34, 0.26, 0.18),
-                                  nrow = 6)) # Errors/Residuals of Indicators
-   item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
-
-   y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, sqrt(0.766)) # Y scores / DV scores
-   
-   df <- cbind(y_scores, eta_scores_int)
-
-model ='
-        # Structural Model
-            Y ~ X + M + XM'
-
-colnames(df) <- c("Y", "X", "M", "XM")
-
-fit <- sem(model = model, data = df)
-summary(fit, standardized = TRUE)
+```{r using upi}
+  # Modified model syntax
+  mod_upi <- "
+          tvalue =~ t1 + t2 + t3 + t4
+          sources =~ s1 + s2 + s3 + s4 + s5
+          tip =~ tip1 + tip2 + tip3
+          
+          tip ~ b1*tvalue + b2*sources + b3*tvalue:sources
+          
+          tvalue ~~ v1*tvalue
+          sources ~~ v2*sources
+          beta1 := b1*sqrt(v1)
+          beta2 := b2*sqrt(v2)
+          beta3 := b3*sqrt(v1)*sqrt(v2)
+          "
+  # Fit the model using upi()
+  fit_upi <- upi(mod_upi, mod_df, mode = "all")
+  summary(fit_upi, fit.measure = TRUE, standardized = TRUE)
 ```
-
 
 # Reliability-adjusted Product Indicator
 
+Manual steps of using The RAPI method to conduct latent interaction estimation with details:
+
+## Constraining on latent variables
+
 ```{r}
-PE <- parameterEstimates(fitintMC)
-tvalues <- c("t1", "t2", "t3", "t4")
-sources <- c("s1", "s2", "s3", "s4", "s5")
-tips <- c("tip1", "tip2", "tip3")
+  PE <- parameterEstimates(fit_upi)
+  tvalues <- c("t1", "t2", "t3", "t4")
+  sources <- c("s1", "s2", "s3", "s4", "s5")
+  tips <- c("tip1", "tip2", "tip3")
+  
+  # Sum of factor loadings
+  tvalues_lambda <- sum(PE[match(tvalues, PE$rhs), "est"])
+  sources_lambda <- sum(PE[match(sources, PE$rhs), "est"])
+  tips_lambda <- sum(PE[match(tips, PE$rhs), "est"])
+  
+  # Sum of error variances and se
+  PE_vcov <- PE[PE$op == "~~", ]
+  PE_vcov <- PE_vcov[PE_vcov$label == "", ]
+  tvalues_error <- sum(PE_vcov[match(tvalues, PE_vcov$rhs), "est"])
+  sources_error <- sum(PE_vcov[match(sources, PE_vcov$rhs), "est"])
+  tips_error <- sum(PE_vcov[match(tips, PE_vcov$rhs), "est"])
+  
+  tvalues_se <- sqrt(tvalues_error)
+  sources_se <- sqrt(sources_error)
+  tips_se <- sqrt(tips_error)
+  
+  # Sum of item scores
+  mod_df <- df %>% 
+    mutate(tvalues_sum = rowSums(df[, tvalues]),
+           tsum_centered = tvalues_sum - mean(tvalues_sum, na.rm = T),
+           sources_sum = rowSums(df[, sources]),
+           ssum_centered = sources_sum - mean(sources_sum, na.rm = T),
+           tips_sum = rowSums(df[, tips]),
+           tips_sum_centered = tips_sum - mean(tips_sum, na.rm = T),
+           int = tsum_centered*ssum_centered,
+           int_centered = int - mean(int, na.rm = T))
+  
+  int_var <- tvalues_lambda^2*sources_error + 
+    sources_lambda^2*tvalues_error + 
+    sources_error*tvalues_error 
+  
+  # Single-indicator Model
+  
+  mod_rapi <- "
+                tvalue =~ 2.987473*tsum_centered
+                sources =~ 3.989224*ssum_centered
+                tip =~ 1.328669*tips_sum_centered
+                product_ind =~ 2.987473*3.989224*int_centered
+                
+                # Constrain the errors
+                tsum_centered ~~ 1.70026*tsum_centered
+                ssum_centered ~~ 3.55476*ssum_centered
+                tips_sum_centered ~~ 2.498348*tips_sum_centered
+                int_centered ~~ 64.82799*int_centered
+                
+                # regressions
+                tip ~ b1*tvalue + b2*sources + b3*product_ind
+  
+                tvalue ~~ v1*tvalue
+                sources ~~ v2*sources
+                product_ind ~~ v3*product_ind
 
-# Sum of factor loadings
-tvalues_lambda <- sum(PE[match(tvalues, PE$rhs), "est"])
-sources_lambda <- sum(PE[match(sources, PE$rhs), "est"])
-tips_lambda <- sum(PE[match(tips, PE$rhs), "est"])
+                # Define Standardized Coefficients
+                beta1 := b1 * sqrt(v1)
+                beta2 := b2 * sqrt(v2)
+                beta3 := b3 * sqrt(v1) * sqrt(v2)"
 
-# Sum of error variances and se
-PE_vcov <- PE[PE$op == "~~", ]
-PE_vcov <- PE_vcov[PE_vcov$label == "", ]
-tvalues_error <- sum(PE_vcov[match(tvalues, PE_vcov$rhs), "est"])
-sources_error <- sum(PE_vcov[match(sources, PE_vcov$rhs), "est"])
-tips_error <- sum(PE_vcov[match(tips, PE_vcov$rhs), "est"])
-
-tvalues_se <- sqrt(tvalues_error)
-sources_se <- sqrt(sources_error)
-tips_se <- sqrt(tips_error)
-
-# Sum of item scores
-dat_sum <- dat %>% 
-  mutate(tvalues_sum = rowSums(dat[, tvalues]),
-         tsum_centered = tvalues_sum - mean(tvalues_sum, na.rm = T),
-         sources_sum = rowSums(dat[, sources]),
-         ssum_centered = sources_sum - mean(sources_sum, na.rm = T),
-         tips_sum = rowSums(dat[, tips]),
-         tips_sum_centered = tips_sum - mean(tips_sum, na.rm = T),
-         int = tsum_centered*ssum_centered,
-         int_centered = int - mean(int, na.rm = T))
-
-int_var <- tvalues_lambda^2*sources_error + 
-  sources_lambda^2*tvalues_error + 
-  sources_error*tvalues_error 
-
-# Single-indicator Model
-
-model_rapi <- "
-              tvalue =~ 2.987473*tsum_centered
-              sources =~ 3.989224*ssum_centered
-              tip =~ 1.328669*tips_sum_centered
-              product_ind =~ 2.987473*3.989224*int_centered
-              
-              # Constrain the errors
-              tsum_centered ~~ 1.70026*tsum_centered
-              ssum_centered ~~ 3.55476*ssum_centered
-              tips_sum_centered ~~ 2.498348*tips_sum_centered
-              int_centered ~~ 64.82799*int_centered
-              
-              # regressions
-              tip ~ b1*tvalue + b2*sources + b3*product_ind
-              "
-
-              # tvalue ~~ v1*tvalue
-              # sources ~~ v2*sources
-              # product_ind ~~ v3*product_ind
-              # 
-              # # Define Standardized Coefficients
-              # beta1 := b1 * sqrt(v1)
-              # beta2 := b2 * sqrt(v2)
-              # beta3 := b3 * sqrt(v1) * sqrt(v2)
-
-fit_rapi <- sem(model_rapi, 
-                data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
-summary(fit_rapi, standardized = TRUE)
+  fit_rapi <- sem(mod_rapi, 
+                  data = mod_df[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
+  summary(fit_rapi, standardized = TRUE)
 ```
 
+## Constraining on factor loadings
+
 ```{r}
-# Computer centered sum score
-df$tvalue_centered <- rowSums(df[, c("t1", "t2", "t3", "t4")]) - mean(rowSums(df[, c("t1", "t2", "t3", "t4")]), na.rm = T)
-df$sources_centered <- rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]) - mean(rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]), na.rm = T)
-df$tip_centered <- rowSums(df[, c("tip1", "tip2", "tip3")]) - mean(rowSums(df[, c("tip1", "tip2", "tip3")]), na.rm = T)
-df$int_centered <- df$tvalue_centered*df$sources_centered
-df$int_centered <- df$int_centered - mean(df$int_centered, na.rm = T)
-
-# Sum of error variances and se
-PE_vcov <- PE[PE$op == "~~", ]
-PE_vcov <- PE_vcov[PE_vcov$label == "", ]
-
-rel_tvalue <- unlist(as.vector(psych::alpha(df[, c("t1", "t2", "t3", "t4")])$total["raw_alpha"]))
-rel_sources <- unlist(as.vector(psych::alpha(df[, c("s1", "s2", "s3", "s4", "s5")])$total["raw_alpha"]))
-rel_tip <- unlist(as.vector(psych::alpha(df[, c("tip1", "tip2", "tip3")])$total["raw_alpha"]))
-
-error_tvalue <- (1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
-error_sources <- (1 - rel_sources)*var(df$sources_centered, na.rm = T)
-error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
-error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
-    (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
-
-var_int <- var(df$int_centered, na.rm = T) - var(df$tvalue_centered, na.rm = T)*rel_tvalue*error_sources - var(df$sources_centered, na.rm = T)*rel_sources*error_tvalue - error_sources*error_tvalue
-
-
-# Single-indicator Model
-
-model_rapi <- "
-              tvalue =~ 1*tsum_centered
-              sources =~ 1*ssum_centered
-              tip =~ 1*tips_sum_centered
-              int =~ 1*int_centered
-
-              # Error variance
-              tsum_centered ~~ ve1*tsum_centered
-              ssum_centered ~~ ve2*ssum_centered
-              int_centered ~~ ve3*int_centered
-              tips_sum_centered ~~ vey*tips_sum_centered
-              
-              # True score variance
-              tvalue ~~ veta1*tvalue
-              sources ~~ veta2*sources
-              int ~~ veta3*int
-              tip ~~ vetay*tip 
-              
-              # Total variance
-              ve1 == veta1*(1 - 0.8351241)/0.8351241
-              ve2 == veta2*(1 - 0.814727)/0.814727
-              ve3 == ve1*veta2 + ve2*veta1 + ve1*ve2 
-              vey == vetay*(1 - 0.4601677)/0.4601677
-              
-              # regression
-              tip ~ b1*tvalue + b2*sources + b3*int
-              
-              # Define Standardized Coefficients
-              beta1 := b1 * sqrt(veta1)
-              beta2 := b2 * sqrt(veta2)
-              beta3 := b3 * sqrt(veta3)
-              "
-
-fit_rapi <- sem(model_rapi, 
-                data = dat_sum[, c("tsum_centered", "ssum_centered", "tips_sum_centered", "int_centered")])
-summary(fit_rapi, standardized = TRUE)
+# Compute centered sum score
+  df$tvalue_centered <- rowSums(df[, c("t1", "t2", "t3", "t4")]) - mean(rowSums(df[, c("t1", "t2", "t3", "t4")]), na.rm = T)
+  df$sources_centered <- rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]) - mean(rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]), na.rm = T)
+  df$tip_centered <- rowSums(df[, c("tip1", "tip2", "tip3")]) - mean(rowSums(df[, c("tip1", "tip2", "tip3")]), na.rm = T)
+  df$int_centered <- df$tvalue_centered*df$sources_centered
+  df$int_centered <- df$int_centered - mean(df$int_centered, na.rm = T)
+  
+  # Error variances
+  PE_vcov <- PE[PE$op == "~~", ]
+  PE_vcov <- PE_vcov[PE_vcov$label == "", ]
+  
+  rel_tvalue <- unlist(as.vector(psych::alpha(df[, c("t1", "t2", "t3", "t4")])$total["raw_alpha"]))
+  rel_sources <- unlist(as.vector(psych::alpha(df[, c("s1", "s2", "s3", "s4", "s5")])$total["raw_alpha"]))
+  rel_tip <- unlist(as.vector(psych::alpha(df[, c("tip1", "tip2", "tip3")])$total["raw_alpha"]))
+  
+  error_tvalue <- (1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+  error_sources <- (1 - rel_sources)*var(df$sources_centered, na.rm = T)
+  error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
+  error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
+      (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+  
+  var_int <- var(df$int_centered, na.rm = T) - var(df$tvalue_centered, na.rm = T)*rel_tvalue*error_sources - var(df$sources_centered, na.rm = T)*rel_sources*error_tvalue - error_sources*error_tvalue
+  
+  
+  # Single-indicator Model
+  
+  mod_rapi <- "
+                tvalue =~ 1*tvalue_centered
+                sources =~ 1*sources_centered
+                # tip =~ 1*tip_centered
+                int =~ 1*int_centered
+                
+                # Error variance
+                tvalue_centered ~~ ve1*tvalue_centered
+                sources_centered ~~ ve2*sources_centered
+                int_centered ~~ ve3*int_centered
+                # tip_centered ~~ vey*tip_centered
+                
+                # True score variance
+                tvalue ~~ veta1*tvalue
+                sources ~~ veta2*sources
+                int ~~ veta3*int
+                # tip ~~ vetay*tip 
+                
+                # Total variance
+                ve1 == veta1*(1 - 0.8351241)/0.8351241
+                ve2 == veta2*(1 - 0.814727)/0.814727
+                ve3 == ve1*veta2 + ve2*veta1 + ve1*ve2 
+                # vey == vetay*(1 - 0.4601677)/0.4601677
+                
+                # regression
+                tip_centered ~ b1*tvalue + b2*sources + b3*int 
+                
+                # Define Standardized Coefficients
+                beta1 := b1*sqrt(veta1)
+                beta2 := b2*sqrt(veta2)
+                beta3 := b3*sqrt(veta1)*sqrt(veta2)
+                "
+  
+  fit_rapi <- sem(mod_rapi, 
+                  data = df[, c("tvalue_centered", "sources_centered", "tip_centered", "int_centered")])
+  summary(fit_rapi)
 ```
 
 
 ```{r rapi function}
 # Testing
-df <- read.csv("https://osf.io/download/grwn2/")
-model <- '
-tvalue =~ t1 + t2 + t3 + t4
-sources =~ s1 + s2 + s3 + s4 + s5
-tip =~ tip1 + tip2 + tip3
-tip ~ tvalue + sources + tvalue:sources
-'
-summary(rapi_rel(data = data,
-            model = model,
-            rel = "alpha"),
-        fit.measure = TRUE,
-        standardized = TRUE)
-
-lavInspect(rapi(data = df,
-            model = model), "cov.lv")
+  df <- read.csv("https://osf.io/download/grwn2/")
+  df <- df[,-1]
+  mod_rapi <- '
+  tvalue =~ t1 + t2 + t3 + t4
+  sources =~ s1 + s2 + s3 + s4 + s5
+  tip =~ tip1 + tip2 + tip3
+  tip ~ tvalue + sources + tvalue:sources
+  '
+  rapi_fit <- rapi_rel(data = df,
+                       model = mod_rapi,
+                       rel = "alpha")
+  summary(rapi_fit)
 ```
 
 # 2S-PA

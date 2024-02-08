@@ -53,7 +53,7 @@ rapi_rel <- function (model, data, rel) {
 
   # Generate the mean centered latent scores
   #############################################################################
-  pars <- parameterEstimates(upi(data = data, model = model))
+  pars <- parameterEstimates(upi(data = data, model = model, mode = "all"))
 
   sum_lambda <- function (x) sum(pars[match(x, pars$rhs), "est"])
   lambda_sum <- lapply(indics, sum_lambda)
