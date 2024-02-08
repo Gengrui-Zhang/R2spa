@@ -107,7 +107,7 @@ get_fs_lavaan <- function(lavobj,
       pats <- mp$pat
       mis_idx <- mp$case.idx
       for (m in seq_len(npat)) {
-        idx_m <- which(case_idx %in% mis_idx[[m]])
+        idx_m <- mis_idx[[m]]
         pat_m <- pats[m, ]
         fs_m <-
           compute_fscore(y[idx_m, pat_m, drop = FALSE],
@@ -135,8 +135,7 @@ get_fs_lavaan <- function(lavobj,
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
-    out <- prepare_fs_dat(y, est, add_to_evfs[[1]],
-                          lavInspect(lavobj, what = "case.idx"),
+    out <- prepare_fs_dat(y, est = est, add = add_to_evfs[[1]],
                           mp = miss_pat[[1]])
   } else {
     fs_lst <- setNames(
@@ -145,8 +144,7 @@ get_fs_lavaan <- function(lavobj,
     )
     for (g in seq_along(fs_lst)) {
       fs_lst[[g]] <- prepare_fs_dat(
-        y[[g]], est[[g]], add_to_evfs[[g]],
-        lavInspect(lavobj, what = "case.idx")[[g]],
+        y[[g]], est = est[[g]], add = add_to_evfs[[g]],
         mp = miss_pat[[g]]
       )
       fs_lst[[g]][[group]] <- names(est[g])
