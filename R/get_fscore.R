@@ -100,6 +100,7 @@ get_fs_lavaan <- function(lavobj,
           method = method,
           fs_matrices = TRUE
         )
+      augment_fs(fscore, attr(fscore, which = "fsT") + add)
     } else {
       fscore <- matrix(NA, nrow = nrow(y), ncol = ncol(est$psi))
       npat <- mp$npatterns
@@ -118,13 +119,19 @@ get_fs_lavaan <- function(lavobj,
             method = method,
             fs_matrices = TRUE
           )
-        fscore[idx_m, ] <- fs_m
+        fs_dat <- augment_fs(fs_m, attr(fs_m, which = "fsT") + add)
         if (m == 1) {
-          attributes(fscore) <- c(list(dim = dim(fscore)), attributes(fs_m)[-1])
+          fscore <- as.data.frame(
+            matrix(NA, nrow = nrow(y), ncol = ncol(fs_dat)))
+          attributes(fscore) <-
+            c(attributes(fs_dat)[1:2],
+              list(row.names = rownames(fscore)),
+              attributes(fs_dat)[-(1:3)])
         }
+        fscore[idx_m, ] <- fs_dat
       }
+      fscore
     }
-    augment_fs(est, fscore, attr(fscore, which = "fsT") + add)
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
@@ -166,7 +173,7 @@ get_fs_lavaan <- function(lavobj,
   out
 }
 
-augment_fs <- function(est, fs, fs_ev) {
+augment_fs <- function(fs, fs_ev) {
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   # fs_se[is.nan(fs_se)] <- 0
   colnames(fs) <- paste0("fs_", colnames(fs))
