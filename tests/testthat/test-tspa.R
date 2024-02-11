@@ -466,8 +466,8 @@ sim_dat <- MASS::mvrnorm(n = 2000, mu = mean_vec, Sigma = cov_mat) |>
 strict_mod <- "
 # factor loadings
 eta1 =~ 15.1749088 * s_g3 + l2 * r_g3 + l3 * m_g3
-eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + L3 * m_g5
-eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + L3 * m_g8
+eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + l3 * m_g5
+eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + l3 * m_g8
 
 # factor variances/covariances
 eta1 ~~ 1 * eta1 + eta2 + eta3
