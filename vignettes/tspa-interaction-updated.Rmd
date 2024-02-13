@@ -19,11 +19,12 @@ knitr::opts_chunk$set(
 ```{r load packages}
 library(lavaan)
 library(semTools)
-library(R2spa)
 library(dplyr)
 library(mnormt)
+library(R2spa)
+devtools::load_all()
+source("/Users/jimmy_z/R Projects/R2spa/R/rapi.R")
 # library(nlsem)
-devtools::load_all(".")
 ```
 
 # Introduction
@@ -314,8 +315,68 @@ mod_rapi <- '# Measurement Model
               beta3 := b3*sqrt(v1)*sqrt(v2)'
 
 # Fit the model using rapi()
-fit_rapi <- rapi(mod_rapi, df) 
+fit_rapi <- rapi(model = mod_rapi, data = df) 
 summary(fit_rapi, fit.measure = TRUE, standardized = TRUE)
+```
+
+# 2S-PA
+
+The 2S-PA interaction model is based on the 2S-PA framework proposed by Lai & Hsiao (2022).
+
+```{r manually fit 2s-pa model}
+# Step 1: Get factor scores
+fs_dat <- get_fs(df,
+                 model ='X =~ x1 + x2 + x3
+                         M =~ m1 + m2 + m3',
+                 method = "Bartlett",
+                 std.lv = TRUE)
+
+# Step 2: Obtain factor scores
+# Obtain mean-centered factor product
+fs_dat$fs_int <- fs_dat$fs_X * fs_dat$fs_M
+fs_dat$fs_int <- fs_dat$fs_int - mean(fs_dat$fs_int)
+Y <- df$Y
+fs_dat <- cbind(fs_dat, Y)
+
+# Step 3: Obtain the standard error of the interaction term
+fs_dat$fs_int_se <- sqrt(1 * fs_dat$fs_X_se^2 + 1 * fs_dat$fs_M_se^2 + fs_dat$fs_X_se^2*fs_dat$fs_M_se^2)
+
+# Step 4: 
+mod_tspa = '# latent variables (indicated by factor scores)
+            X =~ fs_X
+            M =~ fs_M
+            XM =~ fs_int
+            
+            # constrain the errors
+            fs_X ~~ 0.3352061 * fs_X
+            fs_M ~~ 0.5634815 * fs_M
+            fs_int ~~ 1.08757 * fs_int
+            
+            # regressions
+            Y ~ b1*X + b2*M + b3*XM
+
+            X ~~ v1*X
+            M ~~ v2*M
+            XM ~~ v3*XM
+              
+            # Define Standardized Coefficients
+            beta1 := b1 * sqrt(v1)
+            beta2 := b2 * sqrt(v2)
+            beta3 := b3 * sqrt(v1) * sqrt(v2)'
+
+fit_tspa <- sem(mod_tspa, data = fs_dat)
+summary(fit_tspa)
+```
+
+```{r function tspa}
+fit_tspa <- tspa(model = "Y ~ b1*X + b2*M + b3*X:M
+                          beta1 := b1 * sqrt(v1)
+                          beta2 := b2 * sqrt(v2)
+                          beta3 := b3 * sqrt(v1) * sqrt(v2)",
+                   data = fs_dat,
+                   se = list(X = fs_dat$fs_X_se[1],
+                             M = fs_dat$fs_M_se[1]))
+summary(fit_tspa)
 ```
 
 

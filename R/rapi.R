@@ -13,8 +13,10 @@ processData <- function(data, pairs, indics) {
     first_sum <- paste0(pair_name[1], "_sum")
     second_sum <- paste0(pair_name[2], "_sum")
     data_centered <- data_centered %>%
-      mutate(!!first_sum := rowSums(select(., all_of(first_set)), na.rm = TRUE),
-             !!second_sum := rowSums(select(., all_of(second_set)), na.rm = TRUE))
+      rowwise %>%
+      mutate(!!first_sum := sum(c_across(all_of(first_set)), na.rm = TRUE),
+             !!second_sum := sum(c_across(all_of(second_set)), na.rm = TRUE)) %>%
+      ungroup()
 
     # Create the interaction term
     int_name <- paste0(pair_name[1], "_int_", pair_name[2])

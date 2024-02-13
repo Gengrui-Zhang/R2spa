@@ -46,7 +46,7 @@ set.seed(42)
 knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
 
-Increasing numbers of recent social science research rarely focus on bivariate relations among variables; instead, more sophisticated theories with assumptions of intricate effects such as nonlinear and moderation effects are studied because the real world is rarely simple and straightforward (Carte & Russell, 2003; MacKinnon & Luecken, 2008; Cunningham & Ahn, 2019). Numerous research conclude that exercising may help people lose weight, but people may be interested in how, when, for whom, and under what conditions that exercising can do for losing weight. Moderation (or interaction) research can answer such questions by investigating how a third variable (or a groups of additional variables) modifies relations among variables of interest. 
+Increasing numbers of recent social science research rarely focus on bare bivariate relations among variables; instead, more sophisticated theories with assumptions of intricate effects such as nonlinear and moderation effects are studied as the real world is rarely simple and straightforward (Carte & Russell, 2003; MacKinnon & Luecken, 2008; Cunningham & Ahn, 2019). Numerous research conclude that exercising may help people lose weight, but people may be interested in how, when, for whom, and under what conditions that exercising can do for losing weight. Moderation (or interaction) research can answer such questions by investigating how a third variable (or a groups of additional variables) modifies relations among variables of interest. 
 
 In regression models, moderation effects are represented by an interaction term created by multiplying two predictors:
 

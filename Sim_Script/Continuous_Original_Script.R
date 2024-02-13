@@ -118,9 +118,8 @@ GenData <- function (condition, fixed_objects = NULL) {
 extract_res <- function (condition, dat, fixed_objects = NULL) {
 
   # Fit using rapi function
-  fit_rapi <- rapi_rel(model = fixed_objects$model,
-                       data = dat,
-                       rel = "alpha")
+  fit_rapi <- rapi(model = fixed_objects$model,
+                       data = dat)
   # Fit using upi function
   fit_upi <- upi(model = fixed_objects$model,
                  data = dat,
@@ -165,6 +164,17 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
   results_est <- as.data.frame(results[colnames(results)[grepl("_est", colnames(results))]])
   results_se <- as.data.frame(results[colnames(results)[grepl("_se", colnames(results))]])
 
+  # Helper function: robust bias
+  robust_bias <- function (est_se, est, pop_par, trim = NULL, type = "trim") {
+    if (type == "trim") {
+      return(mean(est, trim = trim, na.rm = TRUE) - pop_par)
+    } else if (type == "median"){
+      return((median(est, na.rm = TRUE) - pop_par) / mad(est, na.rm = TRUE))
+    } else {
+      return((mean(est, trim = trim, na.rm = TRUE) - pop_par)/est_se)
+    }
+  }
+
   # Helper function: relative SE bias
   rse_bias <- function(est_se, est) {
     est_se <- as.matrix(est_se)
@@ -181,20 +191,27 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
     est <- as.matrix(est)
     lo.95 <- est - qnorm(.975)*est_se
     hi.95 <- est + qnorm(.975)*est_se
-
     for (i in seq_len(length(colnames(est)))) {
       ci_est[[i]] <- cbind(lo.95[,i], hi.95[,i])
       names(ci_est)[i] <- colnames(est)[i]
     }
-
     return(unlist(lapply(ci_est, ECR, parameter = pop)))
-
   }
 
-  c(
+  c(raw_bias = bias(results_est,
+                    parameter = pop_par),
     std_bias = bias(results_est,
                     parameter = pop_par,
                     type = "standardized"),
+    trimm_bias = robust_bias(results_se,
+                              results_est,
+                              pop_par,
+                              trim = 0.1,
+                              type = "trim"), # 10% trimmed mean
+    stdMed_bias = robust_bias(results_se,
+                              results_est,
+                              pop_par,
+                              type = "median"),
     coverage = coverage_rate(results_se,
                              results_est,
                              pop = pop_par),
