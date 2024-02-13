@@ -208,11 +208,20 @@ Manual steps of using The RAPI method to conduct latent interaction estimation w
 
 ```{r}
 # Compute centered sum score
-  df$tvalue_centered <- rowSums(df[, c("t1", "t2", "t3", "t4")]) - mean(rowSums(df[, c("t1", "t2", "t3", "t4")]), na.rm = T)
-  df$sources_centered <- rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]) - mean(rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]), na.rm = T)
-  df$tip_centered <- rowSums(df[, c("tip1", "tip2", "tip3")]) - mean(rowSums(df[, c("tip1", "tip2", "tip3")]), na.rm = T)
-  df$int_centered <- df$tvalue_centered*df$sources_centered
-  df$int_centered <- df$int_centered - mean(df$int_centered, na.rm = T)
+  # df$tvalue_centered <- rowSums(df[, c("t1", "t2", "t3", "t4")]) - mean(rowSums(df[, c("t1", "t2", "t3", "t4")]), na.rm = T)
+  # df$sources_centered <- rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]) - mean(rowSums(df[, c("s1", "s2", "s3", "s4", "s5")]), na.rm = T)
+  # df$tip_centered <- rowSums(df[, c("tip1", "tip2", "tip3")]) - mean(rowSums(df[, c("tip1", "tip2", "tip3")]), na.rm = T)
+  # df$int_centered <- df$tvalue_centered*df$sources_centered
+  # df$int_centered <- df$int_centered - mean(df$int_centered, na.rm = T)
+  
+  df <- read.csv("https://osf.io/download/grwn2/")
+  df <- df[,-1]
+  
+  df_centered <- df %>% mutate(across(everything(), ~ . - mean(., na.rm = T)))
+  df_centered$tvalue_centered <- rowSums(df_centered[, c("t1", "t2", "t3", "t4")])
+  df_centered$sources_centered <- rowSums(df_centered[, c("s1", "s2", "s3", "s4", "s5")])
+  df_centered$tip_centered <- rowSums(df_centered[, c("tip1", "tip2", "tip3")]) 
+  df_centered$int_centered <- df_centered$tvalue_centered*df_centered$sources_centered
   
   # Error variances
   PE_vcov <- PE[PE$op == "~~", ]
@@ -222,13 +231,13 @@ Manual steps of using The RAPI method to conduct latent interaction estimation w
   rel_sources <- unlist(as.vector(psych::alpha(df[, c("s1", "s2", "s3", "s4", "s5")])$total["raw_alpha"]))
   rel_tip <- unlist(as.vector(psych::alpha(df[, c("tip1", "tip2", "tip3")])$total["raw_alpha"]))
   
-  error_tvalue <- (1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
-  error_sources <- (1 - rel_sources)*var(df$sources_centered, na.rm = T)
-  error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
-  error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
-      (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
-  
-  var_int <- var(df$int_centered, na.rm = T) - var(df$tvalue_centered, na.rm = T)*rel_tvalue*error_sources - var(df$sources_centered, na.rm = T)*rel_sources*error_tvalue - error_sources*error_tvalue
+  # error_tvalue <- (1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+  # error_sources <- (1 - rel_sources)*var(df$sources_centered, na.rm = T)
+  # error_tips <- (1 - rel_tip)*var(df$tip_centered, na.rm = T)
+  # error_int <- rel_tvalue*var(df$tvalue_centered, na.rm = T)*(1 - rel_sources)*var(df$sources_centered, na.rm = T) + rel_sources*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T) +
+  #     (1 - rel_sources)*var(df$sources_centered, na.rm = T)*(1 - rel_tvalue)*var(df$tvalue_centered, na.rm = T)
+  # 
+  # var_int <- var(df$int_centered, na.rm = T) - var(df$tvalue_centered, na.rm = T)*rel_tvalue*error_sources - var(df$sources_centered, na.rm = T)*rel_sources*error_tvalue - error_sources*error_tvalue
   
   
   # Single-indicator Model
@@ -236,29 +245,29 @@ Manual steps of using The RAPI method to conduct latent interaction estimation w
   mod_rapi <- "
                 tvalue =~ 1*tvalue_centered
                 sources =~ 1*sources_centered
-                # tip =~ 1*tip_centered
+                tip =~ 1*tip_centered
                 int =~ 1*int_centered
                 
                 # Error variance
                 tvalue_centered ~~ ve1*tvalue_centered
                 sources_centered ~~ ve2*sources_centered
                 int_centered ~~ ve3*int_centered
-                # tip_centered ~~ vey*tip_centered
+                tip_centered ~~ vey*tip_centered
+                
+                # regression
+                tip ~ b1*tvalue + b2*sources + b3*int 
                 
                 # True score variance
                 tvalue ~~ veta1*tvalue
                 sources ~~ veta2*sources
                 int ~~ veta3*int
-                # tip ~~ vetay*tip 
+                tip ~~ vetay*tip 
                 
                 # Total variance
                 ve1 == veta1*(1 - 0.8351241)/0.8351241
                 ve2 == veta2*(1 - 0.814727)/0.814727
                 ve3 == ve1*veta2 + ve2*veta1 + ve1*ve2 
-                # vey == vetay*(1 - 0.4601677)/0.4601677
-                
-                # regression
-                tip_centered ~ b1*tvalue + b2*sources + b3*int 
+                vey == vetay*(1 - 0.4601677)/0.4601677
                 
                 # Define Standardized Coefficients
                 beta1 := b1*sqrt(veta1)
@@ -267,7 +276,7 @@ Manual steps of using The RAPI method to conduct latent interaction estimation w
                 "
   
   fit_rapi <- sem(mod_rapi, 
-                  data = df[, c("tvalue_centered", "sources_centered", "tip_centered", "int_centered")])
+                  data = df_centered)
   summary(fit_rapi)
 ```
 
@@ -297,7 +306,7 @@ sources =~ s1 + s2 + s3 + s4 + s5
 tip =~ tip1 + tip2 + tip3
 '
 # Obtain factor scores
-fs_dat <- get_fs(dat, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
+fs_dat <- get_fs(df, model = mod_cfa, method = "Bartlett", std.lv = TRUE)
 ```
 
 ```{r}

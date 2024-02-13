@@ -1,0 +1,325 @@
+---
+title: "tspa-interaction"
+author: "Jimmy Zhang"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tspa-interaction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r load packages}
+library(lavaan)
+library(semTools)
+library(R2spa)
+library(dplyr)
+library(mnormt)
+# library(nlsem)
+devtools::load_all(".")
+```
+
+# Introduction
+
+Recent widely used approaches of estimating latent interaction effects are Unconstrained Product Indicator (UPI) and Reliability-Adjusted Product Indicator (RAPI). We proposed a new approach based on the Two-Stage Path Analysis (2S-PA) framework, 2S-PA-Interaction, and compared to the UPI and RAPI methods. 
+
+We begin by simulating a dataset under a hypothetical structural model with two latent predictors, $\xi_{X}$ and $\xi_{M}$, and one observed dependent variable, $Y$. Each latent predicted is indicated by three items (i.e., [$x1$, $x2$, $x3$]; [$m1$, $m2$, $m3$]). The latent interaction term is demonstrated by a multiplicative term, $\xi_{XM}$. 
+
+\begin{equation}
+y = \gamma_{1}\xi_{X} + \gamma_{2}\xi_{M} + \gamma_{3}\xi_{XM} + \zeta,
+\end{equation}
+
+The $\zeta$ is the disturbance of regression model with a distribution of $\zeta \sim N(0, \Psi)$.
+
+```{r data-generating function}
+# Define a function of generating interaction data
+generate_sem_data <- function(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y) {
+  # Generate scores for observed items: x1 - x3, m1 - m3
+  eta_scores <- rmnorm(N, mean = Alpha, varcov = Phi) # Factor scores
+  # Generate eta scores with interaction
+  eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
+  delta <- rmnorm(N, mean = rep(0, length(diag(Theta))), varcov = Theta) # Errors/Residuals of Indicators
+  item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
+
+  y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, SD_y) # Y scores / DV scores
+
+  # Parsing formula
+  indicator_terms <- unlist(strsplit(gsub(" ", "",
+                                          unlist(strsplit(model, "\n"))[grep("=~",
+                                                                             unlist(strsplit(model, "\n")))]),
+                                     split = "=~"))
+  indicator_vars <- indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "FALSE"]
+  indicator_num <- as.vector(unlist(lapply(strsplit(indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "TRUE"],
+                                                    split = "+", fixed = TRUE), length)))
+
+  df <- as.data.frame(cbind(item_scores, y_scores))
+  names <- list()
+  for (n in seq(length(indicator_vars))) {
+    names[[n]] <- tolower(paste0(indicator_vars[n], seq(indicator_num[n])))
+  }
+  colnames(df) <- c(unlist(names), "Y")
+  return(df)
+}
+```
+
+```{r simulate data}
+set.seed(1998)
+# Define model parameters 
+N <- 100
+model <- "# Measurement Model
+            X =~ x1 + x2 + x3
+            M =~ m1 + m2 + m3
+          # Structural Model
+            Y ~ b1*X + b2*M + b3*X:M"
+Alpha <- c(0,0) # Latent means of 0
+Phi <- matrix(c(1, 0.6,
+                0.6, 1), 
+              nrow = 2) # Latent correlation of 0.6
+Lambda <- cbind(c(1, 0.9, 0.75, rep(0, 3)),
+                c(rep(0, 3), 1, 0.9, 0.75)) # Factor loadings
+Gamma <- t(c(0.3, 0.3, 0.3)) # Path coefficients
+Theta <- diag(c(1.32, 0.99, 0.69), nrow = 6) # Residual variance with reliability of 0.7
+SD_y <- sqrt(0.712) # Error variance with correlation of 0.6
+
+# Simulate Data
+df <- generate_sem_data(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y)
+```
+
+## UPI
+
+The procedure of fitting the UPI model is adapted from Schoemann $\&$ Jorgensen (2021):
+
+```{r manual upi}
+# Step 1: Create product indicators
+x_value <- paste0("x", 1:3)
+m_value <- paste0("m", 1:3)
+intNames <- paste0(rep(x_value, each = length(m_value)), m_value) # Create product indicator names
+mod_df <- indProd(df, 
+                  var1 = c("x1", "x2", "x3"),
+                  var2 = c("m1", "m2", "m3"),
+                  match = FALSE, 
+                  meanC = T, 
+                  residualC = F, 
+                  doubleMC = T,
+                  namesProd = intNames) # using the DMC strategy
+
+# Step 2: Draft the model syntax
+mod_upi <- '# Measurement Model
+            X =~ x1 + x2 + x3
+            M =~ m1 + m2 + m3
+            XM =~ x1m1 + x1m2 + x1m3 + 
+                  x2m1 + x2m2 + x2m3 +
+                  x3m1 + x3m2 + x3m3
+                   
+            # Structural Model
+            Y ~ b1*X + b2*M + b3*XM
+            
+            # Covariances between the same indicators are constrained to equality
+              x1m1 ~~ th1*x1m2 + th1*x1m3 
+              x1m2 ~~ th1*x1m3 
+              x2m1 ~~ th2*x2m2 + th2*x2m3 
+              x2m2 ~~ th2*x2m3 
+              x3m1 ~~ th3*x3m2 + th3*x3m3 
+              x3m2 ~~ th3*x3m3
+              x1m1 ~~ th4*x2m1 + th4*x3m1 
+              x2m1 ~~ th4*x3m1 
+              x1m2 ~~ th5*x2m2 + th5*x3m2 
+              x2m2 ~~ th5*x3m2 
+              x1m3 ~~ th6*x2m3 + th6*x3m3 
+              x2m3 ~~ th6*x3m3
+
+            # Define Standardized Coefficients
+              X ~~ v1*X
+              M ~~ v2*M
+              beta1 := b1*sqrt(v1)
+              beta2 := b2*sqrt(v2)
+              beta3 := b3*sqrt(v1)*sqrt(v2)'
+
+# Step 3: Fit the model
+fit_upi <- sem(mod_upi, mod_df)
+summary(fit_upi, fit.measure = TRUE, standardized = TRUE)
+```
+
+The steps above have been wrapped up into a function `upi`. Here is an example demonstration:
+
+```{r function upi}
+# Draft the model syntax
+mod_upi <- '# Measurement Model
+              X =~ x1 + x2 + x3
+              M =~ m1 + m2 + m3
+            # Structural Model
+              Y ~ X + M + b3*X:M
+            # Define Standardized Coefficients
+              X ~~ v1*X
+              M ~~ v2*M
+              beta3 := b3*sqrt(v1)*sqrt(v2)'
+
+# Fit the model using upi()
+fit_upi <- upi(mod_upi, df, mode = "all") # All-pair UPI
+summary(fit_upi, fit.measure = TRUE, standardized = TRUE)
+
+# Matched-pair
+fit_upi_matched <- upi(mod_upi, df, mode = "match")
+summary(fit_upi_matched, fit.measure = TRUE, standardized = TRUE)
+```
+
+## RAPI
+
+The steps of applying RAPI method is based on technical details in Hsiao et al. (2018).
+
+```{r manually fit rapi loading, warning=FALSE}
+# Step 1: Prepare mean-centered df
+df_centered <- df %>%
+  mutate(across(c(x1:m3), ~ . - mean(.)))
+
+# Step 2: Using sum scores as the single indicators
+df_centered$x_sum <- rowSums(df_centered[, c("x1", "x2", "x3")])
+df_centered$m_sum <- rowSums(df_centered[, c("m1", "m2", "m3")])
+
+# Step 3: Create the interaction indicator
+df_centered$xm <- df_centered$x_sum*df_centered$m_sum
+
+# Step 4: Calculate reliability of indicators
+X_rel <- psych::alpha(df_centered[, c("x1", "x2", "x3")])$total$raw_alpha
+M_rel <- psych::alpha(df_centered[, c("m1", "m2", "m3")])$total$raw_alpha
+
+# Step 5: Draft the model syntax
+mod_rapi <- 'X =~ 1 * x_sum
+             M =~ 1 * m_sum
+             XM =~ 1 * xm
+             
+             # Error variance
+             x_sum ~~ ev_x * x_sum
+             m_sum ~~ ev_m * m_sum
+             xm ~~ ev_xm * xm
+             
+             # Regression
+             Y ~ X + M + b3 * XM
+             
+             # Latent variance
+             X ~~ v_x * X
+             M ~~ v_m * M
+             XM ~~ v_xm * XM
+             
+             # Error Constraints
+             ev_x == (1 - X_rel) * v_x / X_rel
+             ev_m == (1 - M_rel) * v_m / M_rel
+             ev_xm == ev_x * v_m + ev_m * v_x + ev_x * ev_m
+             
+             # x-standardized interaction
+             beta3 := b3 * sqrt(v_x) * sqrt(v_m)'
+
+# Substitute in the actual reliability estimates
+mod_rapi <- gsub("X_rel", replacement = X_rel, x = mod_rapi)
+mod_rapi <- gsub("M_rel", replacement = M_rel, x = mod_rapi)
+
+# Step 6: Fit the RAPI model
+rapi_fit <- sem(mod_rapi, data = df_centered)
+summary(rapi_fit)
+```
+
+```{r manually fit rapi lat_var, warning=FALSE}
+# Step 1: Retrieve factor loadings from fitted upi
+mod <- 'X =~ x1 + x2 + x3
+        M =~ m1 + m2 + m3'
+PE <- parameterEstimates(sem(mod, df))
+
+# Step 2: Caculate sum of factor loadings, error variance
+# Sum of factor loadings
+X_lambda <- sum(PE[match(c("x1", "x2", "x3"), PE$rhs), "est"])
+M_lambda <- sum(PE[match(c("m1", "m2", "m3"), PE$rhs), "est"])
+  
+# Sum of error variances
+PE_vcov <- PE[PE$op == "~~", ]
+x_ev <- sum(PE_vcov[match(c("x1", "x2", "x3"), PE_vcov$rhs), "est"])
+m_ev <- sum(PE_vcov[match(c("m1", "m2", "m3"), PE_vcov$rhs), "est"])
+  
+# Sum of item scores
+df_centered <- df %>%
+  mutate(across(c(x1:m3), ~ . - mean(.)))
+df_centered$x_sum <- rowSums(df_centered[, c("x1", "x2", "x3")])
+df_centered$m_sum <- rowSums(df_centered[, c("m1", "m2", "m3")])
+  
+# Step 3: Create the interaction indicator
+df_centered$xm <- df_centered$x_sum*df_centered$m_sum
+
+# Step 4: Calculate reliability of indicators and error constraint for the interaction term
+x_rel <- psych::alpha(df_centered[, c("x1", "x2", "x3")])$total$raw_alpha
+m_rel <- psych::alpha(df_centered[, c("m1", "m2", "m3")])$total$raw_alpha
+int_ev <- x_rel*var(df_centered$x_sum, na.rm = T)*(1 - m_rel)*var(df_centered$m_sum, na.rm = T) +
+    m_rel*var(df_centered$m_sum, na.rm = T)*(1 - x_rel)*var(df_centered$x_sum, na.rm = T) +
+    (1 - m_rel)*var(df_centered$m_sum, na.rm = T)*(1 - x_rel)*var(df_centered$x_sum, na.rm = T)
+
+# Step 5: Draft the model syntax
+mod_rapi <- 'X =~ X_lambda * x_sum
+             M =~ M_lambda * m_sum
+             XM =~ X_lambda * M_lambda * xm
+             
+             # Error variance
+             x_sum ~~ x_ev * x_sum
+             m_sum ~~ m_ev * m_sum
+             xm ~~ int_ev * xm
+             
+             # Regression
+             Y ~ X + M + b3 * XM
+             
+             # Latent variance
+             X ~~ v_x * X
+             M ~~ v_m * M
+             XM ~~ v_xm * XM
+             
+             # x-standardized interaction
+             beta3 := b3 * sqrt(v_x) * sqrt(v_m)'
+
+# Substitute in the actual reliability estimates
+# Define patterns and their replacements
+replacements <- list(
+  X_lambda = X_lambda,
+  M_lambda = M_lambda,
+  x_ev = x_ev,
+  m_ev = m_ev,
+  int_ev = int_ev
+)
+# Iterate over the replacements and update the model string
+for (pattern in names(replacements)) {
+  mod_rapi <- gsub(pattern, replacements[[pattern]], mod_rapi)
+}
+
+# Step 6: Fit the RAPI model
+rapi_fit <- sem(mod_rapi, data = df_centered)
+summary(rapi_fit)
+```
+
+The RAPI method using factor loading constraints as 1s above have been wrapped up into a function `rapi`. Here is an example demonstration:
+
+```{r function rapi}
+# Draft the model syntax
+mod_rapi <- '# Measurement Model
+              X =~ x1 + x2 + x3
+              M =~ m1 + m2 + m3
+            # Structural Model
+              Y ~ b1*X + b2*M + b3*X:M
+            # Define Standardized Coefficients
+              X ~~ v1*X
+              M ~~ v2*M
+              beta1 := b1*sqrt(v1)
+              beta2 := b2*sqrt(v2)
+              beta3 := b3*sqrt(v1)*sqrt(v2)'
+
+# Fit the model using rapi()
+fit_rapi <- rapi(mod_rapi, df) 
+summary(fit_rapi, fit.measure = TRUE, standardized = TRUE)
+```
+
+
+
+
+
+
