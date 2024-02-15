@@ -10,18 +10,18 @@ processData <- function(data, pairs, indics) {
     second_set <- indics[[pair_name[2]]] # Second set of indicators for interaction
 
     # Calculate sum scores for each set of indicators
-    first_sum <- paste0(pair_name[1], "_sum")
-    second_sum <- paste0(pair_name[2], "_sum")
+    first_mean <- paste0(pair_name[1], "_mean")
+    second_mean <- paste0(pair_name[2], "_mean")
     data_centered <- data_centered %>%
       rowwise %>%
-      mutate(!!first_sum := sum(c_across(all_of(first_set)), na.rm = TRUE),
-             !!second_sum := sum(c_across(all_of(second_set)), na.rm = TRUE)) %>%
+      mutate(!!first_mean := mean(c_across(all_of(first_set)), na.rm = TRUE),
+             !!second_mean := mean(c_across(all_of(second_set)), na.rm = TRUE)) %>%
       ungroup()
 
     # Create the interaction term
     int_name <- paste0(pair_name[1], "_int_", pair_name[2])
     data_centered <- data_centered %>%
-      mutate(!!int_name := !!sym(first_sum) * !!sym(second_sum))
+      mutate(!!int_name := !!sym(first_mean) * !!sym(second_mean))
   }
   return(data_centered)
 }
@@ -37,7 +37,6 @@ rapi <- function (model, data) {
   # Parse the model
   pairs <- parseInteractionTerms(model)
   indics <- parseIndicators(model) # This should be a list for multiple pairs
-
   pairs_count <- length(pairs)
 
   # Update the data to include interactions
@@ -100,6 +99,6 @@ rapi <- function (model, data) {
   model_new <- gsub(paste0(lat_names[2], "_rel"), replacement = second_rel, x = model_new)
 
   # Fit the model
-  fit_rapi <- sem(model_new, data = data_int)
+  fit_rapi <- sem(model_new, data = data_int, bounds = TRUE)
   return(fit_rapi)
 }

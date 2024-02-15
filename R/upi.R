@@ -9,56 +9,9 @@
 #' @export
 
 upi <- function (model, data, mode = "match") {
-  #############################################################################
-  # Helper function 1: Parsing the model and extract the interaction pairs
-  # Model input example: y = x + m + x:m / Y = X + M + X:M
-  # Model output should be a list of interaction pairs
 
-    str_elements <- gsub(" ", "",
-                         unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),
-                                         split = "+", fixed = TRUE)))
-    inter_terms <- gsub("\n", "", str_elements[intersect(grep(":", str_elements), grep(":=", str_elements, invert = T))])
-
-    if (grepl("*", inter_terms, fixed = TRUE)) {
-      int_label <- unlist(strsplit(inter_terms, split = "\\*"))[1]
-      inter_terms <- as.list(unlist(strsplit(inter_terms, split = "\\*"))[2])
-    }
-
-    interpairs <- function (inter_terms) {
-      inter_vars <- list()
-      for (i in seq(inter_terms)) {
-        terms <- strsplit(inter_terms[[i]], split = ":")
-        inter_vars[[i]] <- unlist(terms)
-        names(inter_vars)[i] <- paste0("inter_pair_", i)
-      }
-      return(inter_vars)
-    }
-
-  pairs <- interpairs(inter_terms)
-
-  #############################################################################
-  # Helper function 2: Parsing the original model and extract the indicators of interaction terms
-  # Model input: the original/full model
-  # Model output should be a list of interaction pairs
-
-  indicators <- function (model) {
-    model_elements <- unlist(strsplit(model, "\n"))
-    indicator_terms <- unlist(strsplit(gsub(" ", "",
-                                            model_elements[grep("=~",
-                                                                unlist(strsplit(model, "\n")))]),
-                                       split = "=~"))
-    indicator_vars <- indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "FALSE"]
-    indicator_items <- indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "TRUE"]
-    indicators <- list()
-    for (i in seq(indicator_items)) {
-      indicators[[i]] <- unlist(strsplit(indicator_items[[i]], split = "+", fixed = TRUE))
-      names(indicators)[i] <- paste0(indicator_vars[[i]])
-    }
-    return(indicators)
-  }
-
-  indics <- indicators(model)
-
+  pairs <- parseInteractionTerms(model)
+  indics <- parseIndicators(model) # This should be a list for multiple pairs
   pairs_count <- length(pairs)
 
   # Generate product indicators for each interaction pairs

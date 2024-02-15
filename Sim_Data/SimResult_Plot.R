@@ -1,7 +1,7 @@
 # Summarize the results
 
-sim_results <- All_BoundBeta_02062024 %>%
-  gather("var", "val", std_bias.rapi_yint_est:rse_bias.tspa_yint_se) %>%
+sim_results <- Test_02132024 %>%
+  gather("var", "val", raw_bias.rapi_yint_est:convergence_rate.tspa_yint_est) %>%
   dplyr::select(-c(SIM_TIME:WARNINGS)) %>%
   separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
   separate(col = parmet, into = c("method", "par", "result"),  sep = "_") %>%
@@ -15,16 +15,23 @@ sim_results <- All_BoundBeta_02062024 %>%
          cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
          rel_lab = as_factor(paste0("Reliability == ", rel)))
 
-write_csv(sim_results, "Sim_Data/All_BoundBeta_02062024.csv")
+write_csv(sim_results, "Sim_Data/Test_02132024.csv")
 
 # Plot results
-sim_plots <- read.csv("Sim_Data/All_BoundBeta_02062024.csv")
+sim_plots <- read.csv("Sim_Data/Test_02132024.csv")
 # # Bias
 # sim_plots %>%
 #   ggplot(aes(x = factor(N), y = bias, color = method)) +
 #   geom_boxplot() +
 #   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
 #   labs(x = "Sample Size (N)", y = "Bias")
+
+# Raw Bias
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = raw_bias, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Raw Bias")
 
 # Standard Bias
 sim_plots %>%
@@ -33,7 +40,21 @@ sim_plots %>%
   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
   labs(x = "Sample Size (N)", y = "Standardized Bias")
 
-# Relative SE Bias
+# Trimmed Bias
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = trimm_bias, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Trimmed Bias")
+
+# Median-MAD Bias
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = stdMed_bias, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Median-MAD Bias")
+
+# Raw Relative SE Bias
 sim_plots %>%
   ggplot(aes(x = factor(N), y = rse_bias, color = method)) +
   geom_boxplot() +
@@ -54,3 +75,10 @@ sim_plots %>%
   geom_boxplot() +
   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
   labs(x = "Sample Size (N)", y = "RMSE")
+
+# Convergence Rate
+sim_plots %>%
+  ggplot(aes(x = factor(N), y = convergence_rate, color = method)) +
+  geom_boxplot() +
+  facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  labs(x = "Sample Size (N)", y = "Convergence Rate")

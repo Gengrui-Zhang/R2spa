@@ -71,7 +71,7 @@ generate_sem_data <- function(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y) 
 ```
 
 ```{r simulate data}
-set.seed(1998)
+set.seed(4000)
 # Define model parameters 
 N <- 100
 model <- "# Measurement Model
@@ -85,7 +85,7 @@ Phi <- matrix(c(1, 0.6,
               nrow = 2) # Latent correlation of 0.6
 Lambda <- cbind(c(1, 0.9, 0.75, rep(0, 3)),
                 c(rep(0, 3), 1, 0.9, 0.75)) # Factor loadings
-Gamma <- t(c(0.3, 0.3, 0.3)) # Path coefficients
+Gamma <- t(c(0.4, 0.4, 0.2)) # Path coefficients
 Theta <- diag(c(1.32, 0.99, 0.69), nrow = 6) # Residual variance with reliability of 0.7
 SD_y <- sqrt(0.712) # Error variance with correlation of 0.6
 
@@ -156,10 +156,13 @@ mod_upi <- '# Measurement Model
               X =~ x1 + x2 + x3
               M =~ m1 + m2 + m3
             # Structural Model
-              Y ~ X + M + b3*X:M
+              Y ~ b1 * X + b2 * M + b3 * X:M
             # Define Standardized Coefficients
               X ~~ v1*X
               M ~~ v2*M
+              
+              beta1 := b1*sqrt(v1)
+              beta2 := b2*sqrt(v2)
               beta3 := b3*sqrt(v1)*sqrt(v2)'
 
 # Fit the model using upi()
@@ -181,28 +184,28 @@ df_centered <- df %>%
   mutate(across(c(x1:m3), ~ . - mean(.)))
 
 # Step 2: Using sum scores as the single indicators
-df_centered$x_sum <- rowSums(df_centered[, c("x1", "x2", "x3")])
-df_centered$m_sum <- rowSums(df_centered[, c("m1", "m2", "m3")])
+df_centered$x_mean <- rowSums(df_centered[, c("x1", "x2", "x3")])/3
+df_centered$m_mean <- rowSums(df_centered[, c("m1", "m2", "m3")])/3
 
 # Step 3: Create the interaction indicator
-df_centered$xm <- df_centered$x_sum*df_centered$m_sum
+df_centered$xm <- df_centered$x_mean*df_centered$m_mean
 
 # Step 4: Calculate reliability of indicators
 X_rel <- psych::alpha(df_centered[, c("x1", "x2", "x3")])$total$raw_alpha
 M_rel <- psych::alpha(df_centered[, c("m1", "m2", "m3")])$total$raw_alpha
 
 # Step 5: Draft the model syntax
-mod_rapi <- 'X =~ 1 * x_sum
-             M =~ 1 * m_sum
+mod_rapi <- 'X =~ 1 * x_mean
+             M =~ 1 * m_mean
              XM =~ 1 * xm
              
              # Error variance
-             x_sum ~~ ev_x * x_sum
-             m_sum ~~ ev_m * m_sum
+             x_mean ~~ ev_x * x_mean
+             m_mean ~~ ev_m * m_mean
              xm ~~ ev_xm * xm
              
              # Regression
-             Y ~ X + M + b3 * XM
+             Y ~ b1 * X + b2 * M + b3 * XM
              
              # Latent variance
              X ~~ v_x * X
@@ -215,6 +218,8 @@ mod_rapi <- 'X =~ 1 * x_sum
              ev_xm == ev_x * v_m + ev_m * v_x + ev_x * ev_m
              
              # x-standardized interaction
+             beta1 := b1 * sqrt(v_x)
+             beta2 := b2 * sqrt(v_m)
              beta3 := b3 * sqrt(v_x) * sqrt(v_m)'
 
 # Substitute in the actual reliability estimates
@@ -242,7 +247,7 @@ PE_vcov <- PE[PE$op == "~~", ]
 x_ev <- sum(PE_vcov[match(c("x1", "x2", "x3"), PE_vcov$rhs), "est"])
 m_ev <- sum(PE_vcov[match(c("m1", "m2", "m3"), PE_vcov$rhs), "est"])
   
-# Sum of item scores
+# Mean of item scores
 df_centered <- df %>%
   mutate(across(c(x1:m3), ~ . - mean(.)))
 df_centered$x_sum <- rowSums(df_centered[, c("x1", "x2", "x3")])
@@ -288,6 +293,7 @@ replacements <- list(
   m_ev = m_ev,
   int_ev = int_ev
 )
+
 # Iterate over the replacements and update the model string
 for (pattern in names(replacements)) {
   mod_rapi <- gsub(pattern, replacements[[pattern]], mod_rapi)
@@ -348,9 +354,9 @@ mod_tspa = '# latent variables (indicated by factor scores)
             XM =~ fs_int
             
             # constrain the errors
-            fs_X ~~ 0.3352061 * fs_X
-            fs_M ~~ 0.5634815 * fs_M
-            fs_int ~~ 1.08757 * fs_int
+            fs_X ~~ rel_X * fs_X
+            fs_M ~~ rel_M * fs_M
+            fs_int ~~ rel_int * fs_int
             
             # regressions
             Y ~ b1*X + b2*M + b3*XM
@@ -363,6 +369,10 @@ mod_tspa = '# latent variables (indicated by factor scores)
             beta1 := b1 * sqrt(v1)
             beta2 := b2 * sqrt(v2)
             beta3 := b3 * sqrt(v1) * sqrt(v2)'
+
+mod_tspa <- gsub("rel_X", replacement = fs_dat$fs_X_se[1]^2, x = mod_tspa)
+mod_tspa <- gsub("rel_M", replacement = fs_dat$fs_M_se[1]^2, x = mod_tspa)
+mod_tspa <- gsub("rel_int", replacement = fs_dat$fs_int_se[1]^2, x = mod_tspa)
 
 fit_tspa <- sem(mod_tspa, data = fs_dat)
 summary(fit_tspa)

@@ -139,6 +139,7 @@ tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data,
+                  bounds = TRUE,
                   ...)
   attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
   return (tspa_fit)
