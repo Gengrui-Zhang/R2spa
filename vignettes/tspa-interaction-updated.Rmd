@@ -22,8 +22,6 @@ library(semTools)
 library(dplyr)
 library(mnormt)
 library(R2spa)
-devtools::load_all()
-source("/Users/jimmy_z/R Projects/R2spa/R/rapi.R")
 # library(nlsem)
 ```
 

@@ -5,7 +5,7 @@
 #' @param model A string variable describing the structural path model with interaction term(s),
 #'              in \code{lavaan} syntax.
 #' @param data A data frame containing indicator scores.
-#' @return An object of classy7777777777777777777777777777777777777y \code{lavaan}.
+#' @return An object of \code{lavaan}.
 #' @export
 
 upi <- function (model, data, mode = "match") {

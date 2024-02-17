@@ -9,9 +9,6 @@ library(mnormt)
 library(dplyr)
 library(tidyverse)
 library(MBESS)
-source("/Users/jimmy_z/R Projects/R2spa/R/rapi.R")
-source("/Users/jimmy_z/R Projects/R2spa/R/upi.R")
-source("/Users/jimmy_z/R Projects/R2spa/R/tspa.R")
 devtools::load_all(".")
 
 # Data Generation

@@ -2,7 +2,12 @@
 
 export(compute_fscore)
 export(get_fs)
+export(get_fsint)
+export(parseIndicators)
+export(parseInteractionTerms)
+export(rapi)
 export(tspa)
+export(upi)
 importFrom(lavaan,cfa)
 importFrom(lavaan,lavInspect)
 importFrom(lavaan,sem)

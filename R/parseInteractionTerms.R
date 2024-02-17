@@ -1,3 +1,12 @@
+# Interaction-branch
+
+#' Unconstrained product indicator method
+#'
+#' @param model A string variable describing the structural path model with interaction term(s),
+#'              in \code{lavaan} syntax.
+#' @return A list of interaction pair
+#' @export
+
 parseInteractionTerms <- function(model) {
   str_elements <- gsub(" ", "",
                        unlist(strsplit(unlist(strsplit(model, split = "\n|=~|~")),

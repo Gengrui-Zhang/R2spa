@@ -1,38 +1,50 @@
-processData <- function(data, pairs, indics) {
-  data_centered <- data %>%
-    # Mean-center indicators
-    mutate(across(unname(unlist(indics)), ~ . - mean(.)))
+# Interaction-branch
 
-  # Dynamically generate interaction terms based on pairs and indics
-  for (i in seq_along(pairs)) {
-    pair_name <- unname(unlist(pairs)) # Name of the interaction term
-    first_set <- indics[[pair_name[1]]] # First set of indicators for interaction
-    second_set <- indics[[pair_name[2]]] # Second set of indicators for interaction
-
-    # Calculate sum scores for each set of indicators
-    first_mean <- paste0(pair_name[1], "_mean")
-    second_mean <- paste0(pair_name[2], "_mean")
-    data_centered <- data_centered %>%
-      rowwise %>%
-      mutate(!!first_mean := mean(c_across(all_of(first_set)), na.rm = TRUE),
-             !!second_mean := mean(c_across(all_of(second_set)), na.rm = TRUE)) %>%
-      ungroup()
-
-    # Create the interaction term
-    int_name <- paste0(pair_name[1], "_int_", pair_name[2])
-    data_centered <- data_centered %>%
-      mutate(!!int_name := !!sym(first_mean) * !!sym(second_mean))
-  }
-  return(data_centered)
-}
-
-user_alpha <- function(x) {
-  covx <- cov(x)
-  p <- ncol(x)
-  p / (p - 1) * (1 - sum(diag(covx)) / sum(covx))
-}
+#' Reliability Adjusted Product Indicator
+#'
+#' @param model A string variable describing the structural path model with interaction term(s),
+#'              in \code{lavaan} syntax.
+#' @param data A data frame containing indicator scores.
+#' @return An object of \code{lavaan}.
+#' @export
 
 rapi <- function (model, data) {
+
+  # Helper function: processing data
+  processData <- function (data, pairs, indics) {
+    data_centered <- data %>%
+      # Mean-center indicators
+      mutate(across(unname(unlist(indics)), ~ . - mean(.)))
+
+    # Dynamically generate interaction terms based on pairs and indics
+    for (i in seq_along(pairs)) {
+      pair_name <- unname(unlist(pairs)) # Name of the interaction term
+      first_set <- indics[[pair_name[1]]] # First set of indicators for interaction
+      second_set <- indics[[pair_name[2]]] # Second set of indicators for interaction
+
+      # Calculate sum scores for each set of indicators
+      first_mean <- paste0(pair_name[1], "_mean")
+      second_mean <- paste0(pair_name[2], "_mean")
+      data_centered <- data_centered %>%
+        rowwise %>%
+        mutate(!!first_mean := mean(c_across(all_of(first_set)), na.rm = TRUE),
+               !!second_mean := mean(c_across(all_of(second_set)), na.rm = TRUE)) %>%
+        ungroup()
+
+      # Create the interaction term
+      int_name <- paste0(pair_name[1], "_int_", pair_name[2])
+      data_centered <- data_centered %>%
+        mutate(!!int_name := !!sym(first_mean) * !!sym(second_mean))
+    }
+    return(data_centered)
+  }
+
+  # Helper function: cronbach's alpha
+  user_alpha <- function (x) {
+    covx <- cov(x)
+    p <- ncol(x)
+    p / (p - 1) * (1 - sum(diag(covx)) / sum(covx))
+  }
 
   # Parse the model
   pairs <- parseInteractionTerms(model)
@@ -72,11 +84,11 @@ rapi <- function (model, data) {
   err_cstr <- paste(err_cstr, collapse = "")
 
   lat_cstr <- paste(trimws(unlist(strsplit(model, split = "\n"))
-               [grep("~~", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
+                           [grep("~~", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
   reg_str <- gsub(":", "_", trimws(unlist(strsplit(model, split = "\n"))[grep(paste0(lat_names[1], ":", lat_names[2]),
-                                                                    unlist(strsplit(model, split = "\n")))]))
+                                                                              unlist(strsplit(model, split = "\n")))]))
   defbeta_cstr <- paste(trimws(unlist(strsplit(model, split = "\n"))
-                                         [grep(":=", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
+                               [grep(":=", unlist(strsplit(model, split = "\n")), fixed = TRUE)]), collapse = "\n")
 
   model_new <- paste0("# Measurement Model (indicated by sum scores)\n",
                       fac_cstr,
