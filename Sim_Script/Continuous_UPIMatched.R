@@ -1,3 +1,5 @@
+set.seed(14589)
+
 library(semTools)
 library(lavaan)
 library(semPlot)
@@ -8,6 +10,8 @@ library(dplyr)
 library(tidyverse)
 library(MBESS)
 source("/Users/jimmy_z/R Projects/R2spa/R/rapi.R")
+source("/Users/jimmy_z/R Projects/R2spa/R/upi.R")
+source("/Users/jimmy_z/R Projects/R2spa/R/tspa.R")
 devtools::load_all(".")
 
 # Data Generation
@@ -160,8 +164,8 @@ extract_res <- function (condition, dat, fixed_objects = NULL) {
     tspa_est <- coef(fit_tspa, type = "user")["beta3"]
     tspa_se <- sqrt(vcov(fit_tspa, type = "user")["beta3", "beta3"])
   } else {
-    rapi_est <- NA
-    rapi_se <- NA
+    tspa_est <- NA
+    tspa_se <- NA
   }
   # Extract parameter estimates and standard errors
   paret <- c(upi_est, upi_se, rapi_est, rapi_se, tspa_est, tspa_se)
@@ -201,19 +205,25 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
   }
 
   # Helper function: relative SE bias
-  rse_bias <- function(est, est_se, trim = NULL, type = "raw") {
+  rse_bias <- function(est, est_se, trim = 0, type = "raw") {
     if (type == "raw") {
         est_se <- as.matrix(est_se)
         est <- as.matrix(est)
         est_se_mean <- apply(est_se, 2, mean, na.rm = T)
         emp_sd <- apply(est, 2L, sd, na.rm = T)
         rse_bias <- est_se_mean / emp_sd - 1
-    } else if (type == "robust") {
+    } else if (type == "median") {
         est_se <- as.matrix(est_se)
         est <- as.matrix(est)
         est_se_median <- apply(est_se, 2, median, na.rm = TRUE)
-        emp_mad <- apply(est, 2, function(x) mad(x, constant = 1, na.rm = TRUE))
+        emp_mad <- apply(est, 2, function(x) mad(x, na.rm = TRUE))
         rse_bias <- est_se_median / emp_mad - 1
+    } else if (type == "trim") {
+      est_se <- as.matrix(est_se)
+      est <- as.matrix(est)
+      est_se_mean <- apply(est_se, 2, mean, trim = trim, na.rm = TRUE)
+      emp_sd <- apply(est, 2L, sd, na.rm = T)
+      rse_bias <- est_se_mean / emp_sd - 1
     }
     return(rse_bias)
   }
@@ -246,7 +256,7 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
                            results_se,
                            pop_par,
                            type = "standardized"),
-    trimm_bias = robust_bias(results_est,
+    trim_bias = robust_bias(results_est,
                              results_se,
                              pop_par,
                              trim = 0.2,
@@ -263,16 +273,20 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
     raw_rse_bias = rse_bias(results_est,
                             results_se,
                             type = "raw"),
-    robust_rse_bias = rse_bias(results_est,
+    stdMed_rse_bias = rse_bias(results_est,
                                results_se,
-                               type = "robust"),
+                               type = "median"),
+    trim_rse_bias = rse_bias(results_est,
+                               results_se,
+                               trim = 0.2,
+                               type = "trim"),
     convergence_rate = convergence_rate(results_est)
   )
 }
 
 # Run 2000 replications
 
-Match_02142024 <- runSimulation(design = DESIGNFACTOR,
+Match_02162024 <- runSimulation(design = DESIGNFACTOR,
                                replications = 2000,
                                generate = GenData,
                                analyse = extract_res,
@@ -280,7 +294,7 @@ Match_02142024 <- runSimulation(design = DESIGNFACTOR,
                                fixed_objects = FIXED_PARAMETER,
                                save = TRUE,
                                save_results = TRUE,
-                               filename = "Match_02142024",
+                               filename = "Match_02162024",
                                control = list(allow_na = TRUE),
                                parallel = TRUE,
                                ncores = min(4L, parallel::detectCores() - 1))
