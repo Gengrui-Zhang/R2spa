@@ -237,7 +237,7 @@ summary(tspa_mx_fit)
 Note: FIML couldn't finish within 12 hours
 
 ```{r}
-jreg_umx <- umxRAM(
+jreg_umx_fit <- umxRAM(
     "
     f1 =~ a * i1 + a * i2 + a * i3 + a * i4 + a * i5 +
           a * i6 + a * i7 + a * i8 + a* i9 + a * i10
@@ -270,7 +270,8 @@ jreg_umx <- umxRAM(
                  levels = c(0, 1)) |>
                as.data.frame(),
     type = "DWLS")
-mxStandardizeRAMpaths(jreg_umx_fit, SE = TRUE)[4, ]
+jreg_std <- mxStandardizeRAMpaths(jreg_umx_fit, SE = TRUE)
+jreg_std[jreg_std$label == "f1_to_f2", ]
 ```
 
 ## Multidimensional Measurement Model
@@ -363,4 +364,6 @@ tspa_mx2 <- tspa_mx_model(fsreg_umx, data = fs_dat,
 tspa_mx2_fit <- mxRun(tspa_mx2)
 # Summarize the results
 summary(tspa_mx2_fit)
+# Standardize coefficients
+mxStandardizeRAMpaths(tspa_mx2_fit, SE = TRUE)$m1[1, ]
 ```
