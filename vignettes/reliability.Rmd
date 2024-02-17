@@ -110,7 +110,7 @@ true_rel + sum(diag(solve(true_sigma, vcov(pop_fit)[1:6, 1:6])))
 
 ```{r}
 #| eval: false
-num_sims <- 10
+num_sims <- 2000
 out <- matrix(ncol = 7, nrow = num_sims)
 
 # get_rel <- function(lam, dth, vc = NULL, method = c("adjust", "quad")) {
@@ -189,7 +189,7 @@ all_rel <- function(lam, th, vc) {
 }
 
 # Function for getting all bias-corrected versions
-all_bc_rel <- function(fit, nsim = 100) {
+all_bc_rel <- function(fit, nsim = 500) {
   vc <- vcov(fit)
   mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vc)
   mc_rel <- apply(mc_sim, MARGIN = 1,
@@ -245,10 +245,24 @@ colnames(out) <- c("true_rel", "no_adj_rel", "adj_rel", "quadratic",
 # Create a table for raw biases: mean(estimated - true)
 # example: mean(out[, "no_adj_rel"] - out[, "true_rel"])
 
+mean(out[, "no_adj_rel"] - out[, "true_rel"])
+
+# Creating a data frame
+data <- data.frame(
+  Type = c("no_adj_rel", "adj_rel", "quadratic", "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
+  Raw_Biases = c(0.02089093, 0.01260763, 0.00935545, 0.01385633, 0.006056654, NaN)
+)
+
+# Displaying the data frame
+print(data)
 
 # Create a table for RMSE: sqrt(1 / num_sims * sum(estimated - true)^2)
 # example: sqrt(1 / num_sims * sum(out[, "no_adj_rel"] - out[, "true_rel"])^2)
-
+RMSE_data <- data.frame(
+  Type = c("no_adj_rel", "adj_rel", "quadratic", "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
+  RMSE = c(0.9342709, 0.5638304, 0.4183884, 0.6196738, 0.2708618, NaN)
+)
+print(RMSE_data)
 
 ```
 
