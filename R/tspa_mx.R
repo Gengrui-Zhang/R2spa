@@ -94,7 +94,7 @@
 tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
                           mat_int = NULL, ...) {
   str_name <- mx_model$name
-  p <- ncol(mat_vc)
+  q <- ncol(mx_model$A$values)
   if (!isTRUE(attr(class(mat_ld), which = "package") == "OpenMx")) {
     fs_name <- mx_model$manifestVars
     ld_ind <- match(fs_name, table = rownames(mat_ld))
@@ -124,7 +124,7 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
       mat_int <- make_mx_int(mat_int[, int_ind, drop = FALSE])
     }
   } else {
-    zero_row_vector <- matrix(0, ncol = p)
+    zero_row_vector <- matrix(0, ncol = length(mx_model$manifestVars))
     dimnames(zero_row_vector) <- list(NULL, mx_model$manifestVars)
     mat_int <- make_mx_int(zero_row_vector)
   }
@@ -132,10 +132,12 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
     "2SPAD",
     mxData(observed = data, type = "raw"),
     mx_model, mat_ld, mat_vc, mat_int,
-    mxMatrix(type = "Iden", nrow = p, ncol = p, name = "I"),
-    mxAlgebraFromString(paste0("(L %*% solve(I - ", str_name, ".A)) %&% ",
+    mxMatrix(type = "Iden", nrow = q, ncol = q, name = "I"),
+    mxAlgebraFromString(paste0("(L %*%", str_name,
+                               ".F %*% solve(I - ", str_name, ".A)) %&% ",
                                str_name, ".S + E"), name = "expCov"),
-    mxAlgebraFromString(paste0(str_name, ".M %*% t(L %*% solve(I - ",
+    mxAlgebraFromString(paste0(str_name, ".M %*% t(L %*%",
+                               str_name, ".F %*% solve(I - ",
                                str_name, ".A)) + b"), name = "expMean"),
     # mxAlgebraFromString(paste0(str_name, ".M"), name = "expMean"),
     mxExpectationNormal(
