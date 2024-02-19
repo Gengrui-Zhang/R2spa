@@ -95,6 +95,50 @@ tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
                          mat_vc = attr(fs_dat, "fsT"))
 ```
 
+### With Mean Structure
+
+```{r}
+my_cfa <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    x1 + y1 ~ 0
+    ind60 + dem60 ~ 1
+"
+fs_dat <- get_fs(PoliticalDemocracy, model = my_cfa,
+                 meanstructure = TRUE)
+```
+
+lavaan
+
+```{r}
+tspa_fit <- tspa(model = "dem60 ~ ind60\ndem60 + ind60 ~ 1", data = fs_dat,
+                 fsT = attr(fs_dat, "fsT"),
+                 fsL = attr(fs_dat, "fsL"),
+                 fsb = attr(fs_dat, "fsb"))
+parameterEstimates(tspa_fit)
+standardizedSolution(tspa_fit)
+```
+
+OpenMx
+
+```{r}
+# Force symmetric E
+matE <- attr(fs_dat, "fsT")
+matE <- (matE + t(matE)) / 2
+matb <- t(as.matrix(attr(fs_dat, "fsb")))
+tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
+                         mat_ld = attr(fs_dat, "fsL"),
+                         mat_vc = matE,
+                         mat_int = matb)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results (takes 20 seconds or so)
+summary(tspa_mx_fit)
+# Standardize coefficients
+mxStandardizeRAMpaths(tspa_mx_fit, SE = TRUE)$m1[1, ]
+```
+
 ## Compare to joint model with OpenMx
 
 ```{r}
