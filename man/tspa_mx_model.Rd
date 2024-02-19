@@ -4,7 +4,7 @@
 \alias{tspa_mx_model}
 \title{Two-Stage Path Analysis with Definition Variables Using OpenMx}
 \usage{
-tspa_mx_model(mx_model, data, mat_ld, mat_vc, ...)
+tspa_mx_model(mx_model, data, mat_ld, mat_vc, mat_int = NULL, ...)
 }
 \arguments{
 \item{mx_model}{A model object of class \link[OpenMx:MxRAMModel-class]{OpenMx::MxRAMModel}, created
@@ -29,6 +29,9 @@ the corresponding loadings.
 }}
 
 \item{mat_vc}{Similar to \code{mat_ld} but for the error variance-covariance
+matrix of the factor scores.}
+
+\item{mat_int}{Similar to \code{mat_ld} but for the measurement intercept
 matrix of the factor scores.}
 
 \item{...}{Additional arguments passed to \code{\link[OpenMx:mxModel]{OpenMx::mxModel()}}.}

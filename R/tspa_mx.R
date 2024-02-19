@@ -20,6 +20,8 @@
 #'   the corresponding loadings.
 #' @param mat_vc Similar to `mat_ld` but for the error variance-covariance
 #'               matrix of the factor scores.
+#' @param mat_int Similar to `mat_ld` but for the measurement intercept
+#'               matrix of the factor scores.
 #' @param ... Additional arguments passed to [OpenMx::mxModel()].
 #' @return An object of class [OpenMx::MxModel-class]. Note that the
 #'         model has not been run.
@@ -89,7 +91,8 @@
 #' # Summarize the results
 #' summary(tspa_mx_fit)
 
-tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
+tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
+                          mat_int = NULL, ...) {
   str_name <- mx_model$name
   p <- ncol(mat_vc)
   if (!isTRUE(attr(class(mat_ld), which = "package") == "OpenMx")) {
@@ -110,15 +113,30 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc, ...) {
     }
     mat_vc <- make_mx_vc(mat_vc[vc_ind, vc_ind])
   }
+  if (!is.null(mat_int)) {
+    if (!isTRUE(attr(class(mat_int), which = "package") == "OpenMx")) {
+      fs_name <- mx_model$manifestVars
+      int_ind <- match(fs_name, table = colnames(mat_int))
+      if (any(is.na(int_ind))) {
+        stop("`rownames(mat_int)` must match the names of the",
+             "factor score variables.")
+      }
+      mat_int <- make_mx_int(mat_int[, int_ind, drop = FALSE])
+    }
+  } else {
+    zero_row_vector <- matrix(0, ncol = p)
+    dimnames(zero_row_vector) <- list(NULL, mx_model$manifestVars)
+    mat_int <- make_mx_int(zero_row_vector)
+  }
   mxModel(
     "2SPAD",
     mxData(observed = data, type = "raw"),
-    mx_model, mat_ld, mat_vc,
+    mx_model, mat_ld, mat_vc, mat_int,
     mxMatrix(type = "Iden", nrow = p, ncol = p, name = "I"),
     mxAlgebraFromString(paste0("(L %*% solve(I - ", str_name, ".A)) %&% ",
                                str_name, ".S + E"), name = "expCov"),
     mxAlgebraFromString(paste0(str_name, ".M %*% t(L %*% solve(I - ",
-                               str_name, ".A))"), name = "expMean"),
+                               str_name, ".A)) + b"), name = "expMean"),
     # mxAlgebraFromString(paste0(str_name, ".M"), name = "expMean"),
     mxExpectationNormal(
       covariance = "expCov", means = "expMean",
@@ -164,5 +182,28 @@ make_mx_vc <- function(vc_mat) {
     values = val,
     labels = lab,
     name = "E"
+  )
+}
+
+make_mx_int <- function(int_mat) {
+  if (!is.matrix(int_mat) || nrow(int_mat) != 1) {
+    stop("`int_mat` must be a 1xN matrix (i.e., a row vector).")
+  }
+  if (is.numeric(int_mat)) {
+    val <- int_mat
+    lab <- NA
+  } else if (is.character(int_mat)) {
+    lab <- int_mat
+    lab[!is.na(lab)] <- paste0("data.", lab[!is.na(lab)])
+    val <- NA
+  } else {
+    stop("`int_mat` must be either a numeric matrix or a character matrix.")
+  }
+  mxMatrix(
+    type = "Full", nrow = 1, ncol = length(int_mat),
+    free = FALSE,
+    values = val,
+    labels = lab,
+    name = "b"
   )
 }
