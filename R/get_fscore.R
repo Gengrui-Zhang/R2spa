@@ -208,6 +208,17 @@ augment_fs <- function(fs, fs_ev) {
   fs_dat
 }
 
+augment_fs2 <- function(fs, fsL, fsT, fsb = NULL) {
+  fs_se <- sqrt(diag(fsT))
+  fs_lds <- c(fsL)
+  fs_evs <- fsT[upper.tri(fsT, diag = TRUE)]
+  fs_vec <- c(fs_se, fs_lds, fs_evs)
+  if (!is.null(fsb)) {
+    fs_vec <- c(fs_vec, fsb)
+  }
+  cbind(as.data.frame(fs), matrix(fs_vec, nrow = 1))
+}
+
 #' Compute factor scores
 #'
 #' @param y An N x p matrix where each row is a response vector. If there
