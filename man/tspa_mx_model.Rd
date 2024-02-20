@@ -4,7 +4,15 @@
 \alias{tspa_mx_model}
 \title{Two-Stage Path Analysis with Definition Variables Using OpenMx}
 \usage{
-tspa_mx_model(mx_model, data, mat_ld, mat_vc, mat_int = NULL, ...)
+tspa_mx_model(
+  mx_model,
+  data,
+  mat_ld,
+  mat_vc,
+  mat_int = NULL,
+  fs_lv_names = NULL,
+  ...
+)
 }
 \arguments{
 \item{mx_model}{A model object of class \link[OpenMx:MxRAMModel-class]{OpenMx::MxRAMModel}, created
@@ -33,6 +41,11 @@ matrix of the factor scores.}
 
 \item{mat_int}{Similar to \code{mat_ld} but for the measurement intercept
 matrix of the factor scores.}
+
+\item{fs_lv_names}{A named character vector where each element is
+the name of a factor score variable, and the
+names of the vector are the corresponding name
+of the latent variables.}
 
 \item{...}{Additional arguments passed to \code{\link[OpenMx:mxModel]{OpenMx::mxModel()}}.}
 }

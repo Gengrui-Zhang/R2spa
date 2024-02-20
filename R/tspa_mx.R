@@ -22,6 +22,10 @@
 #'               matrix of the factor scores.
 #' @param mat_int Similar to `mat_ld` but for the measurement intercept
 #'               matrix of the factor scores.
+#' @param fs_lv_names A named character vector where each element is
+#'                    the name of a factor score variable, and the
+#'                    names of the vector are the corresponding name
+#'                    of the latent variables.
 #' @param ... Additional arguments passed to [OpenMx::mxModel()].
 #' @return An object of class [OpenMx::MxModel-class]. Note that the
 #'         model has not been run.
@@ -92,33 +96,50 @@
 #' summary(tspa_mx_fit)
 
 tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
-                          mat_int = NULL, ...) {
+                          mat_int = NULL,
+                          fs_lv_names = NULL, ...) {
   str_name <- mx_model$name
   q <- ncol(mx_model$A$values)
   if (!isTRUE(attr(class(mat_ld), which = "package") == "OpenMx")) {
-    fs_name <- mx_model$manifestVars
-    ld_ind <- match(fs_name, table = rownames(mat_ld))
+    mv_name <- mx_model$manifestVars
+    ld_ind <- match(mv_name, table = colnames(mat_ld))
     if (any(is.na(ld_ind))) {
-      stop("`rownames(mat_ld)` must match the names of the",
-           "factor score variables.")
+      stop("`colnames(mat_ld)` must match the names of the ",
+           "latent factor variables.")
+    }
+    if (is.null(fs_lv_names) &&
+      !identical(rownames(mat_ld), colnames(mat_ld))) {
+      fs_lv_names <- rownames(mat_ld)
+      names(fs_lv_names) <- colnames(mat_ld)
     }
     mat_ld <- make_mx_ld(mat_ld[ld_ind, ld_ind])
   }
+  if (!is.null(fs_lv_names)) {
+    dup_fs <- data[fs_lv_names]
+    names(dup_fs) <- names(fs_lv_names)
+    data <- cbind(data, dup_fs)
+  }
   if (!isTRUE(attr(class(mat_vc), which = "package") == "OpenMx")) {
-    fs_name <- mx_model$manifestVars
-    vc_ind <- match(fs_name, table = rownames(mat_vc))
+    mv_name <- mx_model$manifestVars
+    if (!is.null(fs_lv_names)) {
+      mv_name <- fs_lv_names[match(mv_name, table = names(fs_lv_names))]
+    }
+    vc_ind <- match(mv_name, table = rownames(mat_vc))
     if (any(is.na(vc_ind))) {
-      stop("`rownames(mat_vc)` must match the names of the",
+      stop("`rownames(mat_vc)` must match the names of the ",
            "factor score variables.")
     }
     mat_vc <- make_mx_vc(mat_vc[vc_ind, vc_ind])
   }
   if (!is.null(mat_int)) {
     if (!isTRUE(attr(class(mat_int), which = "package") == "OpenMx")) {
-      fs_name <- mx_model$manifestVars
-      int_ind <- match(fs_name, table = colnames(mat_int))
+      mv_name <- mx_model$manifestVars
+      if (!is.null(fs_lv_names)) {
+        mv_name <- fs_lv_names[match(mv_name, table = names(fs_lv_names))]
+      }
+      int_ind <- match(mv_name, table = colnames(mat_int))
       if (any(is.na(int_ind))) {
-        stop("`rownames(mat_int)` must match the names of the",
+        stop("`colnames(mat_int)` must match the names of the ",
              "factor score variables.")
       }
       mat_int <- make_mx_int(mat_int[, int_ind, drop = FALSE])
