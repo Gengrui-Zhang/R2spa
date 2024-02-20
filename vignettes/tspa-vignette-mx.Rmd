@@ -50,8 +50,8 @@ parameterestimates(tspa_fit)
 ```{r}
 fsreg_umx <- umxLav2RAM(
     "
-    fs_dem60 ~ fs_ind60
-    fs_dem60 + fs_ind60 ~ 1
+    dem60 ~ ind60
+    dem60 + ind60 ~ 1
     ",
     printTab = FALSE)
 ```
@@ -79,7 +79,9 @@ matE <- mxMatrix(
 
 ```{r}
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
-                         mat_ld = matL, mat_vc = matE)
+                         mat_ld = matL, mat_vc = matE,
+                         fs_lv_names = c(ind60 = "fs_ind60",
+                                         dem60 = "fs_dem60"))
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results (takes 20 seconds or so)
@@ -158,7 +160,7 @@ mxStandardizeRAMpaths(jreg_umx_fit, SE = TRUE)[4, ]
 
 Example from Lai & Hsiao (2021, Psychological Methods)
 
-## Not accounting for erro
+## Not accounting for error
 
 ```{r}
 # Simulate data with mirt
@@ -398,7 +400,7 @@ fsreg_umx <- umxLav2RAM(
     printTab = FALSE)
 cross_load <- matrix(c("F1_by_fs1", "F1_by_fs2",
                        "F2_by_fs1", "F2_by_fs2"), nrow = 2) |>
-    `dimnames<-`(list(c("F1", "F2"), NULL))
+    `dimnames<-`(rep(list(c("F1", "F2")), 2))
 err_cov <- matrix(c("ev_fs1", "ecov_fs1_fs2",
                     "ecov_fs1_fs2", "ev_fs2"), nrow = 2) |>
     `dimnames<-`(rep(list(c("F1", "F2")), 2))
