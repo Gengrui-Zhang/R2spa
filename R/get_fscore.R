@@ -219,6 +219,112 @@ augment_fs2 <- function(fs, fsL, fsT, fsb = NULL) {
   cbind(as.data.frame(fs), matrix(fs_vec, nrow = 1))
 }
 
+compute_lav_fs_matrices <- function(
+  acov, psi = NULL, alpha = NULL,
+  method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    fsL <- diag(nrow(acov)) - acov %*% solve(psi)
+    fsT <- fsL %*% acov
+    fsb <- alpha - fsL %*% alpha
+  } else if (method == "Bartlett") {
+    fsL <- diag(nrow(acov))
+    fsT <- acov
+    fsb <- rep(0, nrow(acov))
+  }
+  return(list(fsL = fsL, fsT = fsT, fsb = fsb))
+}
+
+create_fsT_names <- function(fs_names) {
+  out <- outer(fs_names,
+    Y = fs_names,
+    FUN = paste, sep = "_"
+  )
+  out[lower.tri(out)] <- t(out)[lower.tri(out)]
+  out[] <- paste0("ecov_", out)
+  diag(out) <- paste0("ev_", fs_names)
+  out
+}
+
+create_fsL_names <- function(lv_names, fs_names) {
+  out <- outer(lv_names,
+    Y = fs_names, FUN = paste,
+    sep = "_by_"
+  )
+  t(out)
+}
+
+get_fs_dat_names <- function(lv_names) {
+  # Initialize data frame
+  fs_names <- paste0("fs_", lv_names)
+  se_names <- paste0("se_", fs_names)
+  ev_names <- create_fsT_names(fs_names)
+  ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
+  int_names <- paste0("int_", fs_names)
+  c(
+    fs_names, se_names,
+    c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)],
+    int_names
+  )
+}
+
+augment_lav_predict <- function(
+    lavobj, method = c("regression", "Bartlett"),
+    drop_list_single = TRUE, ...) {
+  method <- match.arg(method)
+  mp_lst <- lavobj@Data@Mp
+  fs_lst <- lavaan::lavPredict(
+    lavobj,
+    type = "lv", method = method,
+    acov = TRUE,
+    drop.list.single.group = FALSE, ...
+  )
+  pars <- lavInspect(lavobj, what = "est",
+                     drop.list.single.group = FALSE)
+  out <- vector("list", length = length(mp_lst))
+  names(out) <- names(fs_lst)
+  for (g in seq_along(mp_lst)) {
+    mp <- mp_lst[[g]]
+    case_idx <- mp$case.idx
+    fs <- fs_lst[[g]]
+    # Initialize empty data frame
+    fs_colnames <- get_fs_dat_names(colnames(fs))
+    fs_dat <- data.frame(
+      matrix(NA,
+        nrow = nrow(fs),
+        ncol = length(fs_colnames),
+        dimnames = list(NULL, fs_colnames)
+      )
+    )
+    # Somehow lavaan sort the `acov` output by the missing data pattern and
+    # does not match the order of the missing pattern
+    # So need to find the order first
+    acov_rank <- rank(mp$id)
+    psi <- pars[[g]]$psi
+    alpha <- pars[[g]]$alpha
+    for (i in seq_along(case_idx)) {
+      mat_idx <- acov_rank[i]
+      fs_matrices <- compute_lav_fs_matrices(
+        acov = attr(fs_lst, "acov")[[g]][[mat_idx]],
+        psi = psi,
+        alpha = alpha,
+        method = method
+      )
+      fs_dat[case_idx[[i]], ] <- augment_fs2(
+        fs[case_idx[[i]], , drop = FALSE],
+        fsL = fs_matrices$fsL,
+        fsT = fs_matrices$fsT,
+        fsb = fs_matrices$fsb
+      )
+    }
+    out[[g]] <- fs_dat
+  }
+  if (drop_list_single) {
+    out <- out[[1]]
+  }
+  out
+}
+
 #' Compute factor scores
 #'
 #' @param y An N x p matrix where each row is a response vector. If there
