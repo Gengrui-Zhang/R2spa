@@ -319,7 +319,7 @@ augment_lav_predict <- function(
     }
     out[[g]] <- fs_dat
   }
-  if (drop_list_single) {
+  if (drop_list_single && length(out) == 1) {
     out <- out[[1]]
   }
   out
