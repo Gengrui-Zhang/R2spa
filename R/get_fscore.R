@@ -226,11 +226,19 @@ compute_lav_fs_matrices <- function(
   if (method == "regression") {
     fsL <- diag(nrow(acov)) - acov %*% solve(psi)
     fsT <- fsL %*% acov
-    fsb <- alpha - fsL %*% alpha
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- alpha - fsL %*% alpha
+    }
   } else if (method == "Bartlett") {
     fsL <- diag(nrow(acov))
     fsT <- acov
-    fsb <- rep(0, nrow(acov))
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- rep(0, nrow(acov))
+    }
   }
   return(list(fsL = fsL, fsT = fsT, fsb = fsb))
 }
@@ -254,18 +262,21 @@ create_fsL_names <- function(lv_names, fs_names) {
   t(out)
 }
 
-get_fs_dat_names <- function(lv_names) {
+get_fs_dat_names <- function(lv_names, int = TRUE) {
   # Initialize data frame
   fs_names <- paste0("fs_", lv_names)
   se_names <- paste0("se_", fs_names)
   ev_names <- create_fsT_names(fs_names)
   ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
-  int_names <- paste0("int_", fs_names)
-  c(
+  out <- c(
     fs_names, se_names,
-    c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)],
-    int_names
+    c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)]
   )
+  if (int) {
+    return(c(out, paste0("int_", fs_names)))
+  } else {
+    return(out)
+  }
 }
 
 augment_lav_predict <- function(
@@ -281,14 +292,27 @@ augment_lav_predict <- function(
   )
   pars <- lavInspect(lavobj, what = "est",
                      drop.list.single.group = FALSE)
-  out <- vector("list", length = length(mp_lst))
+  out <- vector("list", length = length(fs_lst))
   names(out) <- names(fs_lst)
-  for (g in seq_along(mp_lst)) {
+  has_means <- lavInspect(lavobj, what = "meanstructure")
+  for (g in seq_along(fs_lst)) {
     mp <- mp_lst[[g]]
-    case_idx <- mp$case.idx
     fs <- fs_lst[[g]]
+    if (is.null(mp)) {
+      case_idx <- list(seq_len(nrow(fs)))
+      acov_g <- list(attr(fs_lst, "acov")[[g]])
+      acov_rank <- 1
+    } else {
+      case_idx <- mp$case.idx
+      # Somehow lavaan sort the `acov` output by the missing data pattern and
+      # does not match the order of the missing pattern
+      # So need to find the order first
+      acov_g <- attr(fs_lst, "acov")[[g]]
+      acov_rank <- rank(mp$id)
+    }
     # Initialize empty data frame
-    fs_colnames <- get_fs_dat_names(colnames(fs))
+    fs_colnames <- get_fs_dat_names(colnames(fs),
+                                    int = has_means)
     fs_dat <- data.frame(
       matrix(NA,
         nrow = nrow(fs),
@@ -296,16 +320,12 @@ augment_lav_predict <- function(
         dimnames = list(NULL, fs_colnames)
       )
     )
-    # Somehow lavaan sort the `acov` output by the missing data pattern and
-    # does not match the order of the missing pattern
-    # So need to find the order first
-    acov_rank <- rank(mp$id)
     psi <- pars[[g]]$psi
     alpha <- pars[[g]]$alpha
     for (i in seq_along(case_idx)) {
       mat_idx <- acov_rank[i]
       fs_matrices <- compute_lav_fs_matrices(
-        acov = attr(fs_lst, "acov")[[g]][[mat_idx]],
+        acov = acov_g[[mat_idx]],
         psi = psi,
         alpha = alpha,
         method = method
