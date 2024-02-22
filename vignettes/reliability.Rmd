@@ -278,38 +278,45 @@ bias_tab |>
   geom_hline(yintercept = 0)
 ```
 
-1. Assuming no sampling errors in the weights
+1. The reliability formula for regression factor scores assuming no sampling errors in the weights is given by 
 
-$$\rho = \frac{(a'\lambda)^2}{(a'\lambda)^2 + a\Theta a}$$
+$$\rho = \frac{(a'\lambda)^2}{(a'\lambda)^2 + a'\Theta a}, $$
 
-2. Accounting for sampling error in the weights
+which in matrix form is
 
-$$\rho = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a\Theta a + \lambda'V_{\tilde{a}}\lambda + tr(\Theta V_{\tilde{a}})}$$
+$$
+\begin{align*}
+\text{Rel} 
+&= \frac{(\lambda' \Sigma^{-1} \lambda)^2}{\lambda'\Sigma^{-1}\lambda \lambda \Sigma^{-1}\lambda + \lambda'\Sigma^{-1}\Theta \Sigma^{-1}\lambda} \\
+&= \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}(\lambda\lambda'+\Theta)\Sigma^{-1}\lambda} \\
+&= \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda}
+\end{align*}
+$$
 
-3. Derived using a quadratic formula
+2. The reliability formula for regression factor scores accounting for sampling error in the weights is given by
 
-$$\rho = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
-
-Derivation for the reliability formula that accounts for sampling errors in the weights:
-
-Given $$E(\tilde{a}=a, y=\lambda\eta+\varepsilon),V(\eta)=1,E(\eta)=0,V(\varepsilon)=\Theta,\eta\perp\varepsilon,$$
+$$\rho = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + \lambda'V_{\tilde{a}}\lambda + tr(\Theta V_{\tilde{a}})}$$
+The derivation for the reliability formula that accounts for sampling errors in the weights is as follows. Given $E(\tilde{a}=a, y=\lambda\eta+\varepsilon),V(\eta)=1,E(\eta)=0,V(\varepsilon)=\Theta,\eta\perp\varepsilon$, 
 
 
 $$
-\begin{aligned}
+\begin{aligned*}
 V(\tilde{a}'y) 
   & = E[V(\tilde{a}'y|\eta)] + V[E(\tilde{a}'y|\eta)] \\
   & = E[V(\tilde{a}'\lambda\eta + \tilde{a}'\varepsilon|\eta)]+V[E(\tilde{a}'\lambda\eta|\eta + E(\tilde{a}'\varepsilon)] \\
   & = E[\eta^2\lambda^2V_{\tilde a} + a'\Theta a+tr(\Theta V_{\tilde a})] + V[a'\lambda\eta] \\
-  & = \lambda'V_{\tilde a}\lambda+a'\Theta a + tr(\Theta V_{\tilde a} + (a'\lambda)^2) \\
+  & = \lambda'V_{\tilde a}\lambda+a'\Theta a + tr(\Theta V_{\tilde a}) + (a'\lambda)^2 \\
   \\
   \\
-  & Rel = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + tr(\Theta V_{\tilde{a}}) + (a'\lambda)^2} \\
-  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda\lambda\Sigma^{-1}\lambda + \lambda'\Sigma^{-1}\Theta\Sigma^{-1}\lambda} \\
-  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}(\lambda\lambda'+\Theta)\Sigma^{-1}\lambda} \\
-  & = \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda}
-\end{aligned}
+  & \text{Rel} = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + tr(\Theta V_{\tilde{a}}) + (a'\lambda)^2},  \\
+\end{aligned*}
 $$
+
+where $\tilde a$ = a vector of estimated weights of length $p$, $a$ = a vector of true weights of length $p$, $y$ = a vector of observed scores of length $p$, $\lambda$ = a vector of factor loadings of length $p$, $\eta$ = latent variable, $\varepsilon$ = a vector of measurement errors of length $p$, $\Theta$ = variance-covariance matrix of errors $p \times p$, $V_{\tilde a}$ = asymptotic covariance matrix of the estimated weights $p \times p$, and $p$ = number of items. 
+
+3. The reliability formula for the regression factor scores derived using a quadratic formula is
+
+$$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
 
 
 TODO:
