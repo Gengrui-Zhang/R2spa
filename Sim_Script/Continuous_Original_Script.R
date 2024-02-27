@@ -1,4 +1,5 @@
-set.seed(14560)
+seed_value <- 14577
+set.seed(seed_value)
 
 library(semTools)
 library(lavaan)
@@ -46,7 +47,7 @@ DESIGNFACTOR <- createDesign(
   N = c(100, 250, 500),
   beta1 = 1,  # fixed
   beta2 = 0.9,  # fixed
-  beta3 = c(0.75, 0.80, 0.85),  # three conditions
+  beta3 = 0.75,  # three conditions
   cor_xm = c(0, 0.3, 0.6), # correlation between latent x and m / error variance of Y
   rel = c(0.7, 0.8, 0.9)
 )
@@ -77,17 +78,18 @@ GenData <- function (condition, fixed_objects = NULL) {
   N <- condition$N # Sample size
   beta1 <- condition$beta1 # beta 1: fixed at 1
   beta2 <- condition$beta2 # beta 2: fixed at 0.9
-  beta3 <- condition$beta3 # beta 3: varied
+  beta3 <- condition$beta3 # beta 3: fixed at 0.75
   cor_xm <- condition$cor_xm # latent correlation: varied
 
-  if (condition$cor_xm == 0) {
-    sd_y <- sqrt(0.82)
-  } else if (condition$cor_xm == 0.3) {
-    sd_y <- sqrt(0.766)
-  } else if (condition$cor_xm == 0.6) {
-    sd_y <- sqrt(0.712)
+  if (cor_xm == 0) {
+    sd_y <- 0.8544
+  } else if (cor_xm == 0.3) {
+    sd_y <- 0.8173
+  } else if (cor_xm == 0.6) {
+    sd_y <- 0.7679
   }
 
+  # Error variances
   if (condition$rel == 0.7) {
     rel_val <- c(1.32, 0.99, 0.69)
   } else if (condition$rel == 0.8) {
@@ -165,7 +167,7 @@ extract_res <- function (condition, dat, fixed_objects = NULL) {
     tspa_se <- NA
   }
   # Extract parameter estimates and standard errors
-  paret <- c(upi_est, upi_se, rapi_est, rapi_se, tspa_est, tspa_se)
+  paret <- c(rapi_est, rapi_se, upi_est, upi_se, tspa_est, tspa_se)
   names(paret) <- c("rapi_yint_est", "rapi_yint_se",
                     "upi_yint_est", "upi_yint_se",
                     "tspa_yint_est", "tspa_yint_se")
@@ -180,6 +182,21 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
   # Separate estimates and se
   results_est <- as.data.frame(results[colnames(results)[grepl("_est", colnames(results))]])
   results_se <- as.data.frame(results[colnames(results)[grepl("_se", colnames(results))]])
+
+  # Descriptive of SEs
+  descriptive <- function(est, se, type = NULL) {
+    output <- numeric(ncol(est))
+    if (type == "SD") {
+      output <- apply(est, 2L, sd, na.rm = T)
+    } else if (type == "MeanSE") {
+      output <- apply(se, 2, mean, na.rm = T)
+    } else if (type == "MedianSE") {
+      output <- apply(se, 2, median, na.rm = TRUE)
+    } else if (type == "MAD") {
+      output <- apply(est, 2, function(x) mad(x, na.rm = TRUE))
+    }
+    return(output)
+  }
 
   # Helper function: robust bias
   robust_bias <- function(est, se, pop_par, trim = 0, type = NULL) {
@@ -223,6 +240,25 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
       rse_bias <- est_se_mean / emp_sd - 1
     }
     return(rse_bias)
+  }
+
+  # Helper function: detecting outliers for SE
+  outlier_se <- function(est_se) {
+    results <- c()
+    for(column in names(est_se)) {
+      # Calculate Q1, Q3, and IQR
+      Q1 <- quantile(est_se[[column]], 0.25, na.rm = TRUE)
+      Q3 <- quantile(est_se[[column]], 0.75, na.rm = TRUE)
+      IQR <- Q3 - Q1
+      # Determine outliers
+      lower_bound <- (Q1 - 1.5 * IQR)
+      upper_bound <- (Q3 + 1.5 * IQR)
+      outliers <- est_se[[column]][est_se[[column]] < lower_bound | est_se[[column]] > upper_bound]
+      # Calculate the percentage of outliers
+      percentage <- length(outliers) / sum(!is.na(est_se[[column]])) * 100
+      results[column] <- percentage
+    }
+    return(results)
   }
 
   # Helper functuion for calculating coverage rate
@@ -273,17 +309,30 @@ evaluate_res <- function (condition, results, fixed_objects = NULL) {
     stdMed_rse_bias = rse_bias(results_est,
                                results_se,
                                type = "median"),
+    SD = descriptive(results_est,
+                     results_se,
+                     type = "SD"),
+    MeanSE = descriptive(results_est,
+                         results_se,
+                         type = "MeanSE"),
+    MedianSE = descriptive(results_est,
+                           results_se,
+                           type = "MedianSE"),
+    MAD = descriptive(results_est,
+                      results_se,
+                      type = "MAD"),
     trim_rse_bias = rse_bias(results_est,
                              results_se,
                              trim = 0.2,
                              type = "trim"),
+    outlier_se = outlier_se(results_se),
     convergence_rate = convergence_rate(results_est)
   )
 }
 
 # Run 2000 replications
 
-All_02162024 <- runSimulation(design = DESIGNFACTOR,
+All_02252024 <- runSimulation(design = DESIGNFACTOR,
                                 replications = 2000,
                                 generate = GenData,
                                 analyse = extract_res,
@@ -291,7 +340,9 @@ All_02162024 <- runSimulation(design = DESIGNFACTOR,
                                 fixed_objects = FIXED_PARAMETER,
                                 save = TRUE,
                                 save_results = TRUE,
-                                filename = "All_02162024",
+                                filename = "All_02252024",
                                 control = list(allow_na = TRUE),
                                 parallel = TRUE,
                                 ncores = min(4L, parallel::detectCores() - 1))
+
+All_02252024$seed_value <- seed_value

@@ -1,0 +1,271 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  man]{apa7}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{english}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+% Manuscript styling
+\usepackage{upgreek}
+\captionsetup{font=singlespacing,justification=justified}
+
+% Table formatting
+\usepackage{longtable}
+\usepackage{lscape}
+% \usepackage[counterclockwise]{rotating}   % Landscape page setup for large tables
+\usepackage{multirow}		% Table styling
+\usepackage{tabularx}		% Control Column width
+\usepackage[flushleft]{threeparttable}	% Allows for three part tables with a specified notes section
+\usepackage{threeparttablex}            % Lets threeparttable work with longtable
+
+% Create new environments so endfloat can handle them
+% \newenvironment{ltable}
+%   {\begin{landscape}\centering\begin{threeparttable}}
+%   {\end{threeparttable}\end{landscape}}
+\newenvironment{lltable}{\begin{landscape}\centering\begin{ThreePartTable}}{\end{ThreePartTable}\end{landscape}}
+
+% Enables adjusting longtable caption width to table width
+% Solution found at http://golatex.de/longtable-mit-caption-so-breit-wie-die-tabelle-t15767.html
+\makeatletter
+\newcommand\LastLTentrywidth{1em}
+\newlength\longtablewidth
+\setlength{\longtablewidth}{1in}
+\newcommand{\getlongtablewidth}{\begingroup \ifcsname LT@\roman{LT@tables}\endcsname \global\longtablewidth=0pt \renewcommand{\LT@entry}[2]{\global\advance\longtablewidth by ##2\relax\gdef\LastLTentrywidth{##2}}\@nameuse{LT@\roman{LT@tables}} \fi \endgroup}
+
+% \setlength{\parindent}{0.5in}
+% \setlength{\parskip}{0pt plus 0pt minus 0pt}
+
+% Overwrite redefinition of paragraph and subparagraph by the default LaTeX template
+% See https://github.com/crsh/papaja/issues/292
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\itshape\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-\z@\relax}%
+  {\normalfont\normalsize\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+\makeatletter
+\usepackage{etoolbox}
+\patchcmd{\maketitle}
+  {\section{\normalfont\normalsize\abstractname}}
+  {\section*{\normalfont\normalsize\abstractname}}
+  {}{\typeout{Failed to patch abstract.}}
+\patchcmd{\maketitle}
+  {\section{\protect\normalfont{\@title}}}
+  {\section*{\protect\normalfont{\@title}}}
+  {}{\typeout{Failed to patch title.}}
+\makeatother
+
+\usepackage{xpatch}
+\makeatletter
+\xapptocmd\appendix
+  {\xapptocmd\section
+    {\addcontentsline{toc}{section}{\appendixname\ifoneappendix\else~\theappendix\fi\\: #1}}
+    {}{\InnerPatchFailed}%
+  }
+{}{\PatchFailed}
+\DeclareDelayedFloatFlavor{ThreePartTable}{table}
+\DeclareDelayedFloatFlavor{lltable}{table}
+\DeclareDelayedFloatFlavor*{longtable}{table}
+\makeatletter
+\renewcommand{\efloat@iwrite}[1]{\immediate\expandafter\protected@write\csname efloat@post#1\endcsname{}}
+\makeatother
+\usepackage{lineno}
+
+\linenumbers
+\usepackage{csquotes}
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-\z@\relax}%
+  {\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Methods Draft},
+  pdfauthor={Jimmy},
+  pdflang={en-EN},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Methods Draft}
+\author{Jimmy\textsuperscript{}}
+\date{}
+
+
+\shorttitle{SHORT TITLE}
+
+\affiliation{\phantom{0}}
+
+\begin{document}
+\maketitle
+
+\hypertarget{method}{%
+\section{Method}\label{method}}
+
+\hypertarget{simulation-design}{%
+\subsection{Simulation Design}\label{simulation-design}}
+
+Adapted from Hsiao et al.~(2021), the current simulation study aimed to compare performance of UPI and RAPI with that of 2S-PA-Int on estimating latent interaction effects for continuous congeneric items. We investigated the bias and variance of interaction estimates generated by the three methods over various levels of sample size, reliability, and correlation between first-order latent variables. The generated population data was based on the model below with predefined parameter values:
+
+\begin{equation}
+\begin{gathered}
+x_{i} =  \tau_{x_{i}} + \lambda_{x_{i}}\xi_{x} + \delta_{x_{i}};\\
+m_{i} =  \tau_{m_{i}} + \lambda_{m_{i}}\xi_{m} + \delta_{m_{i}};\\
+y =  \tau_{y} + \gamma_{x}\xi_{x} + \gamma_{m}\xi_{m} + \gamma_{xm}\xi_{x}\xi_{m} + \zeta,
+\end{gathered}
+\end{equation}
+where the path coefficients of two latent predictors (i.e., \(\gamma_{x}\) and \(\gamma_{m}\)) and their interaction term (i.e., \(\gamma_{xm}\)) were all set to 0.3 for the structural model. The first-order latent predictors \(\xi_{x}\) and \(\xi_{m}\) were simulated from standard normal distributions with means of 0 and variances fixed at 1, each indicated by three items (i.e., \(\xi_{x}\) indicated by {[}\(x_{1}\), \(x_{2}\), \(x_{3}\){]}; \(\xi_{m}\) indicated by {[}\(m_{1}\), \(m_{2}\), \(m_{3}\){]}). The first-order indicators and the dependent variable \(y\) were all observed continuous variables with normally distributed error. Accordingly, \(\delta_{x_{i}}\), \(\delta_{m_{i}}\) and \(\zeta\) were assumed to have multivariate normal distributions and be mutually independent. \(\tau_{x_{i}}\), \(\tau_{m_{i}}\), and \(\tau_{y}\) were their corresponding constant intercepts and assumed to be 0. The first-order indicators were mean-centered for UPI, RAPI and 2S-PA-Int at the sample level.
+
+Drawing from Jöreskog's (1971) concept, congeneric tests were defined as a set of observed items measuring a latent construct with different factor loadings and unique error terms. These error terms were assumed to be uncorrelated with each other and with the latent construct, reflecting random measurement error unique to each item. To align with this concept, we manipulated the factor loadings and error variances of first-order indicators to create sets of congeneric items in the measurement model. Specifically, the first, second, and third indicators were set to fixed values of 1.0, 0.9, and 0.75 for both first-order latent variables (i.e., \(\lambda_{x_{1}} = \lambda_{m_{1}} = 1.0\), \(\lambda_{x_{2}} = \lambda_{m_{2}} = 0.9\), \(\lambda_{x_{3}} = \lambda_{m_{3}} = 0.75\)). We involved reliability estimates to manipulate error variances since equation (9) demonstrates that the error variance of the interaction term was a function of first-order indicators' reliability, implying that the interaction effect could be impacted by the amount of measurement error. Hence we included reliability as a varying condition to explore how each method performed under three reliability conditions: .70, .80, and .90, which resulted in three levels of error variances. For each level of error variance, we systematically manipulated proportions of error variances each first-order indicator occupied. The proportions were set to maintain consistency with the design in Hsiao et al.~(2021): 44\(\%\) of the total error variance for the first indicator, 33\(\%\) for the second, and 23\(\%\) for the third. Then we obtained the manipulated error variances according to equation (8). For instance, \(\theta_{x1}, \ \theta_{x2}, \ \theta_{x3}\) and \(\theta_{m1}, \ \theta_{m2}, \ \theta_{m3}\) were \([3.01, \ 1.76, \ 0.78]\) when \(\lambda_{x1}, \ \lambda_{x2}, \ \lambda_{x3} = \lambda_{m1}, \ \lambda_{m2}, \ \lambda_{m3} = [1, \ 0.9, \ 0.75]\), as the reliability was varied at .70, .80, and .90 respectively.
+
+Following the recommendation by Marsh et al.~(2004), \(\xi_{x}\xi_{m}\) was represented through a matched-pair configuration of indicators in the UPI method, namely \(x_{1}m_{1}\), \(x_{2}m_{2}\), and \(x_{3}m_{3}\). For the RAPI and 2SPA methods, \(\xi_{x}\xi_{m}\) was loaded by single PIs. Specifically, for RAPI the interaction term's PI was the mean scores of first-order indicators, while for 2S-PA-Int was pre-computed Bartlett factor scores. To reduce the problem of multicollinearity between first-order latent predictors and the interaction term, the DMC strategy was applied to all the methods.
+
+The literature on latent interaction methods showed a range of researcher-selected sample sizes from 20 to 5,000 (Chin, Marcolin, \& Newsted, 2003; Lin et al., 2010; Cham et al., 2012), with common selections ranging from 100 to 500. Consequently, we selected N = 100, 250, and 500 to represent small, medium, and large sample sizes, respectively.
+
+Based on the study design in Hsiao et al.~(2021), we pre-specified three population correlations between latent predictors (\(Corr[{\xi_{x},\xi_{m}}]\)): 0, 0.3, 0.6 as zero to large correlation. Given that the variance of \(y\) (i.e., \(\sigma_{y}^2\)), \(\sigma_{\xi_{x}}^2\), and \(\sigma_{\xi_{x}}^2\) was set to 1, \(\psi\) could be computed as \(1 - R^2\) in which \(R^2 = \gamma_{x}^2 + \gamma_{m}^2 + 2\gamma_{x}\gamma_{m}Corr[{\xi_{x},\xi_{m}}] + \gamma_{xm}^2(1 + Corr[{\xi_{x},\xi_{m}}]^2)\). Take \(Corr[{\xi_{x},\xi_{m}}] = 0\) as an example, \(\psi = 1 - (0.3^2 + 0.3^2 + 2\times0.3\times0.3\times0 + 0.3^2\times(1 + 0)^2) = 0.73\). Similarly, \(\psi\) was determined to be 0.668 and 0.590 for \(Corr[{\xi_{x},\xi_{m}}]\) equal to 0.3 and 0.6, respectively.
+
+In summary, our study implemented a \(3 \times 3 \times 3\) factorial design, accommodating variations across three sample sizes, three levels of correlation between first-order latent predictors, and three levels of reliability.
+
+\hypertarget{evaluation-criteria}{%
+\subsection{Evaluation Criteria}\label{evaluation-criteria}}
+
+We chose widely used evaluation criteria that were summarized from 2000 replications to assess the accuracy and precision of interaction effect estimates (\(\gamma_{xm}\)) of the three methods.
+
+\hypertarget{averaged-raw-bias-and-standardized-bias}{%
+\subsubsection{Averaged Raw Bias and Standardized Bias}\label{averaged-raw-bias-and-standardized-bias}}
+
+Standardized bias (SB) was used to evaluate averaged raw bias and accuracy of parameter estimates. It provided a normalized measure that allowed for comparing bias across different scales or units of measurement, and reflected how far an estimate was from its true value in standard error units. Hence SB was useful in comparisons where models often contained a variety of parameter types (e.g., factor loadings, path coefficients).
+
+The Standardized Bias (SB) was defined through the averaged raw Bias (B):
+
+\begin{equation}
+SB = \frac{B(\gamma_{xm})}{SE_{\gamma_{xm}}},
+\end{equation}
+
+\begin{equation}
+B(\gamma_{xm}) = R^{-1}\Sigma^{R}_{r = 1}(\hat{\gamma}_{xm_{r}} - \gamma_{xm}),
+\end{equation}
+where R was the total number of replication cycles that were counted from 1 to 2,000. \(\hat{\gamma}_{xm_{r}}\) was the estimated interaction effect in each replication cycle r and \(\gamma_{xm}\) was the population parameter set at 0.3. \(B(\gamma_{xm})\) was the averaged deviation of estimates, \(\hat{\gamma}_{xm}\), from 0.3, and \(SE_{\gamma_{xm}}\) represented the empirical standard error of \(\hat{\gamma}_{xm}\) across replications. Collins et al.~(2001) suggested that an absolute value of SB \(\le 0.40\) would be considered acceptable for each replication condition.
+
+\hypertarget{coverage-rate}{%
+\subsubsection{Coverage Rate}\label{coverage-rate}}
+
+The coverage rate with a 95\(\%\) confidence interval (CI) served as a critical metric for evaluating the reliability and accuracy of simulation results. It was defined as the percentage of replications in which the Wald confidence interval captured the true interaction effect \(\gamma_{xm}\). Low coverage rates meant that the proportion of times that \(\gamma_{xm}\) fell within the CI across replications was low, indicating that the model might have issues of misspecification, inappropriate estimation methods, small sample sizes, or violations of statistical assumptions. A coverage rate larger than \(91\%\) was considered acceptable (Muthén \(\&\) Muthén, 2002).
+
+\hypertarget{robust-relative-standard-error-bias-and-outlier-proportion-of-se}{%
+\subsubsection{Robust Relative Standard Error Bias and Outlier Proportion of SE}\label{robust-relative-standard-error-bias-and-outlier-proportion-of-se}}
+
+The relative standard error (SE) bias was used to evaluate the precision of \(\hat{\gamma}_{xm}\). This criterion compared the empirical standard deviation of \(\hat{\gamma}_{xm}\) with the sample-estimated standard error across replications:
+
+\begin{equation}
+Relative\ SE\ Bias = \frac{R^{-1}\Sigma^{R}_{r = 1}(\widehat{SE_{r}} - SD)}{SD},
+\end{equation}
+
+where \(\widehat{SE}_{r}\) was the sample-estimated standard error of \(\hat{\gamma}_{xm}\) in a single replication cycle \(r\) and \(SD\) is the empirical standard deviation obtained from all replications. With \(SD\) being used as a reference variability measure of \(\hat{\gamma}_{xm}\), smaller relative SE bias meant the estimated standard errors were closer to the referenced variability, and the uncertainty of \(\hat{\gamma}_{xm}\) across replications was more accurately measured in each simulation condition. Absolute values of relative SE bias \(\le 10\%\) were considered acceptable and indicated that the standard errors were reasonably unbiased (Hoogland \(\&\) Boomsma, 1998).
+SEM typically required a relatively large sample size to obtain sufficient information to reliably estimate model parameters. Insufficient sample sizes might result in largely biased SEs due to increased uncertainty around the parameter estimates (Bollen \& Long, 1993; Byrne, 2016). Given that the conditions of small sample size (N = 100) and high amount of measurement error (\(\rho = 0.7\)) were included in this study design, a robust version of relative SE bias was calculated as an alternative to the regular one:
+\begin{equation}
+Robust\ Relative\ SE\ Bias = \frac{\widehat{MDN}(SE_{r}) - MAD}{MAD},
+\end{equation}
+where \(\widehat{MDN}(SE_{r})\) represented the median value of the estimated SE values and \(MAD\) is the empirical median-absolute-deviation of SE values. In the context of biased SEs, we did not assume a specific distribution of SEs (e.g., normal distribution) and hence we used the median due to its robustness to non-normal distributions with skewed data and outliers (Rousseeuw \& Hubert, 2011). In addition, MAD measured variability around the median and could serve as a robust alternative to standard deviation that could be inflated by outliers or non-normality (Daszykowski et al., 2007).
+Besides, an outlier detection using the interquartile range (IQR) method was included as a supplemental information of SE estimates:
+\begin{equation}
+O_{a} \not\in (Q_{1} - 1.5 \times IQR, \ Q_{3} + 1.5 \times IQR),
+\end{equation}
+where \(O_{a}\) was an observation of outlier for \(a\) = 1, 2, \ldots, b. \(IQR\) captured the spread of the middle 50\(\%\) of the sample SEs by \(IQR = Q_{3} \ - \ Q_{1}\), where \(Q_{1}\) and \(Q_{3}\) were the 25th percentile and the 75th percentile of the sample. The outlier proportion was then calculated by \(b/R\) where \(b\) represented the total count of identified outliers. Like the robust relative SE bias, the IQR method did not rely on the assumption of normal distribution, thus making it versatile across any distribution.
+
+\hypertarget{root-mean-squre-error}{%
+\subsubsection{Root Mean Squre Error}\label{root-mean-squre-error}}
+
+The last criterion was the root mean square error (RMSE), calculated by taking the squared root of the sum of squared bias:
+
+\begin{equation}
+RMSE = \sqrt{R^{-1}\Sigma^{R}_{r = 1}(\hat{\gamma}_{xm_{r}} - \gamma_{xm})^2}.
+\end{equation}
+
+It quantified the average magnitude of the difference between the interaction estimates and the true value, reflecting both the bias and variability of the estimates across replications. Under one condition across 2,000 replication, a smaller RMSE value of a method indicated that it had relatively more accuracy than the other two methods in estimating \(\hat{\gamma}_{xm}\) (Harwell, 2019). RMSE was most informative when comparing across methods under the same simulated conditions by isolating factors of sample size, model complexity, and the amount of disturbance.
+
+
+\end{document}

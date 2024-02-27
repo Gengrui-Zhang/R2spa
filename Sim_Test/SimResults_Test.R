@@ -1,6 +1,6 @@
 # Summarize the results
 
-sim_results <- Match_02222024 %>%
+sim_results <- Test_02222024 %>%
   gather("var", "val", raw_bias.rapi_yint_est:convergence_rate.tspa_yint_est) %>%
   dplyr::select(-c(SIM_TIME:WARNINGS)) %>%
   separate(col = var, into = c("stats", "parmet"), sep = "\\.") %>%
@@ -15,10 +15,10 @@ sim_results <- Match_02222024 %>%
          cor_xm_lab = as_factor(paste0("Correlation_XM == ", cor_xm)),
          rel_lab = as_factor(paste0("Reliability == ", rel)))
 
-write_csv(sim_results, "Sim_Data/Match_02222024.csv")
+write_csv(sim_results, "Sim_Test/Test_02222024")
 
 # Plot results
-sim_plots <- read.csv("Sim_Data/Match_02222024.csv")
+sim_plots <- read.csv("Sim_Test/Test_02222024")
 # # Bias
 # sim_plots %>%
 #   ggplot(aes(x = factor(N), y = bias, color = method)) +
@@ -83,6 +83,7 @@ sim_plots %>%
   ggplot(aes(x = factor(N), y = outlier_se, color = method)) +
   geom_boxplot() +
   facet_grid(cor_xm_lab ~ rel_lab, labeller = label_parsed) +
+  coord_cartesian(ylim = c(-0.5, 0.75)) +
   labs(x = "Sample Size (N)", y = "Percentage of SE Outliers")
 
 # Coverage rate
