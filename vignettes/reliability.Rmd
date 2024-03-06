@@ -134,6 +134,7 @@ $$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
 where $\theta_{corrected}$ is the corrected error term for the factor scores.
 
 ```{r}
+set.seed(1247)
 # Simulate small data with 6 items
 lambda <- seq(.3, .9, length.out = 6)
 theta <- 1 - lambda^2
@@ -146,9 +147,11 @@ y <- t(
 # Run cfa
 fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
   data = data.frame(y) |> setNames(paste0("y", seq_along(lambda))),
-  std.lv = TRUE
+  std.lv = TRUE,
+  meanstructure = TRUE
 )
-lavPredict(fit, fsm = TRUE)
+fs <- lavPredict(fit, fsm = TRUE)
+head(fs)
 ```
 
 # Simulation of each component
@@ -156,14 +159,29 @@ lavPredict(fit, fsm = TRUE)
 ```{r}
 # Population matrix
 true_sigma <- tcrossprod(lambda) + diag(theta)
-pop_fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
-  sample.cov = true_sigma |> `dimnames<-`(rep(list(paste0("y", 1:6)), 2)),
-  sample.nobs = num_obs,
-  std.lv = TRUE
-)
 (true_rel <- crossprod(lambda, solve(true_sigma, lambda)))
-# Sample expectation
-true_rel + sum(diag(solve(true_sigma, vcov(pop_fit)[1:6, 1:6])))
+# Squared correlation
+cor(eta, fs)^2
+# Sample estimate of reliability, ignoring error
+(est_rel <- with(lavInspect(fit, what = "est"), {
+  crossprod(lambda, solve(fit@implied$cov[[1]], lambda))
+}))
+# Corrected reliability estimator
+# Factor score function using parameter estimates
+get_a <- function(lambda, theta) {
+  solve(tcrossprod(lambda) + diag(theta), lambda)
+}
+lam <- lavInspect(fit, what = "est")$lambda
+th <- lavInspect(fit, what = "est")$theta
+jac_a <- lavaan::lav_func_jacobian_complex(
+  \(x) get_a(x[1:6], x[7:12]),
+  x = c(lam, diag(th))
+)
+va <- jac_a %*% vcov(fit)[1:12, 1:12] %*% t(jac_a)
+aa <- tcrossprod(get_a(lam, diag(th))) + va
+vnu <- vcov(fit)[13:18, 13:18]
+sum(diag(tcrossprod(lam) %*% aa)) /
+  sum(diag((fit@implied$cov[[1]] + vnu) %*% aa))
 ```
 
 ```{r}
