@@ -1,0 +1,217 @@
+---
+title             : "Supplemental Document: All-Pair UPI"
+shorttitle        : "Supplemental"
+
+author: 
+  - name          : "Gengrui (Jimmy) Zhang"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    email         : "gengruiz@email.com"
+    role: # Contributorship roles (e.g., CRediT, https://credit.niso.org/)
+      - "Conceptualization"
+      - "Writing - Original Draft Preparation"
+      - "Writing - Review & Editing"
+
+affiliation:
+  - id            : "1"
+    institution   : "University of Southhern California"
+
+bibliography      : "r-references.bib"
+
+floatsintext      : no
+linenumbers       : yes
+draft             : no
+mask              : no
+
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+
+classoption       : "man"
+output            : papaja::apa6_pdf
+---
+
+```{r setup, include = FALSE}
+library("papaja")
+library(dplyr)
+library(tidyr)
+r_refs("r-references.bib")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(papaja)
+library(stringr)
+
+sim <- readRDS("/Users/jimmy_z/R Projects/R2spa/Qual 1 Paper Draft/Supplemental/All_02262024.rds")
+sim_results <- sim %>% 
+  dplyr::select(-c(SIM_TIME:WARNINGS), -rel) %>%
+  mutate(across(where(is.numeric), round, 4),
+         cor_xm = ifelse(cor_xm == 0, "0", cor_xm))
+```
+
+# Performance of All-Pair UPI on Estimating $\gamma_{xm}$
+
+```{r standardized bias (raw bias), message=FALSE, warning=FALSE}
+raw_bias <- sim_results %>%
+  dplyr::select(N:raw_bias.upi_yint_est) %>%
+  arrange(N)
+names(raw_bias) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+raw_bias_wide <- raw_bias %>%
+  pivot_wider(names_from = `Item Type`,
+              values_from = c("All-Pair UPI"), 
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`),
+         across(where(is.numeric), round, 2))
+names(raw_bias_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+std_bias <- sim_results %>%
+  dplyr::select(N:cor_xm, std_bias.upi_yint_est) %>%
+  arrange(N)
+names(std_bias) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+std_bias_wide <- std_bias %>%
+  pivot_wider(names_from = `Item Type`,
+              values_from = c("All-Pair UPI"), 
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`),
+         across(where(is.numeric), round, 2))
+names(raw_bias_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+standardized_bias <- raw_bias_wide
+for (col_idx in 3:ncol(raw_bias_wide)) {
+  combined_values <- mapply(FUN = function(x, y) paste(y, "\ (", x, ")", sep = ""),
+                            x = raw_bias_wide[, col_idx], y = std_bias_wide[, col_idx])
+  standardized_bias[, col_idx] <- combined_values
+}
+
+standardized_bias_table <- apa_table(standardized_bias,
+                                    escape = F,
+                                    caption = "Standardized Bias (Raw Bias) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+                                    align = c(rep("c", ncol(standardized_bias))),
+                                    note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Raw biases are shown in pararenthese. Note that numerical values have been rounded to two decimal places for consistency, which means that some values, while very close to 0 but not exactly 0, are displayed as 0.")
+
+standardized_bias_table
+```
+
+```{r MAD relative SE bias with outliers proportion, message=FALSE, warning=FALSE}
+MAD <- sim_results %>% 
+  dplyr::select(N:cor_xm, stdMed_rse_bias.upi_yint_se) %>%
+  arrange(N) %>%
+  mutate(stdMed_rse_bias.upi_yint_se = stdMed_rse_bias.upi_yint_se*100)
+names(MAD) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+MAD_wide <- MAD %>%
+  pivot_wider(names_from = `Item Type`,
+              values_from = c("All-Pair UPI"), 
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`),
+         across(where(is.numeric), round, 2))
+names(MAD_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+outlier_se <- sim_results %>% 
+  dplyr::select(N:cor_xm, outlier_se.upi_yint_se) %>%
+  arrange(N) %>%
+  mutate(across(where(is.numeric), ~sprintf("%.2f", .)))
+names(outlier_se) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+outlier_se_wide <- outlier_se %>%
+  pivot_wider(names_from = `Item Type`, 
+              values_from = c("All-Pair UPI"), 
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`)) 
+names(outlier_se_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+MAD_bias <- MAD_wide
+for (col_idx in 3:ncol(MAD_wide)) {
+  combined_values <- mapply(FUN = function(x, y) paste(y, "\ (", x, ")", sep = ""),
+                            x = outlier_se_wide[, col_idx], y = MAD_wide[, col_idx])
+  MAD_bias[, col_idx] <- combined_values
+}
+
+bold_if_larger_than_10 <- function(cell) {
+  first_number <- as.numeric(str_extract(cell, "^[^\\(]+"))
+  if (!is.na(first_number) && abs(first_number) > 10) {
+    return(sprintf("\\textbf{%s}", cell))
+  } else {
+    return(cell)
+  }
+}
+
+for (i in 3:ncol(MAD_bias)) {
+  # Applying the formatting function to each element of the column
+  MAD_bias[[i]] <- sapply(MAD_bias[[i]], bold_if_larger_than_10)
+}
+
+MAD_bias_table <- apa_table(MAD_bias, 
+            escape = F,
+            caption = "Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\\%$) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            align = c(rep("c", ncol(MAD_bias))),
+            note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Outlier proportions of SE are shown in parenthese and all the numbers were percentages.")
+MAD_bias_table
+```
+
+```{r coverage rate, message=FALSE, warning=FALSE}
+coverage <- sim_results %>% 
+  dplyr::select(N:cor_xm, coverage.upi_yint_est) %>%
+  arrange(N) %>%
+  mutate(coverage.upi_yint_est = coverage.upi_yint_est*100) 
+names(coverage) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+coverage_wide <- coverage %>%
+  pivot_wider(names_from = `Item Type`,  
+              values_from = c("All-Pair UPI"),
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`))
+names(coverage_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+bold_if_less_than_91 <- function(cell) {
+  if (!is.na(cell) && abs(cell) < 91) {
+    return(sprintf("\\textbf{%s}", cell))
+  } else {
+    return(cell)
+  }
+}
+
+for (i in 3:ncol(coverage_wide)) {
+  # Applying the formatting function to each element of the column
+  coverage_wide[[i]] <- sapply(coverage_wide[[i]], bold_if_less_than_91)
+}
+
+coverage_table <- apa_table(coverage_wide, 
+            escape = F,
+            caption = "95 $\\%$ Confidence Interval (CI) Coverage Rate for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            align = c(rep("c", ncol(coverage))),
+            note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.")
+
+coverage_table
+```
+
+```{r rmse, message=FALSE, warning=FALSE}
+rmse <- sim_results %>% 
+  dplyr::select(N:cor_xm, rmse.upi_yint_est) %>%
+  arrange(N)
+names(rmse) <- c("$\\textit{N}$","Item Type", "$Corr(\\xi_{x}, \\xi_{m})$","All-Pair UPI")
+
+rmse_wide <- rmse %>%
+  pivot_wider(names_from = `Item Type`,  
+              values_from = c("All-Pair UPI"),
+              names_prefix = "corr_") %>%
+  mutate(`$\\textit{N}$` = ifelse(`$Corr(\\xi_{x}, \\xi_{m})$` != 0, " ", `$\\textit{N}$`))
+names(rmse_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel", "Congeneric Factor", "Congeneric")
+
+rmse_table <- apa_table(rmse_wide, 
+            escape = F,
+            caption = "Root Mean Square Error (RMSE) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            align = c(rep("c", ncol(rmse))),
+            note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.")
+
+rmse_table
+```

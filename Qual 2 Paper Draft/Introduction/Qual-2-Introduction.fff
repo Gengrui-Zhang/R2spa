@@ -1,0 +1,34 @@
+\begin{figure*}[hbt]
+\ifnextchar[{\eatarg}{}
+
+
+{\centering \includegraphics[width=1\linewidth]{Plots/Slide1}
+
+}
+
+\caption{Hypothesized Model of Matched-Pair UPI. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by their corresponding first-order indicators. The latent interaction term, PED.SelfE, is indicated by formed PIs. $\zeta$ is the disturbance of PHQ. The error terms of indicators were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.}\label{fig:figure-1}
+\end{figure*}
+\efloatseparator
+ 
+\begin{figure*}[hbt]
+\ifnextchar[{\eatarg}{}
+
+
+{\centering \includegraphics[width=1\linewidth]{Plots/Slide2}
+
+}
+
+\caption{Hypothesized Model of RAPI. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by corresponding single indicators using mean scores. The latent interaction term is indicated by the product of SIs of PED and SelfE. $\zeta$ is the disturbance of PHQ. The error terms of SIs were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.}\label{fig:figure-2}
+\end{figure*}
+\efloatseparator
+ 
+\begin{figure*}[hbt]
+\ifnextchar[{\eatarg}{}
+
+
+{\centering \includegraphics[width=1\linewidth]{Plots/Slide3}
+
+}
+
+\caption{Hypothesized Model of 2S-PA-Int. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by corresponding single indicators using factor scores. The latent interaction term is indicated by the product of SIs of PED and SelfE. $\zeta$ is the disturbance of PHQ. The error terms of SIs were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.}\label{fig:figure-3}
+\end{figure*}

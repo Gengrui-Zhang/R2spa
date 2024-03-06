@@ -1,13 +1,13 @@
 \begin{lltable}
 
 \begin{TableNotes}[para]
-\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; $\rho$ = reliability level; RAPI = reliability-adjusted product indicator method; Matched-Pair UPI = matched-pair product unconstrained indicator method; 2S-PA-Int = two-stage path analysis with interaction method. Average raw bias are shown in pararenthese. Note that numerical values have been rounded to two decimal places for consistency, which means that some values, while very close to 0 but not exactly 0, are displayed as 0.}
+\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; $\rho$ = reliability level; RAPI = reliability-adjusted product indicator method; Matched-Pair UPI = matched-pair product unconstrained indicator method; 2S-PA-Int = two-stage path analysis with interaction method. Raw biases are shown in pararenthese. Note that numerical values have been rounded to two decimal places for consistency, which means that some values, while very close to 0 but not exactly 0, are displayed as 0.}
 \end{TableNotes}
 
 \small{
 
 \begin{longtable}{ccccccccccc}\noalign{\getlongtablewidth\global\LTcapwidth=\longtablewidth}
-\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Average Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}\\
+\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}\\
 \toprule
  &  & \multicolumn{3}{c}{RAPI} & \multicolumn{3}{c}{Matched-Pair UPI} & \multicolumn{3}{c}{2S-PA-Int} \\
 \cmidrule(r){3-5} \cmidrule(r){6-8} \cmidrule(r){9-11}

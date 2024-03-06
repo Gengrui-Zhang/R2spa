@@ -69,7 +69,7 @@ generate_sem_data <- function(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y) 
 ```
 
 ```{r simulate data}
-set.seed(4077)
+set.seed(4073)
 # Define model parameters 
 N <- 500
 model <- "# Measurement Model
@@ -335,8 +335,7 @@ fs_dat <- get_fs(df,
                  method = "Bartlett",
                  std.lv = TRUE)
 
-# Step 2: Obtain factor scores
-# Obtain mean-centered factor product
+# Step 2: Obtain mean-centered factor product
 fs_dat$fs_int <- fs_dat$fs_X * fs_dat$fs_M
 fs_dat$fs_int <- fs_dat$fs_int - mean(fs_dat$fs_int)
 Y <- df$Y

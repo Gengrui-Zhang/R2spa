@@ -1,0 +1,30 @@
+\begin{lltable}
+
+\begin{TableNotes}[para]
+\normalsize{\textit{Note.} $\gamma$ = Unstandardized path coefficient; $\gamma''$ = Standardized path coefficient; $\textit{SE}$ = Standard error of standardized path coefficient; $\textit{p}$ = p-value of standardized path coefficient.}
+\end{TableNotes}
+
+\begin{longtable}{ccccccccccccc}\noalign{\getlongtablewidth\global\LTcapwidth=\longtablewidth}
+\caption{\label{tab:table 1: Model fit measures}Effects of Perceived Everyday Discrimination, Sefl-Esteem, and Their Interaction on Depression.}\\
+\toprule
+ & \multicolumn{4}{c}{PED} & \multicolumn{4}{c}{SelfE} & \multicolumn{4}{c}{PED*SelfE} \\
+\cmidrule(r){2-5} \cmidrule(r){6-9} \cmidrule(r){10-13}
+Method & \multicolumn{1}{c}{$\gamma_{1}$} & \multicolumn{1}{c}{$\gamma_{1}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{2}$} & \multicolumn{1}{c}{$\gamma_{2}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{3}$} & \multicolumn{1}{c}{$\gamma_{3}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$}\\
+\midrule
+\endfirsthead
+\caption*{\normalfont{Table \ref{tab:table 1: Model fit measures} continued}}\\
+\toprule
+ & \multicolumn{4}{c}{PED} & \multicolumn{4}{c}{SelfE} & \multicolumn{4}{c}{PED*SelfE} \\
+\cmidrule(r){2-5} \cmidrule(r){6-9} \cmidrule(r){10-13}
+Method & \multicolumn{1}{c}{$\gamma_{1}$} & \multicolumn{1}{c}{$\gamma_{1}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{2}$} & \multicolumn{1}{c}{$\gamma_{2}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{3}$} & \multicolumn{1}{c}{$\gamma_{3}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$}\\
+\midrule
+\endhead
+Matched-pair UPI & .096 & .206 & .018 & <.001 & -.515 & -.651 & .015 & <.001 & -.041 & -.067 & .016 & <.001\\
+RAPI & .149 & .245 & .017 & <.001 & -.701 & -.559 & .015 & <.001 & -.085 & -.072 & .016 & <.001\\
+2S-PA-Int & .153 & .145 & .019 & <.001 & -.851 & -.707 & .017 & <.001 & -.06 & -.05 & .014 & .001\\
+\bottomrule
+\addlinespace
+\insertTableNotes
+\end{longtable}
+
+\end{lltable}

@@ -14,7 +14,7 @@ rapi <- function (model, data) {
   processData <- function (data, pairs, indics) {
     data_centered <- data %>%
       # Mean-center indicators
-      mutate(across(unname(unlist(indics)), ~ . - mean(.)))
+      mutate(across(unname(unlist(indics)), ~ . - mean(., na.rm = T)))
 
     # Dynamically generate interaction terms based on pairs and indics
     for (i in seq_along(pairs)) {
@@ -41,7 +41,7 @@ rapi <- function (model, data) {
 
   # Helper function: cronbach's alpha
   user_alpha <- function (x) {
-    covx <- cov(x)
+    covx <- cov(x, use = "complete.obs")
     p <- ncol(x)
     p / (p - 1) * (1 - sum(diag(covx)) / sum(covx))
   }
@@ -59,7 +59,7 @@ rapi <- function (model, data) {
   second_rel <- user_alpha(data_int[, unlist(indics[2])])
 
   # Update the formula
-  lat_names <- c(names(indics), paste0(names(indics), collapse = "_"))
+  lat_names <- c(pairs[[1]], paste0(pairs[[1]], collapse = "_"))
   obs_names <- setdiff(colnames(data_int), colnames(data))
 
   def_lab <- sub(".*~~\\s*(\\w+)\\*.*", "\\1",
@@ -79,6 +79,14 @@ rapi <- function (model, data) {
                         " + ", "ev_", lat_names[2], " * ", def_lab[1], " + ", "ev_", lat_names[1],
                         " * ", "ev_", lat_names[2])
 
+  # Add Y if it is latent
+  if (length(setdiff(names(indics), lat_names)) > 0) {
+    dep_name <- setdiff(names(indics), lat_names)
+    dep_cstr <- paste0(dep_name, " =~ ", paste(indics[[dep_name]], collapse = " + "), collapse = "")
+  } else {
+    dep_cstr <- ""
+  }
+
   fac_cstr <- paste(fac_cstr, collapse = "")
   ev_cstr <- paste(ev_cstr, collapse = "")
   err_cstr <- paste(err_cstr, collapse = "")
@@ -92,7 +100,8 @@ rapi <- function (model, data) {
 
   model_new <- paste0("# Measurement Model (indicated by sum scores)\n",
                       fac_cstr,
-                      "# Error Variance\n",
+                      dep_cstr,
+                      "\n# Error Variance\n",
                       ev_cstr,
                       "# Structural Model\n",
                       reg_str,

@@ -1,0 +1,316 @@
+---
+title             : "Methods"
+
+author: 
+  - name          : "Jimmy"
+
+bibliography      : "r-references.bib"
+
+floatsintext      : no
+linenumbers       : yes
+draft             : no
+mask              : no
+
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+
+classoption       : "man"
+header-includes   :
+  - |
+    \makeatletter
+    \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-1em}%
+      {\normalfont\normalsize\bfseries\typesectitle}}
+    
+    \renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+      {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+      {-\z@\relax}%
+      {\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+    \makeatother
+  - \usepackage{colortbl}
+
+csl               : "`r system.file('rmd', 'apa7.csl', package = 'papaja')`"
+documentclass     : "apa7"
+output:
+  papaja::apa6_pdf:
+    includes:
+      in_header: "/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/header.tex"
+
+---
+
+```{r setup, include = FALSE}
+# Load packages
+library("papaja")
+library(formatR)
+library(knitr)
+library(kableExtra)
+library(haven)
+library(dplyr)
+library(tidyr)
+library(psych)
+library(semTools)
+library(lavaan)
+library(emmeans)
+library(ggplot2)
+library(gridExtra)
+library(R2spa)
+r_refs("r-references.bib")
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\n \\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+opts_chunk$set(out.extra='size=\\small')
+```
+
+```{r data preprocessing}
+TA2019 <- zap_formats(zap_labels(read_sav("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/TA2019.sav")))
+
+# Scale 1: ROSENBURG SELF-ESTEEM SCALE
+# Recoded items: TA190106, TA190108, TA190111, TA190112, TA190113
+# Strongly agree - 4; Agree - 3; Disagree - 2; Strongly Disagree - 1; Missing - 9.
+SelfE <- TA2019 %>%
+  select(TA190104:TA190113) %>%
+  mutate(TA190106 = recode(TA190106, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190108 = recode(TA190108, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190111 = recode(TA190111, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190112 = recode(TA190112, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190113 = recode(TA190113, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9")) %>%
+  mutate_if(is.character, as.numeric) %>%
+  mutate_all(na_if, 9)
+colnames(SelfE) <- paste0("SelfE", 1:10)
+
+# Scale 2: Everyday Discrimination
+# No recoded items
+# Never - 1; Less than once a year - 2; A few times a year - 3; A few times a month - 4;
+# At least once a week - 5; Almost every day - 6; Missing - 9.
+PED <- TA2019 %>%
+  select(TA192066:TA192072) %>%
+  mutate_all(na_if, 9) %>%
+  mutate_all(na_if, 8)
+colnames(PED) <- paste0("PED", 1:7)
+
+# Scale 3: PHQ-9 Depression Scale
+# No recoded items
+# Not at all - 1; Several days - 2; More than half the days - 3; Nearly every day - 4; Missing - 9.
+PHQ <- TA2019 %>%
+  select(TA190114:TA190122) %>%
+  mutate_all(na_if, 9) %>%
+  mutate_all(na_if, 8)
+colnames(PHQ) <- paste0("PHQ", 1:9)
+```
+
+# Methods
+
+## Sample Source
+
+The data was sourced from the Panel Study of Income Dynamics (PSID), the longest-running and nationally representative panel survey in the United States starting from 1968, which tracks the physical and psychological well-being of U.S. residents in the context of societal change (Institute for Social Research, 2024). As of 2015, the PSID has collected data across 39 waves over 47 years from 10,000 households and 25,000 individuals, and maintains an impressive return rate (i.e., return to study for consecutive years; 96–98%) for nearly every wave. Designed with a longitudinal approach, the PSID ensures the continuity of data acquisition by including children of participated adults (and next generations) who establish new households (Institute for Social Research, 2024). 
+
+In this study, we used the Transition to Adulthood Supplement (TAS) from PSID collected in the 2019 wave (TAS2019). TAS2019 provides a rich dataset including variables related to psychological functioning, family formation, fertility-related behavior, cohabitation, childhood adversity, and health condition for the cohort aged 18 to 28 years. The TAS2019 sample eligibility was determined based on three key criteria: (1) Participants were aged between 18 and 28 years in 2019; (2) Participants' families were required to participate in the 2019 Core PSID interview; (3) A prerequisite of completing a 2017 Core PSID interview was required specifically for the 2017 immigrant refresher sample (Panel Study of Income Dynamics [Transition into Adulthood Supplement], Public Use Dataset, 2019). The dataset had a sample size of 2,595 individuals, with 1,201 males and 1,352 females. More details of this sample are available in the codebook of TAS2019. 
+
+## Measures
+
+All psychological constructs of interest were measured by scales with multiple items. The internal consistency measures (Cronbach’s $\alpha$) for each scale were reported and found exceeding the acceptable threshold (i.e., $\alpha > .70$) for analyses (Nunnally & Bernstein, 1994).
+
+### Depression
+
+Depression was evaluated by the PHQ-9 Depression screening scale (Patent Health Questionnaire; Kroenke, Spitzer, & Williams, 2001) in which various depressive symptoms were assessed such as depressed mood, sleeping trouble, fatigue, concentration problems, and psychomotor failures. The scale had 9 items, each with four response categories. For example, participants had four options for the item "Over the last two weeks, how often have you been bothered by?" [1 = “Not at all”; 2 = "Several days"; 3 = "More than half the days"; 4 = “Nearly every day”]. Participants who chose either "Don't know" or "NA; refused" were considered missing and their responses were excluded from the subsequent analyses. The data had 110 records of missing (0.47%), and the reliability estimate for PHQ-9 was $\alpha = .87$.
+
+### Perceived Everyday Discrimination (PED)
+
+The Everyday Discrimination Scale (EDD; Williams et al., 1997) used in the PSID study comprehensively measured frequency of perceived discrimination regarding daily interpersonal communications, perceived violations of equal rights, and experiences associated with less courtesy and ill-respect. The scale was composed of 7 items, each having six response categories. One example item, "You are treated with less respect than other people", had six response categories with [1 = "Never"; 2 = "Less than once a year"; 3 = "A few times a year"; 4 = "A few times a month"; 5 = "At least once a week"; 6 = "Almost every day"]. Invalid responses were "Don't know" and "NA", similar to PHQ-9, and coded as missing (1.98%). The reliability for EDD was $\alpha = .90$.
+
+### Self-Esteem
+
+Self-esteem was assessed by Rosenberg Self-Esteem Scale (RSE; Rosenberg, 1965), originally designed to measure the global self-worth through both positive and negative feelings about one's self. The scale consists of ten items, each with four options. Five items are positively oriented (e.g., “I feel that I have a number of good qualities.”) with response options of [1 = "Strongly disagree"; 2 = "Disagree"; 3 = "Agree"; 4 = "Strongly agree"], while the other five items are negatively oriented (e.g., “I certainly feel useless at times”).  For congruent interpretation, response options of negatively oriented items were reversely coded (i.e., 1 was recoded as 4; 2 was recoded as 3; 3 was recoded as 2; 4 was recoded as 1). Accordingly, higher scores on this scale indicated a higher level of self-esteem. The internal consistency for RSE was $\alpha = .88$.
+
+## Analytical Methods and Procedure
+
+In this section, we showed how to test the hypothetical models in Figure 1-3 and estimate the latent interaction effect of self-esteem on the relation between PED and depression, using matched-pair UPI, RAPI and 2S-PA-Int with step-by-step demonstrations. In summary, the first-order latent variables included a predictor (PED) indicated by 7 items (PED1 ~ PED7), a moderator (self-esteem) indicated by 10 items (SelfE1 ~ SelfE10), and a dependent variable (depression) indicated by 9 items (PHQ1 ~ PHQ9). For each method, the model fitting procedure was conducted based on the `sem` function in the R package `lavaan` (Rosseel, 2012). To simplify the demonstration steps, we have already pre-processed the data of three latent variables by selecting only relevant indicators from TAS2019 and renaming latent variables as `PED`, `SelfE`, and `PHQ` (for perceived every discrimination, self-esteem, and depression, respectively). A full data frame was then created with a name `dat`:
+
+```{r full dat, echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=70), size="footnotesize"}
+# Dimension of dat: 2,595 observations and 26 first-order indicators
+dat <- cbind(PED, SelfE, PHQ)
+```
+
+### Matched-pair UPI
+
+For matched-pair UPI, We began the demonstration with forming PIs by mean-centering all the first-order indicators and renaming the full dataset as `dat.centered`:
+
+```{r UPI step 1: mean-centering first-order indicators, echo=TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+# Mean-centering first-order indicators of PED and SelfE
+dat.centered <- dat %>%
+       mutate(across(.cols = everything(), .fns = ~ .x - mean(.x, na.rm = TRUE)))
+```
+Note that the argument `na.rm` was set to `TRUE` for the dataset with missing values. Then, we used the mean-centered first-order indicators to form PIs. Given that the numbers of indicators for PED and self-esteem were unequal, a forming strategy needed to be determined for use. According to Marsh et al. (2004), the authors suggested one solution in which items could be matched in terms of quality, which was echoed by Wu et al. (2013) such that PIs should be formed by using highly reliable first-order indicators (i.e., items with higher factor loadings) and ignoring those with low reliability. Therefore we fitted two unidimensional confirmatory factor analysis (CFA) models to the indicators of PED and self-esteem, and decreasingly sorted the factor loadings. Following the instruction from Wu et al. (2013), first 7 indicators of self-esteem with highest factor loadings were chosen to pair with the indicators of PED to form PIs. The chosen pairs of indicators were listed below:
+
+```{r UPI step 2-a: form product indicators, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+model <- "SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 + 
+                   SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10
+          PED =~ PED1 + PED2 + PED3 + PED3 + PED4 + PED5 + PED6 + PED7"
+results <- parameterestimates(sem(model, dat.centered, std.lv = T), standardized = TRUE)
+results_subset <- subset(results, op == "=~", select = c("rhs", "est"))
+selfe_data <- results_subset %>% 
+  filter(grepl("SelfE", rhs)) %>% 
+  arrange(desc(est)) %>%
+ slice(1:(n() - 3))
+ped_data <- results_subset %>% 
+  filter(grepl("PED", rhs)) %>% 
+  arrange(desc(est))
+match_items <- as.data.frame(cbind(selfe_data, ped_data))
+names(match_items) <- c("SelfE", "SelfE Loading", "PED", "PED Loading")
+match_items <- match_items %>% mutate(`SelfE Loading` = round(`SelfE Loading`, 3),
+                                      `PED Loading` = round(`PED Loading`, 3))
+match_items <- match_items %>% mutate(across(everything(), as.character))
+match_items
+```
+Lin et al. (2010) proposed a double-mean-centering (DMC) strategy to show that the mean structure of UPI methods is unnecessary and can be removed for simpler model specification and estimation, by additionally mean-centering PIs. Besides, the DMC strategy is superior under violation of normality assumption on latent variables. Then, the formed PIs were additionally mean-centered based on the DMC strategy to drop the mean structure required by matched-pair UPI. We only showed one example of formed PI for limited space, but the other PI pairs should be created using the same procedure:
+
+```{r UPI step 2: form product indicators, echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), size="footnotesize"}
+# Mean-center formed PI
+PED6.SelfE10 <- dat.centered$PED6*dat.centered$SelfE10 - mean(dat.centered$PED6*dat.centered$SelfE10, na.rm = T)
+```
+
+```{r UPI step 2-a: form product indicators using IndProd(), message=FALSE, warning=FALSE, include=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+dat.matchpair <- indProd(dat.centered,
+                       var1 = c("PED6", "PED3", "PED7", "PED1", "PED5", "PED2", "PED4"),
+                       var2 = c("SelfE10", "SelfE9", "SelfE6", "SelfE7", "SelfE5", "SelfE3", "SelfE8"),
+                       match = TRUE, 
+                       meanC = FALSE, 
+                       residualC = FALSE, 
+                       doubleMC = TRUE) 
+```
+
+Jorgensen et al. (2022) introduced a R package `semTools` in which the function `IndProd()` was developed to automate the process of forming PIs with the DMC setting available. Assuming the data frame `dat.matchpair` was already created with all the mean-centered first-order indicators and 7 newly formed PIs, a `lavaan` model syntax should be created for model specification to test the latent interaction between PED and self-esteem, :
+
+```{r UPI step 3: model specification for matched-pair UPI, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.matchpair <- "# Measurement model
+                      PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + PHQ8 + PHQ9
+                      PED =~ PED6 + PED3 + PED7 + PED1 + PED5 + PED2 + PED4
+                      SelfE =~ SelfE10 + SelfE9 + SelfE6 + SelfE7 + SelfE5 + SelfE3 + SelfE8
+                      PED.SelfE =~ PED6.SelfE10 + PED3.SelfE9 + PED7.SelfE6 + PED1.SelfE7 + 
+                                   PED5.SelfE5 + PED2.SelfE3 + PED4.SelfE8
+                    # Structural model
+                      PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.matchpair <- sem(data = dat.matchpair,
+                     model = model.matchpair)
+```
+The measurement model was specified using `lavaan` syntax as regular CFA models, in which the latent interaction term, `PED.SelfE`, was indicated by the matched-pair PIs. The specification of the structural model was in the usual regression form, and the model fitting was conducted using the `sem` function in `lavaan`. According to DMC, the mean structure for the first-order latent predictors and the latent interaction term was not needed, so that the argument of `meanstructure` was not required when applying the `sem` function.
+
+### RAPI
+
+One of the critical differences between RAPI and matched-pair UPI was that matched-pair UPI used multiple indicators for the latent variables while RAPI used composite scores (sum or mean scores), so that RAPI produced a simpler model specification. In this study, we demonstrated RAPI using mean scores as single indicators of latent variables.
+
+```{r RAPI step 1: create composite scores, echo=TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=70)}
+# Compute composite scores using first-order indicators
+dat.centered <- dat.centered %>%
+  mutate(PED.mean = rowMeans(select(., starts_with("PED")), na.rm = TRUE),
+         SelfE.mean = rowMeans(select(., starts_with("SelfE")), na.rm = TRUE),
+         PHQ.mean = rowMeans(select(., starts_with("PHQ")), na.rm = TRUE),
+         PED.SelfE.mean = PED.mean*SelfE.mean - mean(PED.mean*SelfE.mean, na.rm = T))
+```
+We first computed mean scores using the first-order indicators and the computed SIs were `PED.mean`, `SelfE.mean`, `PHQ.mean` for their latent variables. Then we multiplied `PED.mean` and `SelfE.mean` to create the SI for the latent interaction term ,`PED.SelfE.mean`, and mean-centered it again to apply the DMC strategy. 
+
+```{r RAPI step 1-a: compute reliabilities, message=FALSE, warning=FALSE, include=FALSE}
+# Compute reliability of first-order indicators
+  user_alpha <- function (x) {
+    covx <- cov(x, use = "complete.obs")
+    p <- ncol(x)
+    p / (p - 1) * (1 - sum(diag(covx)) / sum(covx))
+  }
+user_alpha(dat.centered[,1:7])
+user_alpha(dat.centered[,8:17])
+```
+
+```{r RAPI step 2: model specification for RAPI, echo=TRUE, eval = TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.rapi <- "# Measurement model
+                 PHQ =~ 1*PHQ.mean
+                 PED =~ 1*PED.mean
+                 SelfE =~ 1*SelfE.mean
+                 PED.SelfE =~ 1*PED.SelfE.mean
+               # Error variance
+                 PED.mean ~~ ev1*PED.mean
+                 SelfE.mean ~~ ev2*SelfE.mean
+                 PED.SelfE.mean ~~ ev3*PED.SelfE.mean
+               # Latent variance
+                 PED ~~ v1*PED
+                 SelfE ~~ v2*SelfE
+                 PED.SelfE ~~ v3*PED.SelfE
+               # Error Constraints
+                 ev1 == (1 - 0.8965932) * v1 / 0.8965932
+                 ev2 == (1 - 0.8792078) * v2 / 0.8792078
+                 ev3 == ev1 * v2 + ev2 * v1 + ev1 * ev2
+               # Structural model
+                 PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.rapi <- sem(data = dat.centered,
+                model = model.rapi)
+```
+
+In the measurement model, the factor loadings of single indicators on the latent variables were all constrained to 1. As described in the introduction, the error variances of single indicators were constrained to account for measurement error and specified in the section of `Error Constraints`. Take PED as an example, the constraint for `PED.mean` could be derived as a function of estimated reliability, such that $ev_{1} = [(1 - \rho_{PED})/{\rho_{PED}}]v_{1}$ where $\rho_{PED} = 0.8965932$ was the estimated reliability of PED using Cronbach's $\alpha$, and $v_{1}$ was the sample-estimated latent variance of PED. The same formula was applied to self-esteem to generate its error-variance constraint. Note that researchers could use any reasonable reliability measures depending on their research design and data. As a reference, Hsiao et al. (2018) compared four reliability measures between Cronbach's $\alpha$ (Cronbach, 1951), $\omega$ (McDonald, 1970; Raykov, 1997), the greatest lower bound reliability (GLB; Berge & Sočan, 2004), and Coefficient H (Hancock & Mueller, 2001), and found that Cronbach's $\alpha$ was adequate to account for measurement error and adjust for biased interaction estimates.
+Then, the error-variance constraint of `PED.SelfE` could be derived using the formula $ev_{3} = ev_{1}v_{2} + ev_{2}v_{1} + ev_{1}ev_{2}$ where $v_{2}$ and $ev_{2}$ were the variance of self-esteem and the error-variance constraint of `SelfE.mean`. More technical details of formula derivation about $ev_{3}$ were available in Appendix A of Hsiao et al. (2018).
+
+### 2S-PA-Int
+
+As described in the introduction, 2S-PA-Int involved a two-step process by separately estimating the measurement and the structural models. In this example, we continued to use the dataset `dat.centered` which contained the original first-order indicators to create a new data frame with factor scores, namely `dat.fs`.
+
+```{r 2S-PA-Int step 1: compute factor scores, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+# Compute factor scores
+model.fs <- "PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + PHQ8 + PHQ9
+             PED =~ PED1 + PED2 + PED3 + PED4 + PED5 + PED6 + PED7
+             SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 + 
+                      SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10"
+dat.fs <- get_fs(dat.centered,
+                 model = model.fs,
+                 method = "Bartlett",
+                 std.lv = TRUE)
+```
+First, the model syntax named `model.fs` represented the structure of measurement model under the confirmatory factor analysis (CFA) framework, wherein each latent variable, PHQ, PED, and SelfE, was indicated by their corresponding first-order indicators. Next, a user-defined function `get_fs()`, created by Lai et al. (2024), was used to compute factor scores with corresponding standard errors of measurement. The argument `method` indicated the computation methods of factor scores. Currently the function is able to support `regression` or `Bartlett` factor scores. Technically, the factor scores could be estimated using any appropriate psychometric methods. We used Bartlett factor scores in this demonstration as Estabrook and Neale (2013) mentioned that Bartlett's method corrected the regression method by correcting the bias in factor means. The `std.lv` argument was set to `TRUE` so that the variances of latent variables were set to unity because latent variables did not have meaningful units naturally (Lai & Hsiao, 2021).
+
+```{r 2S-PA-Int step 2-a: obtain the single indicator, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# obtain the single indicators 
+dat.fs <- dat.fs[ ,1:6]
+colnames(dat.fs) <- gsub("_", ".", colnames(dat.fs))
+```
+
+```{r 2S-PA-Int step 2: obtain the factor scores with se, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+# Obtain the factor scores as single indicators 
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED*dat.fs$fs.SelfE
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED.SelfE - mean(dat.fs$fs.PED.SelfE)
+# Compute the standard error of interaction
+dat.fs$fs.PED.SelfE.se <- sqrt(1*dat.fs$fs.PED.se[1]^2 + 1*dat.fs$fs.SelfE.se[1]^2 + 
+                               dat.fs$fs.PED.se[1]^2*dat.fs$fs.SelfE.se[1]^2)
+```
+
+The creation of SI to the latent interaction term `fs.PED.SelfE` was very similar to what was done in RAPI, such that the factor scores of PED and SelfE were multiplied and then mean-centered subsequently. Furthermore, the formula for computing the standard error of measurement of `fs.PED.SelfE` was the same as the one used in RAPI. Since 2S-PA-Int is able to provide observation-specific standard errors, the outputs of `fs.PED.se` (i.e., standard error of `PED`'s factor score) and `fs.SelfE.se` (i.e., standard error of `SeflE`'s factor score) are two vectors. Given that standard errors are the same for continuous first-order indicators, the first value of each vector can be used in the formula (e.g., `fs.PED.se[1]`).
+
+```{r 2S-PA-Int step 3: model fitting, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.2spaint <- "# Measurement model
+                    PHQ =~ 1*fs.PHQ
+                    PED =~ 1*fs.PED
+                    SelfE =~ 1*fs.SelfE
+                    PED.SelfE =~ 1*fs.PED.SelfE
+                  # Error variance
+                    fs.PED ~~ 0.09875111*fs.PED
+                    fs.SelfE ~~ 0.3397634*fs.SelfE
+                    fs.PED.SelfE ~~ 0.22559*fs.PED.SelfE
+                  # Structural model
+                    PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.2spaint <- sem(data = dat.fs,
+                   model = model.2spaint)
+```
+Lai and Hsiao (2021) stated that 2S-PA was similar to RAPI when the indicators were treated as continuous with normal distributions. When using Bartlett scores, the model of 2S-PA-Int was similarly specified as that of RAPI, but with more simplicity because the standard errors of measurement were computed in the first stage. Thus, the input of constraints for factor loadings and error variances were even clearer and more straightforward.
+

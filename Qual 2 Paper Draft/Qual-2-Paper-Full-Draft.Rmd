@@ -1,0 +1,609 @@
+---
+title             : "Testing Moderating Effect of Self-Esteem on the Relation between Perceived Everyday Discrimination and Depression: Using Three Latent Interaction Models"
+shorttitle        : "Testing Latent Interaction"
+
+author: 
+  - name          : "Jimmy Zhang"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    email         : "gengruiz@email.com"
+    role: # Contributorship roles (e.g., CRediT, https://credit.niso.org/)
+      - "Conceptualization"
+      - "Writing - Original Draft Preparation"
+      - "Writing - Review & Editing"
+
+affiliation:
+  - id            : "1"
+    institution   : "University of Southhern California"
+
+abstract: |
+  Testing moderation effects using regression-based methods with observed variables may result in low statistical power and inability to detect nuanced interaction effects, due to failure to account for measurement error. Latent interaction models based on structural equation modeling (SEM) have been developed and used in recent social science research. Product indicator methods stemming from Kenny and Judd's (1984) model have been extensively researched and applied to empirical studies. In this study, we illustrate the use three product indicator methods, matched-pair unconstrained product indicator (UPI), reliability-adjusted product indicator (RAPI), and two-stage path analysis with interaction (2S-PA-Int), with step-by-step demonstrations on a nationally representaive dataset with 2,595 observations sourced from the Panel Study of Income Dynamics (PSID) study. The theoretical model we tested on is that self-esteem and perceived everyday discrimination (PED), and their interaction effect are  are significantly associated with depression. Results showed that all three methods were able to produce reasonable estimates of interaction effect with similar magnitude and standard errors. 2S-PA-Int showed relatively more conservative estimate with smaller magnitude of standard error, implying that it can be a reliable alternative to existing product indicator methods. 
+  
+  <!-- https://tinyurl.com/ybremelq -->
+  
+keywords          : "Latent interaction, UPI, RAPI, 2S-PA-Int"
+
+bibliography      : "/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/r_references.bib"
+
+floatsintext      : no
+linenumbers       : yes
+draft             : no
+mask              : no
+
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+
+classoption       : "man"
+csl               : "`r system.file('rmd', 'apa7.csl', package = 'papaja')`"
+documentclass     : "apa7"
+output            : papaja::apa6_pdf
+---
+
+```{r setup, include = FALSE}
+# Load packages
+library("papaja")
+library(formatR)
+library(knitr)
+library(kableExtra)
+library(haven)
+library(dplyr)
+library(tidyr)
+library(psych)
+library(semTools)
+library(lavaan)
+library(emmeans)
+library(ggplot2)
+library(gridExtra)
+library(R2spa)
+r_refs("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/r_references.bib")
+```
+
+```{r methods code, include=FALSE}
+TA2019 <- zap_formats(zap_labels(read_sav("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/TA2019.sav")))
+
+# Scale 1: ROSENBURG SELF-ESTEEM SCALE
+# Recoded items: TA190106, TA190108, TA190111, TA190112, TA190113
+# Strongly agree - 4; Agree - 3; Disagree - 2; Strongly Disagree - 1; Missing - 9.
+SelfE <- TA2019 %>%
+  select(TA190104:TA190113) %>%
+  mutate(TA190106 = recode(TA190106, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190108 = recode(TA190108, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190111 = recode(TA190111, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190112 = recode(TA190112, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9"),
+         TA190113 = recode(TA190113, "1" = "4", "2" = "3", "3" = "2", "4" = "1", "9" = "9")) %>%
+  mutate_if(is.character, as.numeric) %>%
+  mutate_all(na_if, 9)
+colnames(SelfE) <- paste0("SelfE", 1:10)
+
+# Scale 2: Everyday Discrimination
+# No recoded items
+# Never - 1; Less than once a year - 2; A few times a year - 3; A few times a month - 4;
+# At least once a week - 5; Almost every day - 6; Missing - 9.
+PED <- TA2019 %>%
+  select(TA192066:TA192072) %>%
+  mutate_all(na_if, 9) %>%
+  mutate_all(na_if, 8)
+colnames(PED) <- paste0("PED", 1:7)
+
+# Scale 3: PHQ-9 Depression Scale
+# No recoded items
+# Not at all - 1; Several days - 2; More than half the days - 3; Nearly every day - 4; Missing - 9.
+PHQ <- TA2019 %>%
+  select(TA190114:TA190122) %>%
+  mutate_all(na_if, 9) %>%
+  mutate_all(na_if, 8)
+colnames(PHQ) <- paste0("PHQ", 1:9)
+
+# Dimension of dat: 2,595 observations and 26 first-order indicators
+dat <- cbind(PED, SelfE, PHQ)
+# Mean-centering first-order indicators of PED and SelfE
+dat.centered <- dat %>%
+       mutate(across(.cols = everything(), .fns = ~ .x - mean(.x, na.rm = TRUE)))
+dat.matchpair <- indProd(dat.centered,
+                       var1 = c("PED6", "PED3", "PED7", "PED1", "PED5", "PED2", "PED4"),
+                       var2 = c("SelfE10", "SelfE9", "SelfE6", "SelfE7", "SelfE5", "SelfE3", "SelfE8"),
+                       match = TRUE, 
+                       meanC = FALSE, 
+                       residualC = FALSE, 
+                       doubleMC = TRUE) 
+# Model Specification
+model.matchpair <- "# Measurement model
+                      PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + PHQ8 + PHQ9
+                      PED =~ PED6 + PED3 + PED7 + PED1 + PED5 + PED2 + PED4
+                      SelfE =~ SelfE10 + SelfE9 + SelfE6 + SelfE7 + SelfE5 + SelfE3 + SelfE8
+                      PED.SelfE =~ PED6.SelfE10 + PED3.SelfE9 + PED7.SelfE6 + PED1.SelfE7 + 
+                                   PED5.SelfE5 + PED2.SelfE3 + PED4.SelfE8
+                    # Latent variance
+                      PED ~~ v1*PED
+                      SelfE ~~ v2*SelfE
+                      PED.SelfE ~~ v3*PED.SelfE
+                    # Latent covariance
+                      PED ~~ v12*SelfE
+                      PED ~~ v13*PED.SelfE
+                      SelfE ~~ v23*PED.SelfE
+                    # Residual variance of DV
+                      PHQ ~~ v4*PHQ
+                    # Structural model
+                      PHQ ~ g1*PED + g2*SelfE + g3*PED.SelfE
+                    # Standardized
+                      v_y := g1^2*v1 + g2^2*v2 + g3^2*v3 + 2*g1*g2*v12 + 
+                             2*g1*g3*v13 + 2*g2*g3*v23 + v4
+                      gamma1 := g1*sqrt(v1)/sqrt(v_y)
+                      gamma2 := g2*sqrt(v2)/sqrt(v_y)
+                      gamma3 := g3*sqrt(v1)*sqrt(v2)/sqrt(v_y)"
+# Model Fitting
+fit.matchpair <- sem(data = dat.matchpair,
+                     model = model.matchpair)
+# Compute composite scores using first-order indicators
+dat.centered <- dat.centered %>%
+  mutate(
+    PED.mean = rowMeans(select(., starts_with("PED")), na.rm = TRUE),
+    SelfE.mean = rowMeans(select(., starts_with("SelfE")), na.rm = TRUE),
+    PHQ.mean = rowMeans(select(., starts_with("PHQ")), na.rm = TRUE),
+    PED.SelfE.mean = PED.mean*SelfE.mean - mean(PED.mean*SelfE.mean, na.rm = T)
+  )
+# Model Specification
+model.rapi <- "# Measurement model
+                 PHQ =~ 1*PHQ.mean
+                 PED =~ 1*PED.mean
+                 SelfE =~ 1*SelfE.mean
+                 PED.SelfE =~ 1*PED.SelfE.mean
+               # Error variance
+                 PED.mean ~~ ev1*PED.mean
+                 SelfE.mean ~~ ev2*SelfE.mean
+                 PED.SelfE.mean ~~ ev3*PED.SelfE.mean
+               # Latent variance
+                 PED ~~ v1*PED
+                 SelfE ~~ v2*SelfE
+                 PED.SelfE ~~ v3*PED.SelfE
+               # Error Constraints
+                 ev1 == (1 - 0.8965932) * v1 / 0.8965932
+                 ev2 == (1 - 0.8792078) * v2 / 0.8792078
+                 ev3 == ev1 * v2 + ev2 * v1 + ev1 * ev2
+               # Latent covariance
+                 PED ~~ v12*SelfE
+                 PED ~~ v13*PED.SelfE
+                 SelfE ~~ v23*PED.SelfE
+               # Residual variance of DV
+                 PHQ ~~ v4*PHQ
+               # Structural model
+                 PHQ ~ g1*PED + g2*SelfE + g3*PED.SelfE
+               # Standardized
+                 v_y := g1^2*v1 + g2^2*v2 + g3^2*v3 + 2*g1*g2*v12 + 
+                        2*g1*g3*v13 + 2*g2*g3*v23 + v4
+                 gamma1 := g1*sqrt(v1)/sqrt(v_y)
+                 gamma2 := g2*sqrt(v2)/sqrt(v_y)
+                 gamma3 := g3*sqrt(v1)*sqrt(v2)/sqrt(v_y)"
+# Model Fitting
+fit.rapi <- sem(data = dat.centered,
+                model = model.rapi)
+# Compute factor scores
+model.fs <- "PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + PHQ8 + PHQ9
+             PED =~ PED1 + PED2 + PED3 + PED4 + PED5 + PED6 + PED7
+             SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 + 
+                      SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10"
+dat.fs <- get_fs(dat.centered,
+                 model = model.fs,
+                 method = "Bartlett",
+                 std.lv = TRUE)
+# obtain the single indicators 
+dat.fs <- dat.fs[ ,1:6]
+colnames(dat.fs) <- gsub("_", ".", colnames(dat.fs))
+# Obtain the factor scores as single indicators 
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED*dat.fs$fs.SelfE
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED.SelfE - mean(dat.fs$fs.PED.SelfE)
+# Compute the standard error of interaction
+dat.fs$fs.PED.SelfE.se <- sqrt(1*dat.fs$fs.PED.se[1]^2 + 1*dat.fs$fs.SelfE.se[1]^2 + 
+                               dat.fs$fs.PED.se[1]^2*dat.fs$fs.SelfE.se[1]^2)
+# Model Specification
+model.2spaint <- "# Measurement model
+                    PHQ =~ 1*fs.PHQ
+                    PED =~ 1*fs.PED
+                    SelfE =~ 1*fs.SelfE
+                    PED.SelfE =~ 1*fs.PED.SelfE
+                  # Error variance
+                    fs.PED ~~ 0.09875111*fs.PED
+                    fs.SelfE ~~ 0.3397634*fs.SelfE
+                    fs.PED.SelfE ~~ 0.22559*fs.PED.SelfE
+                  # Latent variance
+                    PED ~~ v1*PED
+                    SelfE ~~ v2*SelfE
+                    PED.SelfE ~~ v3*PED.SelfE
+                  # Latent covariance
+                    PED ~~ v12*SelfE
+                    PED ~~ v13*PED.SelfE
+                    SelfE ~~ v23*PED.SelfE
+                  # Residual variance of DV
+                    PHQ ~~ v4*PHQ
+                  # Structural model
+                    PHQ ~ b1*PED + b2*SelfE + b3*PED.SelfE
+                  # Standardized
+                    v_y := b1^2*v1 + b2^2*v2 + b3^2*v3 + 2*b1*b2*v12 + 
+                           2*b1*b3*v13 + 2*b2*b3*v23 + v4
+                    beta1 := b1*sqrt(v1)/sqrt(v_y)
+                    beta2 := b2*sqrt(v2)/sqrt(v_y)
+                    beta3 := b3*sqrt(v1)*sqrt(v2)/sqrt(v_y)"
+# Model Fitting
+fit.2spaint <- sem(data = dat.fs,
+                   model = model.2spaint)
+
+# Measurement Model Fit
+model.mm <- "# Measurement model
+               PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + PHQ8 + PHQ9
+               PED =~ PED1 + PED2 + PED3 + PED4 + PED5 + PED6 + PED7
+               SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 +
+                        SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10"
+fit.mm <- cfa(model.mm,
+              data = dat.centered)
+fitmeasures(fit.mm)
+```
+
+Moderation analysis plays an important role in social science research because it can illuminate the intricate nature of human behaviors and allows for differential effects among explanatory variables. Social scientists use the terms "moderation" and "interaction" interchangeably since both refer to how a third variable can modify the relation between two variables [@fairchildEvaluatingMediationModeration2010]. @baronModeratormediatorVariableDistinction1986's groundbreaking work on moderation emphasized the need to understand not only the existence of an effect but also the circumstances that shaped it. Alternatively speaking, interaction effects reveal how the strength and direction of relations between variables can shift depending on contextual factors. For instance, it was found that the number of passive and active bystanders in a work group moderated the relationship between exposure to bullying and work engagement [@ngDoesBystanderBehavior2022]. Typical interaction effects are frequently investigated through regression-based techniques [@hayesRegressionbasedStatisticalMediation2017; @hayesIntroductionMediationModeration2013], in which an interaction term is created by multiplying the explanatory variable with the interacting variable and then included in the regression model. 
+
+A significant limitation of traditional regression-based approaches with observed variables is that directly measured variables are inherently subject to measurement error. This practice usually results in reduced statistical power and has the potential to obscure true relationships, and thus fails to detect nuanced interaction effects [@busemeyerAnalysisMultiplicativeCombination1983; @atkinsonStatisticalMethodsAssessing1998; @yezerinacMeasurementErrorMorphometric1992; @fritzCombinedEffectsMeasurement2016]. To address these potential concerns, researchers may consider latent variables to account for measurement error. Latent variables are not directly observable but inferred from observed indicators or manifest variables [@bollenStructuralEquationsLatent1989e], such as anxiety measured by Beck Anxiety Inventory [@beckInventoryMeasuringClinical1988]. To model relations between latent variables, researchers extensively use structural equation modeling (SEM) in which a network of equations not only captures relations between observed indicators and their underlying latent variables but also models the relationships among the latent variables themselves [@bollenStructuralEquationsLatent1989e; @hoyleStructuralEquationModeling1995].This simultaneous modeling of measurement model and structural paths enables a comprehensive assessment of complex theoretical models, providing insights into mediation and moderation within a single analysis [@klinePrinciplesPracticeStructural2016a]. Hence, typical regression models with interaction can be tested among latent variables. 
+
+Since the relations between latent variables can only be investigated through observed indicators, it is not possible to directly multiply them as observed variables. In past years, a few latent interaction models have been developed based on the SEM framework [@jaccardMeasurementErrorAnalysis1995; @joreskogLISRELStructuralEquation1993; @pingEQSLISRELExamples1998; @kleinMaximumLikelihoodEstimation2000; @wallGeneralizedAppendedProduct2001; @marshStructuralEquationModels2004b; @maslowskyEstimatingInterpretingLatent2015b; @hsiaoEvaluationTwoMethods2018b]. These methods can be divided into two categories: product indicator methods and distribution analytic methods [@marshStructuralEquationModels2012]. Latent moderated structural equations (LMS) is a widely used method based on the distribution analytic method, but it is limited in use since it does not generate model fit indices and standard coefficients for interaction effects, hence making model comparisons and coefficient interpretations difficult [@maslowskyEstimatingInterpretingLatent2015b]. Therefore we focus on product indicator methods in this study.
+
+The present paper used a nationally representative dataset to demonstrate the application of three product indicator methods of estimating latent interaction effects and compare the results in terms of parameter estimates and implementing procedure: unconstrained product indicator (UPI; Marsh et al. 2004), reliability-adjusted product indicator (RAPI; Hsiao et al., 2018), and two-stage path analysis with interaction (2S-PA-Int; Lai & Hsiao, 2021). The performance of each method has been evaluated through simulation studies in each stemming paper, but only UPI is commonly used in empirical studies of latent interaction and demonstrated with concrete examples. This paper aims to: (1) provide detailed demonstration of each method on an existing dataset with an empirically supported theory; (2) supplement the comparison of three product indicator methods in simulated settings; (3) examine the moderating effect of self-esteem on the relations between perceived everyday discrimination on depression using latent variable modeling. In the demonstration, we expect to detect a significant latent interaction effect using all the methods. 
+
+## Perceived Everyday Discimination, Self-Esteem, and Depression
+
+Emerging adulthood, defined as ages of 18 to mid-to-late 20s, has been gaining attention in cognitive, social, and clinical psychology research. It is recognized as a pivotal developmental stage typified by what they pursue, how they strive, and where they will be [@arnettEmergingAdulthoodTheory2000]. This is a stimulating yet stressful period filled with relatively more changes and challenges in an individual’s lifespan, given that people in this transition period (i.e., childhood to young adulthood) usually need to make major life decisions, take responsibility for their own needs, and explore their future [@wagnerLongitudinalTransitionOutcomes2012]. Numerous research reported that emerging adulthood is typically connected to the onset of various mental health illnesses and the development of serious mental health conditions that exacerbate later health [@klodnickMeetingDevelopmentalNeeds2021]. Specifically, emerging adults are more prone to depressive symptoms that lead to suicidal tendencies, feeling of worthlessness, sleeping trouble, and social avoidence [@martinez-hernaezSocialSupportGender2016]. 
+
+Many potential stress factors may culminate in the depressive symptoms described above, given the abundance of challenges young adults may have to confront in their everyday social interaction. Current social and clinical research have found that perceived everyday discrimination (PED) is significantly associated with depression among emerging adults in the United States [@williamsRacialEthnicDiscrimination2003]. PED is defined as “a behavioral manifestation of a negative attitude, judgment, or unfair treatment toward members of a group” through subjective evaluations [@pascoePerceivedDiscriminationHealth2009a]. For instance, LGBT individuals perceive significantly higher levels of sexual-orientation-related discrimination, which results in greater likelihood of incurring depression, compared to their heterosexual counterparts [@burgessEffectsPerceivedDiscrimination2007]. Living in an immigrant country brimming with people from different cultural backgrounds, racial minorities may encounter discrimination related to their race and ethnicity in various settings. @patrickEffectRacialDiscrimination2019 found that PED and experience of related violence may lead to increased depression among African American and Hispanic American adolescents. 
+
+Self-esteem has been researched as one of the correlates that potentially alleviate the effect of PED on depression. In Rosenberg’s work, self-esteem is early characterized as “a favorable or unfavorable attitude toward oneself and functions as an affective evaluation of the self” [@rosenbergRosenbergSelfEsteemScale1965]. A more recent definition by @harterDevelopmentSelfrepresentationsChildhood2003 is that self-esteem depicts a psychological approximation of the degree to which one individual is evaluated and accepted by themselves and others (e.g., peers, family, friends). Individuals with high self-esteem have higher chances of perceiving subjective well-being and obtaining self-confidence in adolescents and adults [@weinbergFoundationsSportExercise1995; @chenSocioeconomicStatusLife2016]. From an intuitive perspective, individuals with low or reduced level of self-esteem are more plausible to possess lower self-assurance and experience more detrimental emotional consequences resulting from PED. One study about second-generation immigrant adolescents across ethnic groups confirmed this pathway, in which PED from school peers negatively influences perceptions of social acceptance and subsequently impacts their mental health outcomes [@espinosaDiscriminationSelfEsteemMental2021a]. Moreover, it was found that gender-related PED predicts increased psychological malfunctioning through both linear and non-linear reduction in self-esteem among American Indians [@kiraAreNegativeMental2015].
+
+Although the moderation effect of self-esteem on mental health outcomes has been studied in various representative samples across groups and occasions [@chenRelationshipBiculturalIdentity2022], few studies model this effect in a latent variable framework. The current study posits self-esteem as a moderator of the relation between PED and depression among emerging adults (18-28) in the United States. The hypotheses are three-folds: (1) self-esteem is negatively associated with depression; (2) PED is positively associated with depression; (3) emerging adults who have higher levels of self-esteem will be less affected by PED on depression. 
+
+## Three Product Indicator Methods for Testing Latent Interaction
+
+@kennyEstimatingNonlinearInteractive1984b's seminal idea on latent interaction has become the basis of many advanced approaches, especially for product indicators methods. They first proposed that the latent interaction term could be measured by all possible cross products of first-order indicators (i.e., observed indicators of latent predictors that formed the interaction term), and these products can form the product indicators (PIs) that indicate the latent interaction term. For example, suppose a latent predictor $\xi_{x}$ and a latent moderator $\xi_{m}$ are indicated by three first-order indicators respectively (i.e., $\xi_{x}$ indicated by $x_{1}$ ~ $x_{3}$; $\xi_{m}$ indicated by $m_{1}$ ~ $m_{3}$), the formed PIs will be 9 PIs: $x_{1}m_{1}$, $x_{1}m_{2}$, $x_{1}m_{3}$, $x_{2}m_{1}$, ..., $x_{3}m_{3}$. It can be observed that these PIs have shared first-order indicators, and hence their error variances covary (e.g., $x_{1}m_{1}$ and $x_{1}m_{2}$ share partial variances stemming from $x_{1}$). The Kenny and Judd's model is usually called constrained product indicator (CPI) method because it requires complicated nonlinear constraints on PIs (e.g., factor loadings and residual variances) in their model, which makes it difficult to implement and computationally burdensome for empirical researchers [@jaccardMeasurementErrorAnalysis1995]. Take the PI $x_{2}m_{2}$ as one example:
+\begin{equation}
+x_{2}m_{2}= (\lambda_{x_{2}}\xi_{x} + \delta_{x_{2}})(\lambda_{m_{2}}\xi_{m} + \delta_{m_{2}}),
+\end{equation}
+where $\lambda$ is the factor loading, $\xi$ is the first-order latent variable, and $\delta$ is the error for first-order indicators $x_{2}$ and $m_{2}$. By expanding the equation, $\lambda_{x_{2}m_{2}} = \lambda_{x_{2}}\lambda_{m_{2}}$, indicating that the factor loading of this PI is composed of original first-order indicators' factor loadings. The error variance can be derived as a function of original first-order indicators' error variances and first-order latent variables' variances. As the number of PIs increases, the complexity of nonlinear constraints is extremely challenging for model specification and may lead to convergence issue [@wallGeneralizedAppendedProduct2001]. Moreover, this method is based on the assumption that first-order latent variables are normally distributed, which menas that CPI may not perform well when this assumption is violated. @marshStructuralEquationModels2004b showed that CPI was not robust to non-normal data in their simulation studies, supporting the theoretical hypothesis. 
+
+### Matched-pair Unconstrained Product Indicator (UPI)
+
+As CPI is too complicated for researchers who do not have sufficient background in statistical details of SEM, @marshStructuralEquationModels2004b proposed a groundbreaking method, unconstrained product indicator (UPI), to explore the possibility of removing complicated nonlinear constraints. UPI uses mean-centered first-order indicators to form PIs that indicate the latent interaction term, and omits most of the nonlinear constraints but the mean structure of latent variables, such that $\kappa = [0, \ 0, \ Cov_{\xi_{x}\xi_{m}}]^T$ where $\kappa$ represents a vector of latent means. Using the example mentioned before, the means of $\xi_{x}$ and $\xi_{m}$ are fixed to 0 and the mean of the interaction effect, $Cov_{\xi_{x}\xi_{m}}$, equals the covariance between $\xi_{x}$ and $\xi_{m}$. It is necessary to keep the $\kappa$ because $Cov_{\xi_{x}\xi_{m}} \neq 0$ when $\xi_{x}$ and $\xi_{m}$ are allowed to correlate, so that the mean of the interaction term should be freely estimated. @marshStructuralEquationModels2004b found that UPI without nonlinear constraints produced unbiased estimates of interaction effects and showed better performance under the violation of assumptions on normal distribution. They also argued that UPI could be more easily implemented than CPI, and therefore testing latent interaction should become more approachable and motivating when empirical researchers need to test more in-depth theories. 
+
+Although UPI with all PIs seems as a promising approach to use, it may lead to unrealistic model specification and risk of non-convergence when the number of PIs is overwhelmingly large. @marshStructuralEquationModels2004b suggests to use matched-pair UPI by pairing up first-order indicators of two latent predictors in the order of reliability. For example, the formed PIs will be $x_{1}m_{1}$, $x_{2}m_{2}$ and $x_{3}m_{3}$ instead of all the 9 possible configurations, assuming the order of indicators is by their reliability. Since nonlinear constraints are omitted, the factor loadings and error variances of formed PIs are freely estimated. Thus, we demonstrated matched-pair UPI in this study because @marshStructuralEquationModels2004b showed that it was more favorable in terms of parsimonious model and comparably good performance.
+
+### Reliability-Adjusted Product Indicator (RAPI)
+
+To further simplify the model, @marshStructuralEquationModels2004b did propose a single indicator (SI) approach by using only one PI formed by first indicators of respective latent variables; however, nonlinear constraints should be applied again to the model for the identification issue (see pp. 279 in Marsh et al., 2004). They concluded that this method failed to show desirable performance because it disregarded most of available information from other unused first-order indicators. As a better alternative, a reliability-adjustment product indicator (RAPI) method using composite scores (sum or mean scores) was introduced in @hsiaoEvaluationTwoMethods2018b. The use of composite scores addresses the issue of unused information because composite scores could sufficiently and effectively gather all available information by using composite scores as SIs. More importantly, the RAPI model maintains simplicity. Using the reliability estimates of first-order indicators, RAPI places error-variance constraints on observed SIs to account for measurement error. @hsiaoModelingMeasurementErrors2021a showed that RAPI exhibited the capability of generating unbiased estimates of latent interaction effects with acceptable standard errors under the condition of small sample size ($\textit{N}$ = 250) and low reliability ($\mathit{\rho}$ = .70) on congeneric items (i.e., items with differential factor loadings and measurement errors). Thus RAPI should be a good representative of SI approach for estimating latent interaction effects, and it was included in our demonstration. 
+
+## Two-stage Path Analysis with Interaction (2S-PA-Int)
+
+The Two-Stage Path Analysis (2S-PA) technique is an advanced method for modeling latent variables within the SEM framework, which has been shown to yield parameter estimates with reduced bias in standard errors, improved convergence rates, and less Type I error, particularly in smaller samples [@laiTwostagePathAnalysis2022a]. Similar to RAPI, 2S-PA is a SI approach when first-order indicators are continuous and normally distributed, but it uses estimated factor scores from first-order indicators as SIs to indicate latent variables. 2S-PA constrains error variances on SIs using the standard error of measurement of factor scores to account for measurement error. Recognizing its robust statistical properties and potential good performance, we have adapted the 2S-PA approach in our study to incorporate the latent interaction estimation, namely 2S-PA-Int, in which SIs of two first-order latent variables are multiplied to form a SI for the interaction term. While it shares similarities with RAPI, a significant benefit of the 2S-PA method is its ability to apply specific reliability estimates to each observation for ordered categorical items and to better fit non-normal distributions [@laiTwostagePathAnalysis2022a; @laiCorrectingUnreliabilityPartial2023]. Moreover, unlike traditional SEM approaches that estimate measurement and structural models concurrently, which usually requires large sample sizes to ensure proper convergence rate, the 2S-PA-Int method separates these steps and simplifies the modeling process, thereby reducing computational demands and enhancing stability of parameter estimates. Given its technically superseding property, we demonstrated this method on empirical data. 
+
+# Methods
+
+## Sample Source
+
+The data was sourced from the Panel Study of Income Dynamics (PSID), the longest-running and nationally representative panel survey in the United States starting from 1968, which tracks the physical and psychological well-being of U.S. residents in the context of societal change [@InstituteSocialResearch2024a]. As of 2015, the PSID has collected data across 39 waves over 47 years from 10,000 households and 25,000 individuals, and maintains an impressive return rate (i.e., return to study for consecutive years; 96–98%) for nearly every wave. Designed with a longitudinal approach, the PSID ensures the continuity of data acquisition by including children of participated adults (and next generations) who establish new households [@InstituteSocialResearch2024a]. 
+
+In this study, we used the Transition to Adulthood Supplement (TAS) from PSID collected in the 2019 wave (TAS2019). TAS2019 provides a rich dataset including variables related to psychological functioning, family formation, fertility-related behavior, cohabitation, childhood adversity, and health condition for the cohort aged 18 to 28 years. The TAS2019 sample eligibility was determined based on three key criteria: (1) Participants were aged between 18 and 28 years in 2019; (2) Participants' families were required to participate in the 2019 Core PSID interview; (3) A prerequisite of completing a 2017 Core PSID interview was required specifically for the 2017 immigrant refresher sample [@PanelStudyIncome2019a]. The dataset had a sample size of 2,595 individuals, with 1,201 males and 1,352 females. More details of this sample are available in the codebook of TAS2019. 
+
+## Measures
+
+All psychological constructs of interest were measured by scales with multiple items. The internal consistency measures (Cronbach’s $\alpha$) for each scale were reported and found exceeding the acceptable threshold (i.e., $\alpha > .70$) for analyses [@nunnallyPsychometricTheory1994a].
+
+### Depression
+
+Depression was evaluated using the PHQ-9 Depression screening scale (Patent Health Questionnaire) by @kroenkeAnxietyDisordersPrimary2007, in which various depressive symptoms were assessed such as depressed mood, sleeping trouble, fatigue, concentration problems, and psychomotor failures. The scale had 9 items, each with four response categories. For example, participants had four options for the item "Over the last two weeks, how often have you been bothered by?" [1 = “Not at all”; 2 = "Several days"; 3 = "More than half the days"; 4 = “Nearly every day”]. Participants who chose either "Don't know" or "NA; refused" were considered missing and their responses were excluded from the subsequent analyses. The data had 110 records of missing (0.47%), and the reliability estimate for PHQ-9 was $\alpha = .87$.
+
+### Perceived Everyday Discrimination (PED)
+
+The Everyday Discrimination Scale (EDD) created by @drRaceHealthBasic1997 used in the PSID study comprehensively measured frequency of perceived discrimination regarding daily interpersonal communications, perceived violations of equal rights, and experiences associated with less courtesy and ill-respect. The scale was composed of 7 items, each having six response categories. One example item, "You are treated with less respect than other people", had six response categories with [1 = "Never"; 2 = "Less than once a year"; 3 = "A few times a year"; 4 = "A few times a month"; 5 = "At least once a week"; 6 = "Almost every day"]. Invalid responses were "Don't know" and "NA", similar to PHQ-9, and coded as missing (1.98%). The reliability for EDD was $\alpha = .90$.
+
+### Self-Esteem
+
+Self-esteem was assessed by Rosenberg Self-Esteem Scale [@rosenbergSocietyAdolescentSelfimage2015], originally designed to measure the global self-worth through both positive and negative feelings about one's self. The scale consists of ten items, each with four options. Five items are positively oriented (e.g., “I feel that I have a number of good qualities.”) with response options of [1 = "Strongly disagree"; 2 = "Disagree"; 3 = "Agree"; 4 = "Strongly agree"], while the other five items are negatively oriented (e.g., “I certainly feel useless at times”).  For congruent interpretation, response options of negatively oriented items were reversely coded (i.e., 1 was recoded as 4; 2 was recoded as 3; 3 was recoded as 2; 4 was recoded as 1). Accordingly, higher scores on this scale indicated a higher level of self-esteem. The internal consistency for RSE was $\alpha = .88$.
+
+## Analytical Methods and Procedure
+
+In this section, we showed how to test the hypothetical models in Figure 1-3 and estimate the latent interaction effect of self-esteem on the relation between PED and depression, using matched-pair UPI, RAPI and 2S-PA-Int with step-by-step demonstrations. In summary, the first-order latent variables included a predictor (PED) indicated by 7 items (PED1 ~ PED7), a moderator (self-esteem) indicated by 10 items (SelfE1 ~ SelfE10), and a dependent variable (depression) indicated by 9 items (PHQ1 ~ PHQ9). For each method, the model fitting procedure was conducted based on the `sem` function in the R package `lavaan` [@rosseelLavaanPackageStructural2012]. To simplify the demonstration steps, we have already pre-processed the data of three latent variables by selecting only relevant indicators from TAS2019 and renaming latent variables as `PED`, `SelfE`, and `PHQ` (for perceived every discrimination, self-esteem, and depression, respectively). A full data frame was then created with a name `dat`:
+
+```{r full dat, echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=70), size="footnotesize"}
+# Dimension of dat: 2,595 observations and 26 first-order indicators
+dat <- cbind(PED, SelfE, PHQ)
+```
+
+### Matched-pair UPI
+
+For matched-pair UPI, We began the demonstration with forming PIs by mean-centering all the first-order indicators and renaming the full dataset as `dat.centered`:
+
+```{r UPI step 1: mean-centering first-order indicators, echo=TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=60)}
+# Mean-centering first-order indicators of PED and SelfE
+dat.centered <- dat %>%
+       mutate(across(.cols = everything(), 
+                     .fns = ~ .x - mean(.x, na.rm = TRUE)))
+```
+Note that the argument `na.rm` was set to `TRUE` for the dataset with missing values. Then, we used the mean-centered first-order indicators to form PIs. Given that the numbers of indicators for PED and self-esteem were unequal, a forming strategy needed to be determined for use. According to @marshStructuralEquationModels2004b, the authors suggested one solution in which items could be matched in terms of quality, which was echoed by @wuComparisonStrategiesForming2013a such that PIs should be formed by using highly reliable first-order indicators (i.e., items with higher factor loadings) and ignoring those with low reliability. Therefore we fitted two unidimensional confirmatory factor analysis (CFA) models to the indicators of PED and self-esteem, and decreasingly sorted the factor loadings. Following the instruction from @wuComparisonStrategiesForming2013a, first 7 indicators of self-esteem with highest factor loadings were chosen to pair with the indicators of PED to form PIs. The chosen pairs of indicators were listed below:
+
+```{r UPI step 2-a: form product indicators, echo=FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+model <- "SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 + 
+                   SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10
+          PED =~ PED1 + PED2 + PED3 + PED3 + PED4 + PED5 + PED6 + PED7"
+results <- parameterestimates(sem(model, dat.centered, std.lv = T), standardized = TRUE)
+results_subset <- subset(results, op == "=~", select = c("rhs", "est"))
+selfe_data <- results_subset %>% 
+  filter(grepl("SelfE", rhs)) %>% 
+  arrange(desc(est)) %>%
+ slice(1:(n() - 3))
+ped_data <- results_subset %>% 
+  filter(grepl("PED", rhs)) %>% 
+  arrange(desc(est))
+match_items <- as.data.frame(cbind(selfe_data, ped_data))
+names(match_items) <- c("SelfE", "SelfE Loading", "PED", "PED Loading")
+match_items <- match_items %>% mutate(`SelfE Loading` = round(`SelfE Loading`, 3),
+                                      `PED Loading` = round(`PED Loading`, 3))
+match_items <- match_items %>% mutate(across(everything(), as.character))
+match_items
+```
+@linStructuralEquationModels2010b proposed a double-mean-centering (DMC) strategy to show that the mean structure of UPI methods is unnecessary and can be removed for simpler model specification and estimation, by additionally mean-centering PIs. Besides, the DMC strategy is superior under violation of normality assumption on latent variables. Then, the formed PIs were additionally mean-centered based on the DMC strategy to drop the mean structure required by matched-pair UPI. We only showed one example of formed PI for limited space, but the other PI pairs should be created using the same procedure:
+
+```{r UPI step 2: form product indicators, echo=TRUE, message=FALSE, warning=FALSE, tidy.opts=list(width.cutoff=50), size="footnotesize"}
+# Mean-center formed PI
+PED6.SelfE10 <- dat.centered$PED6*dat.centered$SelfE10 - 
+                    mean(dat.centered$PED6*dat.centered$SelfE10, na.rm = T)
+```
+
+```{r UPI step 2-a: form product indicators using IndProd(), message=FALSE, warning=FALSE, include=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+dat.matchpair <- indProd(dat.centered,
+                       var1 = c("PED6", "PED3", "PED7", "PED1", 
+                                "PED5", "PED2", "PED4"),
+                       var2 = c("SelfE10", "SelfE9", "SelfE6", 
+                                "SelfE7", "SelfE5", "SelfE3", "SelfE8"),
+                       match = TRUE, 
+                       meanC = FALSE, 
+                       residualC = FALSE, 
+                       doubleMC = TRUE) 
+```
+
+@jorgensen2022 introduced a R package `semTools` in which the function `IndProd()` was developed to automate the process of forming PIs with the DMC setting available. Assuming the data frame `dat.matchpair` was already created with all the mean-centered first-order indicators and 7 newly formed PIs, a `lavaan` model syntax should be created for model specification to test the latent interaction between PED and self-esteem, :
+
+```{r UPI step 3: model specification for matched-pair UPI, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.matchpair <- "# Measurement model
+                      PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + 
+                             PHQ6 + PHQ7 + PHQ8 + PHQ9
+                      PED =~ PED6 + PED3 + PED7 + PED1 + 
+                             PED5 + PED2 + PED4
+                      SelfE =~ SelfE10 + SelfE9 + SelfE6 + SelfE7 + 
+                               SelfE5 + SelfE3 + SelfE8
+                      PED.SelfE =~ PED6.SelfE10 + PED3.SelfE9 + PED7.SelfE6 + 
+                                   PED1.SelfE7 + PED5.SelfE5 + PED2.SelfE3 + 
+                                   PED4.SelfE8
+                    # Structural model
+                      PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.matchpair <- sem(data = dat.matchpair,
+                     model = model.matchpair)
+```
+The measurement model was specified using `lavaan` syntax as regular CFA models, in which the latent interaction term, `PED.SelfE`, was indicated by the matched-pair PIs. The specification of the structural model was in the usual regression form, and the model fitting was conducted using the `sem` function in `lavaan`. According to DMC, the mean structure for the first-order latent predictors and the latent interaction term was not needed, so that the argument of `meanstructure` was not required when applying the `sem` function.
+
+### RAPI
+
+One of the critical differences between RAPI and matched-pair UPI was that matched-pair UPI used multiple indicators for the latent variables while RAPI used composite scores (sum or mean scores), so that RAPI produced a simpler model specification. In this study, we demonstrated RAPI using mean scores as single indicators of latent variables.
+
+```{r RAPI step 1: create composite scores, echo=TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=60)}
+# Compute composite scores using first-order indicators
+dat.centered <- dat.centered %>%
+  mutate(PED.mean = rowMeans(select(., starts_with("PED")), na.rm = TRUE),
+         SelfE.mean = rowMeans(select(., starts_with("SelfE")), na.rm = TRUE),
+         PHQ.mean = rowMeans(select(., starts_with("PHQ")), na.rm = TRUE),
+         PED.SelfE.mean = PED.mean*SelfE.mean - mean(PED.mean*SelfE.mean, na.rm = T))
+```
+We first computed mean scores using the first-order indicators and the computed SIs were `PED.mean`, `SelfE.mean`, `PHQ.mean` for their latent variables. Then we multiplied `PED.mean` and `SelfE.mean` to create the SI for the latent interaction term ,`PED.SelfE.mean`, and mean-centered it again to apply the DMC strategy. 
+
+```{r RAPI step 1-a: compute reliabilities, message=FALSE, warning=FALSE, include=FALSE}
+# Compute reliability of first-order indicators
+  user_alpha <- function (x) {
+    covx <- cov(x, use = "complete.obs")
+    p <- ncol(x)
+    p / (p - 1) * (1 - sum(diag(covx)) / sum(covx))
+  }
+user_alpha(dat.centered[,1:7])
+user_alpha(dat.centered[,8:17])
+```
+
+```{r RAPI step 2: model specification for RAPI, echo=TRUE, eval = TRUE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.rapi <- "# Measurement model
+                 PHQ =~ 1*PHQ.mean
+                 PED =~ 1*PED.mean
+                 SelfE =~ 1*SelfE.mean
+                 PED.SelfE =~ 1*PED.SelfE.mean
+               # Error variance
+                 PED.mean ~~ ev1*PED.mean
+                 SelfE.mean ~~ ev2*SelfE.mean
+                 PED.SelfE.mean ~~ ev3*PED.SelfE.mean
+               # Latent variance
+                 PED ~~ v1*PED
+                 SelfE ~~ v2*SelfE
+                 PED.SelfE ~~ v3*PED.SelfE
+               # Error Constraints
+                 ev1 == (1 - 0.8965932) * v1 / 0.8965932
+                 ev2 == (1 - 0.8792078) * v2 / 0.8792078
+                 ev3 == ev1 * v2 + ev2 * v1 + ev1 * ev2
+               # Structural model
+                 PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.rapi <- sem(data = dat.centered,
+                model = model.rapi)
+```
+
+In the measurement model, the factor loadings of single indicators on the latent variables were all constrained to 1. As described in the introduction, the error variances of single indicators were constrained to account for measurement error and specified in the section of `Error Constraints`. Take PED as an example, the constraint for `PED.mean` could be derived as a function of estimated reliability, such that $ev_{1} = [(1 - \rho_{PED})/{\rho_{PED}}]v_{1}$ where $\rho_{PED} = 0.8965932$ was the estimated reliability of PED using Cronbach's $\alpha$, and $v_{1}$ was the sample-estimated latent variance of PED. The same formula was applied to self-esteem to generate its error-variance constraint. Note that researchers could use any reasonable reliability measures depending on their research design and data. As a reference, Hsiao et al. (2018) compared four reliability measures between Cronbach's $\alpha$ [@cronbachCoefficientAlphaInternal1951], $\omega$ [@mcdonaldTheoreticalFoundationsPrincipal1970a; @raykovEstimationCompositeReliability1997], the greatest lower bound reliability [@tenbergeGreatestLowerBound2004a], and Coefficient H [@hancockReliabilityAradoxAssessing2011], and found that Cronbach's $\alpha$ was adequate to account for measurement error and adjust for biased interaction estimates.
+Then, the error-variance constraint of `PED.SelfE` could be derived using the formula $ev_{3} = ev_{1}v_{2} + ev_{2}v_{1} + ev_{1}ev_{2}$ where $v_{2}$ and $ev_{2}$ were the variance of self-esteem and the error-variance constraint of `SelfE.mean`. More technical details of formula derivation about $ev_{3}$ were available in Appendix A of Hsiao et al. (2018).
+
+### 2S-PA-Int
+
+As described in the introduction, 2S-PA-Int involved a two-step process by separately estimating the measurement and the structural models. In this example, we continued to use the dataset `dat.centered` which contained the original first-order indicators to create a new data frame with factor scores, namely `dat.fs`.
+
+```{r 2S-PA-Int step 1: compute factor scores, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+# Compute factor scores
+model.fs <- "PHQ =~ PHQ1 + PHQ2 + PHQ3 + PHQ4 + PHQ5 + PHQ6 + PHQ7 + 
+                    PHQ8 + PHQ9
+             PED =~ PED1 + PED2 + PED3 + PED4 + PED5 + PED6 + PED7
+             SelfE =~ SelfE1 + SelfE2 + SelfE3 + SelfE4 + SelfE5 + 
+                      SelfE6 + SelfE7 + SelfE8 + SelfE9 + SelfE10"
+dat.fs <- get_fs(dat.centered,
+                 model = model.fs,
+                 method = "Bartlett",
+                 std.lv = TRUE)
+```
+First, the model syntax named `model.fs` represented the structure of measurement model under the confirmatory factor analysis (CFA) framework, wherein each latent variable, PHQ, PED, and SelfE, was indicated by their corresponding first-order indicators. Next, a user-defined function `get_fs()`, created by Lai et al. (2024), was used to compute factor scores with corresponding standard errors of measurement. The argument `method` indicated the computation methods of factor scores. Currently the function is able to support `regression` or `Bartlett` factor scores. Technically, the factor scores could be estimated using any appropriate psychometric methods. We used Bartlett factor scores in this demonstration as @estabrookComparisonFactorScore2013a mentioned that Bartlett's method corrected the regression method by correcting the bias in factor means. The `std.lv` argument was set to `TRUE` so that the variances of latent variables were set to unity because latent variables did not have meaningful units naturally [@laiTwostagePathAnalysis2022a].
+
+```{r 2S-PA-Int step 2-a: obtain the single indicator, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# obtain the single indicators 
+dat.fs <- dat.fs[ ,1:6]
+colnames(dat.fs) <- gsub("_", ".", colnames(dat.fs))
+```
+
+```{r 2S-PA-Int step 2: obtain the factor scores with se, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy.opts=list(width.cutoff=50)}
+# Obtain the factor scores as single indicators 
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED*dat.fs$fs.SelfE
+dat.fs$fs.PED.SelfE <- dat.fs$fs.PED.SelfE - mean(dat.fs$fs.PED.SelfE)
+# Compute the standard error of interaction
+dat.fs$fs.PED.SelfE.se <- sqrt(1*dat.fs$fs.PED.se[1]^2 + 
+                               1*dat.fs$fs.SelfE.se[1]^2 + 
+                               dat.fs$fs.PED.se[1]^2*dat.fs$fs.SelfE.se[1]^2)
+```
+
+The creation of SI to the latent interaction term `fs.PED.SelfE` was very similar to what was done in RAPI, such that the factor scores of PED and SelfE were multiplied and then mean-centered subsequently. Furthermore, the formula for computing the standard error of measurement of `fs.PED.SelfE` was the same as the one used in RAPI. Since 2S-PA-Int is able to provide observation-specific standard errors, the outputs of `fs.PED.se` (i.e., standard error of `PED`'s factor score) and `fs.SelfE.se` (i.e., standard error of `SeflE`'s factor score) are two vectors. Given that standard errors are the same for continuous first-order indicators, the first value of each vector can be used in the formula (e.g., `fs.PED.se[1]`).
+
+```{r 2S-PA-Int step 3: model fitting, echo=TRUE, eval = FALSE, message=FALSE, warning=FALSE, size="footnotesize", tidy=TRUE, tidy.opts=list(width.cutoff=50)}
+# Model Specification
+model.2spaint <- "# Measurement model
+                    PHQ =~ 1*fs.PHQ
+                    PED =~ 1*fs.PED
+                    SelfE =~ 1*fs.SelfE
+                    PED.SelfE =~ 1*fs.PED.SelfE
+                  # Error variance
+                    fs.PED ~~ 0.09875111*fs.PED
+                    fs.SelfE ~~ 0.3397634*fs.SelfE
+                    fs.PED.SelfE ~~ 0.22559*fs.PED.SelfE
+                  # Structural model
+                    PHQ ~ PED + SelfE + PED.SelfE"
+# Model Fitting
+fit.2spaint <- sem(data = dat.fs,
+                   model = model.2spaint)
+```
+@laiTwostagePathAnalysis2022a stated that 2S-PA was similar to RAPI when the indicators were treated as continuous with normal distributions. When using Bartlett scores, the model of 2S-PA-Int was similarly specified as that of RAPI, but with more simplicity because the standard errors of measurement were computed in the first stage. Thus, the input of constraints for factor loadings and error variances were even clearer and more straightforward.
+
+A R script of replicable code was available at: https://github.com/Gengrui-Zhang/2S-PA-Int/blob/main/Qual_2_Supplemental_Material/Qual%202%20Replicable%20Code.R.
+
+# Results
+
+The results of using the three methods of estimating the moderating effect of self-esteem on the relation between PED and depression were discussed below. The model fit indexes of the measurement model (without incorporating the interaction effect) with three factors (PED, self-esteem, depression) on original first-order indicators for matched-pair UPI, RAPI, and 2S-PA-Int were $\chi^2(df) = 4542.68(296)$ with $\textit{p} < .000$, RMSEA = .08, CFI = .87, and SRMR = .06. Theoretically a significant $\chi^2$ indicated that the matched-pair UPI model did not fit data well, implying that there were significant discrepancies between the observed and model-implied covariance matrices. However, the sensitivity of $\chi^2$ to sample size has been a well-known issue such that even trivial discrepancies between two matrices could result in significant value, especially with a large dataset [@huCutoffCriteriaFit1999]. As for the other indexes, only CFI was slightly below the acceptable value .90, while RMSEA and SRMR did not exceed the acceptable threshold of .08 and .05, respectively [@browneAlternativeWaysAssessing1992; @joreskogLISRELStructuralEquation1993]. Overall, the measurement model showed adequate fit to the data. 
+
+For the structural model with interaction effect, the matched-pair UPI model showed a marginally acceptable fit with $\chi^2(df) = 4068.36(399)$, RMSEA = .06, CFI = .89, SRMR = .04, wherein $\chi^2$ was significant with $\textit{p} < .000$. Based on the evaluation criteria described above, matched-pair UPI was a reasonably acceptable method in terms of model fit. For RAPI and 2S-PA-Int with structural models, since their models were just-identified, the model fit indices were not informative as there were no discrepancies between observed and model-implied covariance matrices. Thus, we mainly compared the methods on their substantive estimates of path coefficients.
+
+Before the comparison, standardized path coefficients should be computed in order to appropriately compare the relative strengths of latent predictors regardless of original units of measurement and interpret the results. @wuAppropriateStandardizedEstimates2011 derived the formula of standardizing path coefficients. In the context of the current study, the formula of standardization for the latent interaction estimate was 
+\begin{equation}
+\gamma_{3}'' = \gamma_{3} \frac{\hat{\sigma}_{\xi_{PED}}\hat{\sigma}_{\xi_{SelfE}}}{\hat{\sigma}_{PHQ}},
+\end{equation}
+in which $\gamma_{3}''$ was the appropriately standardized coefficient and  $\gamma_{3}$ was the original coefficient of the interaction estimate. $\hat{\sigma}_{\xi_{PED}}$, $\hat{\sigma}_{\xi_{SelfE}}$ were square root of the sample-estimated true variances (i.e., variances excluding measurement error) of first-order latent predictors, while $\hat{\sigma}_{PHQ}$ was square root of the dependent variable's total variance. The formulas for first-order effects were simpler: $\gamma_{1}'' = \gamma_{1}\hat{\sigma}_{\xi_{PED}}/\hat{\sigma}_{PHQ}$ and $\gamma_{2}'' = \gamma_{2}\hat{\sigma}_{\xi_{SelfE}}/\hat{\sigma}_{PHQ}$, where $\gamma_{1}''$ and $\gamma_{2}''$ were standardized coefficients of `PED` and `SelfE`. To implement the appropriate standardization procedure in R, an example syntax on structural model was demonstrated below:
+
+```{r model example, echo=TRUE, eval=FALSE}
+"# Latent variance
+   PED ~~ v1*PED
+   SelfE ~~ v2*SelfE
+   PED.SelfE ~~ v3*PED.SelfE
+ # Latent covariance
+   PED ~~ v12*SelfE
+   PED ~~ v13*PED.SelfE
+   SelfE ~~ v23*PED.SelfE
+ # Residual variance of DV
+   PHQ ~~ v4*PHQ
+ # Structural model
+   PHQ ~ g1*PED + g2*SelfE + g3*PED.SelfE
+ # Standardized
+   vy := g1^2*v1 + g2^2*v2 + g3^2*v3 + 2*g1*g2*v12 + 
+         2*g1*g3*v13 + 2*g2*g3*v23 + v4
+   gamma1 := g1*sqrt(v1)/sqrt(vy)
+   gamma2 := g2*sqrt(v2)/sqrt(vy)
+   gamma3 := g3*sqrt(v1)*sqrt(v2)/sqrt(vy)"
+```
+We added user-defined labels for unstandardized path coefficients (i.e., $g_{1}$, $g_{2}$, and $g_{3}$) and standardized coefficients (i.e., $\gamma_{1}$, $\gamma_{2}$, and $\gamma_{3}$), where standardized coefficients were defined using latent variables' sample-estimated variances (i.e., $v_{1}$, $v_{2}$, $v_{3}$, and $v_{y}$). Since there was no way to directly label total variance of the dependent variable in `lavaan`, we used $v_{4}$ to indicate the residual variance of PHQ, $\hat{\zeta}_{PHQ}$. Considering $\xi_{PED}$ and $\xi_{SelfE}$ were allowed to correlate in our hypothetical model, we further used labels to indicate the covariances between latent variables (i.e., $v12$, $v_{13}$, and $v_{23}$). Then the total variance of PHQ, $v_{y}$, could be specified using unstandardized coefficients, latent variances, covariances between latent variables, and the residual variance of PEQ.
+
+```{r table 1: model fit of measurement model, echo=FALSE}
+fit.index <- data.frame(Method = c("Matched-pair UPI", "RAPI", "2S-PA-Int"),
+                        chi = c("4068.356", "4542.678", "4542.678"),
+                        df = c("399", "296", "296"),
+                        CFI = c(".886", ".866", ".866"),
+                        TLI = c(".876", ".853", ".853"),
+                        RMSEA = c(".061", ".077", ".077"),
+                        SRMR = c(".044", ".055", ".055"))
+colnames(fit.index) <- c("Method", "$\\chi^2$","$\\textit{df}$", "$CFI$", "$TLI$", "$RMSEA$","$SRMR$")
+
+fit.index.table <- apa_table(fit.index,
+                             escape = F,
+                             caption = "Model Fit Indexes for Measurement Model",
+                             align = c(rep("c", ncol(fit.index))),
+                             landscape = TRUE)
+fit.index.table
+```
+
+
+```{r table 2: estimates of path coefficients, echo=FALSE}
+path.coef <- data.frame(Method = c("Matched-pair UPI", "RAPI", "2S-PA-Int"),
+                        Unstandardized = c(".096", ".149", ".153"),
+                        `$\\gamma_{PED}$` = c(".206", ".245", ".145"),
+                        `$\\textit_{SE}$` = c(".018", ".017", ".019"),
+                        `$\\textit_{p}$` = c("<.001", "<.001", "<.001"),
+                        Unstandardized = c("-.515", "-.701", "-.851"),
+                        `$\\gamma_{SelfE}$` = c("-.651", "-.559", "-.707"),
+                        `$\\textit_{SE}$` = c(".015", ".015", ".017"),
+                        `$\\textit_{p}$` = c("<.001", "<.001", "<.001"),
+                        Unstandardized = c("-.041", "-.085", "-.06"),
+                        `$\\gamma_{PED.SelfE}$` = c("-.067", "-.072", "-.05"),
+                        `$\\textit_{SE}$` = c(".016", ".016", ".014"),
+                        `$\\textit_{p}$` = c("<.001", "<.001", ".001"))
+colnames(path.coef) <- c("Method", "$\\gamma_{1}$","$\\gamma_{1}''$", "$\\textit{SE}$", "$\\textit{p}$",
+                         "$\\gamma_{2}$","$\\gamma_{2}''$", "$\\textit{SE}$", "$\\textit{p}$",
+                         "$\\gamma_{3}$","$\\gamma_{3}''$", "$\\textit{SE}$", "$\\textit{p}$")
+
+path.coef.table <- apa_table(path.coef,
+                             escape = F,
+                             caption = "Effects of Perceived Everyday Discrimination, Sefl-Esteem, and Their Interaction on Depression.",
+                             align = c(rep("c", ncol(path.coef))),
+                             col_spanners = list(`PED` = c(2, 5), `SelfE` = c(6, 9), `PED*SelfE` = c(10, 13)),
+                             landscape = TRUE,
+                             note = "$\\gamma$ = Unstandardized path coefficient; $\\gamma''$ = Standardized path coefficient; $\\textit{SE}$ = Standard error of standardized path coefficient; $\\textit{p}$ = p-value of standardized path coefficient.")
+
+path.coef.table
+```
+
+A summary of standardized estimates by three methods were listed in Table 1. In general, the structural path coefficients of PED, self-esteem, and their interaction effect on depression were similar across methods. It was found that PED had significantly positive effect on depression, meaning that participants who reported higher PED were scored higher on the PHQ-9 scale and more likely to have depressive symptoms. Self-esteem, however, had significantly negative effect on depression, and it implied that higher levels of self-esteem were associated with lower levels of depression. The interaction effect of self-esteem and PED on depression estimated by three methods were close to each other ($\gamma_{3}''$ = -.067, $\textit{SE}$ = .016, $\textit{p}$ < .001 for matched-pair UPI; $\gamma_{3}''$ = -.072, $\textit{SE}$ = .016, $\textit{p}$ < .001 for RAPI; $\gamma_{3}''$ = -.05, $\textit{SE}$ = .014, $\textit{p}$ = .001 for 2S-PA-Int), indicating that higher levels of self-esteem appeared to buffer or reduce the adverse impact of PED on depression. Overall, all the three methods were able to detect significant first-order and interaction effects as hypothesized in our theory. 
+
+# Discussion
+
+Testing for interaction effects is usually conducted in regression-based models with observed variables, which likely reduces statistical power to detect true effects due to ignored measurement error [@nakagawaFarewellBonferroniProblems2004; @lodderModelingInteractionsLatent2019]. Latent variables in the SEM framework can account for measurement error, and various latent interaction models that can model interaction effects among latent variables have been developed in the past 20 years. A theoretical model investigating how self-esteem altered the effect of PED on depression was tested using three latent interaction models of product indicator method in the current study, and we provided detailed step-by-step demonstrations of applying matched-pair UPI, RAPI, and 2S-PA-Int on the TAS2019 dataset from the PSID database. 
+
+All of the approaches found a significant latent interaction effect of self-esteem, and the effect had similar magnitude across methods (i.e., .05 - .072), indicating that three methods were comparably acceptable to fit the empirical data under the hypothesized model. 2S-PA-Int produced the smallest magnitude of interaction effect (.05) with the smallest value of standard error (.014), whereas RAPI produced the largest magnitude (.072). This finding aligned with the simulation study comparing the three methods on a generated dataset, such that 2S-PA-Int tended to be more conservative in estimating the interaction effect, while RAPI and matched-pair UPI were more likely to overestimate the effect especially when sample size is small (Hsiao et al., 2021; Marsh et al., 2004). Besides, the standard error of the interaction effect for 2S-PA-Int was slightly smaller than that produced by RAPI (.016) and matched-pair UPI (.016), implying that 2S-PA-Int is more likely to estimate the interaction effect with more stability. Nevertheless, the differences on standardized coefficients and standard errors were not large and the three methods all showed good performance. 
+
+A major limitation of this study is that most of the measures used in TAS2019 were Likert-scale data with a few response categories. Thus, strictly speaking, these measures should be regarded as categorical items with non-normal distributions. Given that the intricate details of implementing 2S-PA-Int on categorical data are under exploration, we treated the measures as continuous data and used uniform standard error of measurement to constrain the factor scores as SIs, which could result in biased estimates of interaction effect with inflated standard error. Besides, similar to 2S-PA-Int, the RAPI method was tested only on continuous data in simulation studies, and its performance on categorical indicators should be systematically assessed in varied conditions. The current acceptable results might not be convincing enough due to sampling variability. However, since the sample size of the TAS2019 dataset was large enough for empirical studies, the results seemed reasonable for 2S-PA-Int and RAPI. For future studies, a simulation study of comparing the three methods on categorical data can be conducted to systematically evaluate their performance under the violation of normal distributions. 
+
+```{r figure-1, fig.cap="Hypothesized Model of Matched-Pair UPI. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by their corresponding first-order indicators. The latent interaction term, PED.SelfE, is indicated by formed PIs. $\\zeta$ is the disturbance of PHQ. The error terms of indicators were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.", fig.align='center', out.width="100%"}
+knitr::include_graphics("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/Introduction/Plots/slide1.png")
+```
+
+```{r figure-2, fig.cap="Hypothesized Model of RAPI. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by corresponding single indicators using mean scores. The latent interaction term is indicated by the product of SIs of PED and SelfE. $\\zeta$ is the disturbance of PHQ. The error terms of SIs were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.", fig.align='center', out.width="100%"}
+knitr::include_graphics("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/Introduction/Plots/slide2.png")
+```
+
+```{r figure-3, fig.cap="Hypothesized Model of 2S-PA-Int. PED, SelfE, and PHQ represent the latent variables of perceived everyday discrimination, self-esteem, and depression, which are indicated by corresponding single indicators using factor scores. The latent interaction term is indicated by the product of SIs of PED and SelfE. $\\zeta$ is the disturbance of PHQ. The error terms of SIs were not shown due to limited space. PED, SelfE, and PED.SelfE are allowed to correlate with each other.", fig.align='center', out.width="100%"}
+knitr::include_graphics("/Users/jimmy_z/R Projects/R2spa/Qual 2 Paper Draft/Introduction/Plots/slide3.png")
+```
+
+\newpage
+
+# References
+
+::: {#refs custom-style="Bibliography"}
+:::

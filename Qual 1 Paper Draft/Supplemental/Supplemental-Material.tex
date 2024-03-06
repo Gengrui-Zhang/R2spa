@@ -1,0 +1,317 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  man]{apa6}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{english}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+% Manuscript styling
+\usepackage{upgreek}
+\captionsetup{font=singlespacing,justification=justified}
+
+% Table formatting
+\usepackage{longtable}
+\usepackage{lscape}
+% \usepackage[counterclockwise]{rotating}   % Landscape page setup for large tables
+\usepackage{multirow}		% Table styling
+\usepackage{tabularx}		% Control Column width
+\usepackage[flushleft]{threeparttable}	% Allows for three part tables with a specified notes section
+\usepackage{threeparttablex}            % Lets threeparttable work with longtable
+
+% Create new environments so endfloat can handle them
+% \newenvironment{ltable}
+%   {\begin{landscape}\centering\begin{threeparttable}}
+%   {\end{threeparttable}\end{landscape}}
+\newenvironment{lltable}{\begin{landscape}\centering\begin{ThreePartTable}}{\end{ThreePartTable}\end{landscape}}
+
+% Enables adjusting longtable caption width to table width
+% Solution found at http://golatex.de/longtable-mit-caption-so-breit-wie-die-tabelle-t15767.html
+\makeatletter
+\newcommand\LastLTentrywidth{1em}
+\newlength\longtablewidth
+\setlength{\longtablewidth}{1in}
+\newcommand{\getlongtablewidth}{\begingroup \ifcsname LT@\roman{LT@tables}\endcsname \global\longtablewidth=0pt \renewcommand{\LT@entry}[2]{\global\advance\longtablewidth by ##2\relax\gdef\LastLTentrywidth{##2}}\@nameuse{LT@\roman{LT@tables}} \fi \endgroup}
+
+% \setlength{\parindent}{0.5in}
+% \setlength{\parskip}{0pt plus 0pt minus 0pt}
+
+% Overwrite redefinition of paragraph and subparagraph by the default LaTeX template
+% See https://github.com/crsh/papaja/issues/292
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\itshape\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-\z@\relax}%
+  {\normalfont\normalsize\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+\makeatletter
+\usepackage{etoolbox}
+\patchcmd{\maketitle}
+  {\section{\normalfont\normalsize\abstractname}}
+  {\section*{\normalfont\normalsize\abstractname}}
+  {}{\typeout{Failed to patch abstract.}}
+\patchcmd{\maketitle}
+  {\section{\protect\normalfont{\@title}}}
+  {\section*{\protect\normalfont{\@title}}}
+  {}{\typeout{Failed to patch title.}}
+\makeatother
+
+\usepackage{xpatch}
+\makeatletter
+\xapptocmd\appendix
+  {\xapptocmd\section
+    {\addcontentsline{toc}{section}{\appendixname\ifoneappendix\else~\theappendix\fi\\: #1}}
+    {}{\InnerPatchFailed}%
+  }
+{}{\PatchFailed}
+\DeclareDelayedFloatFlavor{ThreePartTable}{table}
+\DeclareDelayedFloatFlavor{lltable}{table}
+\DeclareDelayedFloatFlavor*{longtable}{table}
+\makeatletter
+\renewcommand{\efloat@iwrite}[1]{\immediate\expandafter\protected@write\csname efloat@post#1\endcsname{}}
+\makeatother
+\usepackage{lineno}
+
+\linenumbers
+\usepackage{csquotes}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Supplemental Document: All-Pair UPI},
+  pdfauthor={Gengrui (Jimmy) Zhang1},
+  pdflang={en-EN},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Supplemental Document: All-Pair UPI}
+\author{Gengrui (Jimmy) Zhang\textsuperscript{1}}
+\date{}
+
+
+\shorttitle{Supplemental}
+
+\authornote{
+
+The authors made the following contributions. Gengrui (Jimmy) Zhang: Conceptualization, Writing - Original Draft Preparation, Writing - Review \& Editing.
+
+Correspondence concerning this article should be addressed to Gengrui (Jimmy) Zhang. E-mail: \href{mailto:gengruiz@email.com}{\nolinkurl{gengruiz@email.com}}
+
+}
+
+\affiliation{\vspace{0.5cm}\textsuperscript{1} University of Southhern California}
+
+\begin{document}
+\maketitle
+
+\hypertarget{performance-of-all-pair-upi-on-estimating-gamma_xm}{%
+\section{\texorpdfstring{Performance of All-Pair UPI on Estimating \(\gamma_{xm}\)}{Performance of All-Pair UPI on Estimating \textbackslash gamma\_\{xm\}}}\label{performance-of-all-pair-upi-on-estimating-gamma_xm}}
+
+\begin{table}[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+
+\begin{tabular}{ccccc}
+\toprule
+$\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Congeneric Factor} & \multicolumn{1}{c}{Congeneric}\\
+\midrule
+100 & 0 & -0.01 (0) & -0.14 (-0.02) & -0.14 (-0.02)\\
+ & 0.3 & -0.05 (-0.01) & -0.16 (-0.02) & -0.11 (-0.01)\\
+ & 0.6 & 0.03 (0) & -0.12 (-0.01) & -0.15 (-0.01)\\
+250 & 0 & -0.04 (0) & -0.23 (-0.02) & -0.2 (-0.01)\\
+ & 0.3 & -0.05 (0) & -0.19 (-0.01) & -0.25 (-0.02)\\
+ & 0.6 & 0.02 (0) & -0.17 (-0.01) & -0.19 (-0.01)\\
+500 & 0 & -0.01 (0) & -0.31 (-0.01) & -0.3 (-0.01)\\
+ & 0.3 & 0 (0) & -0.28 (-0.01) & -0.32 (-0.01)\\
+ & 0.6 & 0.01 (0) & -0.27 (-0.01) & -0.32 (-0.01)\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Raw biases are shown in pararenthese. Note that numerical values have been rounded to two decimal places for consistency, which means that some values, while very close to 0 but not exactly 0, are displayed as 0.}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table}
+
+\begin{table}[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:MAD relative SE bias with outliers proportion}Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\%$) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+
+\begin{tabular}{ccccc}
+\toprule
+$\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Congeneric Factor} & \multicolumn{1}{c}{Congeneric}\\
+\midrule
+100 & 0 & -1.67 (2.35) & -7.19 (3.66) & -5.93 (3.65)\\
+ & 0.3 & -2.37 (3.15) & -7.19 (3.40) & -3.21 (3.95)\\
+ & 0.6 & -5.02 (2.10) & -4.76 (2.20) & -6.02 (2.55)\\
+250 & 0 & -3.19 (2.15) & -3.34 (1.65) & -2.69 (1.20)\\
+ & 0.3 & -0.92 (1.80) & -3.28 (2.15) & 0 (1.20)\\
+ & 0.6 & -2.37 (1.60) & -6.21 (1.35) & -0.97 (1.30)\\
+500 & 0 & -4.71 (1.35) & -3.88 (1.05) & -6.98 (1.40)\\
+ & 0.3 & -2.67 (1.25) & -3.75 (1.10) & -5.76 (0.75)\\
+ & 0.6 & -5.78 (0.95) & -5.38 (0.70) & -3.93 (1.30)\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Outlier proportions of SE are shown in parenthese and all the numbers were percentages.}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table}
+
+\begin{table}[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:coverage rate}95 $\%$ Confidence Interval (CI) Coverage Rate for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+
+\begin{tabular}{ccccc}
+\toprule
+$\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Congeneric Factor} & \multicolumn{1}{c}{Congeneric}\\
+\midrule
+100 & 0 & 93.85 & 92.28 & 91.15\\
+ & 0.3 & 93.35 & 91.50 & 91.85\\
+ & 0.6 & 94.40 & 92.80 & 91.20\\
+250 & 0 & 93.85 & 93.15 & 93.25\\
+ & 0.3 & 93.70 & 92.60 & 91.75\\
+ & 0.6 & 94.65 & 92.95 & 92.70\\
+500 & 0 & 94.50 & 92.15 & 92.80\\
+ & 0.3 & 93.95 & 91.65 & 91.65\\
+ & 0.6 & 94.70 & 92.30 & 92.10\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table}
+
+\begin{table}[tbp]
+
+\begin{center}
+\begin{threeparttable}
+
+\caption{\label{tab:rmse}Root Mean Square Error (RMSE) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+
+\begin{tabular}{ccccc}
+\toprule
+$\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}{Parallel} & \multicolumn{1}{c}{Congeneric Factor} & \multicolumn{1}{c}{Congeneric}\\
+\midrule
+100 & 0 & 0.12 & 0.12 & 0.12\\
+ & 0.3 & 0.11 & 0.11 & 0.11\\
+ & 0.6 & 0.10 & 0.09 & 0.10\\
+250 & 0 & 0.07 & 0.07 & 0.07\\
+ & 0.3 & 0.07 & 0.07 & 0.07\\
+ & 0.6 & 0.06 & 0.06 & 0.06\\
+500 & 0 & 0.05 & 0.05 & 0.05\\
+ & 0.3 & 0.05 & 0.05 & 0.05\\
+ & 0.6 & 0.04 & 0.04 & 0.04\\
+\bottomrule
+\addlinespace
+\end{tabular}
+
+\begin{tablenotes}[para]
+\normalsize{\textit{Note.} $\textit{N}$ = sample size; $Corr(\xi_{x}, \xi_{m})$ = correlation between $\xi_{x}$ and $\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.}
+\end{tablenotes}
+
+\end{threeparttable}
+\end{center}
+
+\end{table}
+
+
+\end{document}

@@ -1,0 +1,315 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  man]{apa7}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{english}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+\usepackage{etoolbox}
+\AtBeginEnvironment{verbatim}{\small}
+\usepackage{setspace}
+\AtBeginEnvironment{verbatim}{\begin{singlespace}}
+\AtEndEnvironment{verbatim}{\end{singlespace}}
+% Add any other preamble commands or LaTeX package inclusions here
+% Manuscript styling
+\usepackage{upgreek}
+\captionsetup{font=singlespacing,justification=justified}
+
+% Table formatting
+\usepackage{longtable}
+\usepackage{lscape}
+% \usepackage[counterclockwise]{rotating}   % Landscape page setup for large tables
+\usepackage{multirow}		% Table styling
+\usepackage{tabularx}		% Control Column width
+\usepackage[flushleft]{threeparttable}	% Allows for three part tables with a specified notes section
+\usepackage{threeparttablex}            % Lets threeparttable work with longtable
+
+% Create new environments so endfloat can handle them
+% \newenvironment{ltable}
+%   {\begin{landscape}\centering\begin{threeparttable}}
+%   {\end{threeparttable}\end{landscape}}
+\newenvironment{lltable}{\begin{landscape}\centering\begin{ThreePartTable}}{\end{ThreePartTable}\end{landscape}}
+
+% Enables adjusting longtable caption width to table width
+% Solution found at http://golatex.de/longtable-mit-caption-so-breit-wie-die-tabelle-t15767.html
+\makeatletter
+\newcommand\LastLTentrywidth{1em}
+\newlength\longtablewidth
+\setlength{\longtablewidth}{1in}
+\newcommand{\getlongtablewidth}{\begingroup \ifcsname LT@\roman{LT@tables}\endcsname \global\longtablewidth=0pt \renewcommand{\LT@entry}[2]{\global\advance\longtablewidth by ##2\relax\gdef\LastLTentrywidth{##2}}\@nameuse{LT@\roman{LT@tables}} \fi \endgroup}
+
+% \setlength{\parindent}{0.5in}
+% \setlength{\parskip}{0pt plus 0pt minus 0pt}
+
+% Overwrite redefinition of paragraph and subparagraph by the default LaTeX template
+% See https://github.com/crsh/papaja/issues/292
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\itshape\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-\z@\relax}%
+  {\normalfont\normalsize\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+\makeatletter
+\usepackage{etoolbox}
+\patchcmd{\maketitle}
+  {\section{\normalfont\normalsize\abstractname}}
+  {\section*{\normalfont\normalsize\abstractname}}
+  {}{\typeout{Failed to patch abstract.}}
+\patchcmd{\maketitle}
+  {\section{\protect\normalfont{\@title}}}
+  {\section*{\protect\normalfont{\@title}}}
+  {}{\typeout{Failed to patch title.}}
+\makeatother
+
+\usepackage{xpatch}
+\makeatletter
+\xapptocmd\appendix
+  {\xapptocmd\section
+    {\addcontentsline{toc}{section}{\appendixname\ifoneappendix\else~\theappendix\fi\\: #1}}
+    {}{\InnerPatchFailed}%
+  }
+{}{\PatchFailed}
+\DeclareDelayedFloatFlavor{ThreePartTable}{table}
+\DeclareDelayedFloatFlavor{lltable}{table}
+\DeclareDelayedFloatFlavor*{longtable}{table}
+\makeatletter
+\renewcommand{\efloat@iwrite}[1]{\immediate\expandafter\protected@write\csname efloat@post#1\endcsname{}}
+\makeatother
+\usepackage{lineno}
+
+\linenumbers
+\usepackage{csquotes}
+\makeatletter
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\parindent}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-1em}%
+  {\normalfont\normalsize\bfseries\typesectitle}}
+
+\renewcommand{\subparagraph}[1]{\@startsection{subparagraph}{5}{1em}%
+  {0\baselineskip \@plus 0.2ex \@minus 0.2ex}%
+  {-\z@\relax}%
+  {\normalfont\normalsize\bfseries\itshape\hspace{\parindent}{#1}\textit{\addperi}}{\relax}}
+\makeatother
+
+\usepackage{colortbl}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Results},
+  pdfauthor={Jimmy},
+  pdflang={en-EN},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Results}
+\author{Jimmy\textsuperscript{}}
+\date{}
+
+
+\shorttitle{SHORT TITLE}
+
+\affiliation{\phantom{0}}
+
+\begin{document}
+\maketitle
+
+\hypertarget{results}{%
+\section{Results}\label{results}}
+
+In this section, we provided and summarized the results of using the three methods of estimating The moderating effect of self-esteem on the relationship between PED and depression. For model fit indexes, the matched-pair UPI model showed a marginally acceptable fit with \(\chi^2(df) = 4068.36(399)\), RMSEA = .06, CFI = .89, SRMR = .04, wherein the \(\chi^2\) was significant with \(\textit{p} < .000\). Theoretically a significant \(\chi^2\) represented indicated that the matched-pair UPI model did not fit the data well, implying that there were significant discrepancies between the observed and model-implied covariance matrices. However, the sensitivity of \(\chi^2\) to sample size has been a well-known issue such that even trivial discrepancies between two matrices could result in significant index, especially with a large dataset (Hu \& Bentler, 1999). As for the other indexes, only CFI was slightly below the acceptable value .90, RMSEA and SRMR were below the acceptable values .08 and .05, respectively (Browne \& Cudeck, 1993; Jöreskog \& Sörbom, 1993; Bentler \& Hu, 2009). Overall, matched-pair UPI was a reasonably acceptable method in terms of model fit. The model fit evaluation was not meaningful for RAPI and 2S-PA-Int in this study because their models were just-identified, meaning that fit indices were not informative as there were no discrepancies between observed and model-implied covariance matrices. Thus, we mainly compared the methods on their substantive estimates of path coefficients.
+
+Before the comparison, standardized interaction estimates should be computed in order to appropriately compare the relative strengths of unstandardized coefficients regardless of original units of measurement, and interpret the results. Wen et al.~(2010) derived the formula of converting unstandardized coefficients. In the context of this study, the formula of standardization for the latent interaction estimate was
+\begin{equation}
+\gamma_{3}'' = \gamma_{3} \frac{\hat{\sigma}_{\xi_{PED}}\hat{\sigma}_{\xi_{SelfE}}}{\hat{\sigma}_{PHQ}},
+\end{equation}
+in which \(\gamma_{3}''\) was the appropriately standardized coefficient and \(\gamma_{3}\) was the original coefficient of the interaction estimate. \(\hat{\sigma}_{\xi_{PED}}\), \(\hat{\sigma}_{\xi_{SelfE}}\) were the standard deviations of true variances (i.e., variances exclusing measurement error) of first-order latent predictors, while \(\hat{\sigma}_{PHQ}\) was the standard deviation of the dependent variable's total variance. The formulas for first-order effects were simpler: \(\gamma_{1}'' = \gamma_{1}\hat{\sigma}_{\xi_{PED}}/\hat{\sigma}_{PHQ}\) and \(\gamma_{2}'' = \gamma_{2}\hat{\sigma}_{\xi_{SelfE}}/\hat{\sigma}_{PHQ}\), where \(\gamma_{1}''\) and \(\gamma_{2}''\) were the standardized coefficients of \(\xi_{PED}\) and \(\xi_{SelfE}\).
+To implement the appropriate standardization procedure in R, an example syntax on the 2S-PA-Int model was demonstrated below:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model}\FloatTok{.2}\NormalTok{spaint }\OtherTok{\textless{}{-}} \StringTok{"\# Measurement model}
+\StringTok{                    PHQ =\textasciitilde{} 1*fs.PHQ}
+\StringTok{                    PED =\textasciitilde{} 1*fs.PED}
+\StringTok{                    SelfE =\textasciitilde{} 1*fs.SelfE}
+\StringTok{                    PED.SelfE =\textasciitilde{} 1*fs.PED.SelfE}
+\StringTok{                  \# Error variance}
+\StringTok{                    fs.PED \textasciitilde{}\textasciitilde{} 0.09875111*fs.PED}
+\StringTok{                    fs.SelfE \textasciitilde{}\textasciitilde{} 0.3397634*fs.SelfE}
+\StringTok{                    fs.PED.SelfE \textasciitilde{}\textasciitilde{} 0.22559*fs.PED.SelfE}
+\StringTok{                  \# Latent variance}
+\StringTok{                    PED \textasciitilde{}\textasciitilde{} v1*PED}
+\StringTok{                    SelfE \textasciitilde{}\textasciitilde{} v2*SelfE}
+\StringTok{                    PED.SelfE \textasciitilde{}\textasciitilde{} v3*PED.SelfE}
+\StringTok{                  \# Latent covariance}
+\StringTok{                    PED \textasciitilde{}\textasciitilde{} v12*SelfE}
+\StringTok{                    PED \textasciitilde{}\textasciitilde{} v13*PED.SelfE}
+\StringTok{                    SelfE \textasciitilde{}\textasciitilde{} v23*PED.SelfE}
+\StringTok{                  \# Residual variance of DV}
+\StringTok{                    PHQ \textasciitilde{}\textasciitilde{} v4*PHQ}
+\StringTok{                  \# Structural model}
+\StringTok{                    PHQ \textasciitilde{} g1*PED + g2*SelfE + g3*PED.SelfE}
+\StringTok{                  \# Standardized}
+\StringTok{                    vy := g1\^{}2*v1 + g2\^{}2*v2 + g3\^{}2*v3 + 2*g1*g2*v12 + }
+\StringTok{                           2*g1*g3*v13 + 2*g2*g3*v23 + v4}
+\StringTok{                    gamma1 := g1*sqrt(v1)/sqrt(vy)}
+\StringTok{                    gamma2 := g2*sqrt(v2)/sqrt(vy)}
+\StringTok{                    gamma3 := g3*sqrt(v1)*sqrt(v2)/sqrt(vy)"}
+\end{Highlighting}
+\end{Shaded}
+
+We added user-defined labels (i.e., \(g_{1}\), \(g_{2}\), and \(g_{3}\)) for unstandardized path coefficients and the standardized coefficients, namely \(\gamma_{1}\), \(\gamma_{2}\), and \(\gamma_{3}\), were defined using the formulas mentioned above. Specifically, \(v_{1}\), \(v_{2}\) and \(v_{3}\) were labels of latent variables' sample-estimated variances. Since there was no way to directly label total variance of the dependent variable in \texttt{lavaan}, we used \(v_{4}\) to indicate the residual variance of PHQ, \(\zeta_{PHQ}\). Considering \(\xi_{PED}\) and \(\xi_{SelfE}\) were allowed to correlate in our hypothetical model, we further used labels to indicate the covariances between latent variables. Then the total variance of PHQ, \(v_{y}\), could be specified using unstandardized coefficients, latent variances, covariances between latent variables, and the residual variance of PEQ.
+
+\begin{lltable}
+
+\begin{TableNotes}[para]
+\normalsize{\textit{Note.} $\gamma$ = Unstandardized path coefficient; $\gamma''$ = Standardized path coefficient; $\textit{SE}$ = Standard error of standardized path coefficient; $\textit{p}$ = p-value of standardized path coefficient.}
+\end{TableNotes}
+
+\begin{longtable}{ccccccccccccc}\noalign{\getlongtablewidth\global\LTcapwidth=\longtablewidth}
+\caption{\label{tab:table 1: Model fit measures}Effects of Perceived Everyday Discrimination, Sefl-Esteem, and Their Interaction on Depression.}\\
+\toprule
+ & \multicolumn{4}{c}{PED} & \multicolumn{4}{c}{SelfE} & \multicolumn{4}{c}{PED*SelfE} \\
+\cmidrule(r){2-5} \cmidrule(r){6-9} \cmidrule(r){10-13}
+Method & \multicolumn{1}{c}{$\gamma_{1}$} & \multicolumn{1}{c}{$\gamma_{1}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{2}$} & \multicolumn{1}{c}{$\gamma_{2}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{3}$} & \multicolumn{1}{c}{$\gamma_{3}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$}\\
+\midrule
+\endfirsthead
+\caption*{\normalfont{Table \ref{tab:table 1: Model fit measures} continued}}\\
+\toprule
+ & \multicolumn{4}{c}{PED} & \multicolumn{4}{c}{SelfE} & \multicolumn{4}{c}{PED*SelfE} \\
+\cmidrule(r){2-5} \cmidrule(r){6-9} \cmidrule(r){10-13}
+Method & \multicolumn{1}{c}{$\gamma_{1}$} & \multicolumn{1}{c}{$\gamma_{1}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{2}$} & \multicolumn{1}{c}{$\gamma_{2}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$} & \multicolumn{1}{c}{$\gamma_{3}$} & \multicolumn{1}{c}{$\gamma_{3}''$} & \multicolumn{1}{c}{$\textit{SE}$} & \multicolumn{1}{c}{$\textit{p}$}\\
+\midrule
+\endhead
+Matched-pair UPI & .096 & .206 & .018 & <.001 & -.515 & -.651 & .015 & <.001 & -.041 & -.067 & .016 & <.001\\
+RAPI & .149 & .245 & .017 & <.001 & -.701 & -.559 & .015 & <.001 & -.085 & -.072 & .016 & <.001\\
+2S-PA-Int & .153 & .145 & .019 & <.001 & -.851 & -.707 & .017 & <.001 & -.06 & -.05 & .014 & .001\\
+\bottomrule
+\addlinespace
+\insertTableNotes
+\end{longtable}
+
+\end{lltable}
+
+A summary of standardized estimates of the three methods were listed in Table 1. In general, the structural path coefficients of PED, self-esteem, and their interaction effect on depression were similar for matched-pair UPI, RAPI, and 2S-PA-Int. It was found that PED had significantly positive effect on depression for the three methods, meaning that participants who reported higher PED were scored higher on the PHQ-9 scale and more likely to have depressive symptoms. Self-esteem, however, had significantly negative effect on depression, and it implied that higher levels of self-esteem were associated with lower levels of depression. The interaction effects of self-esteem and PED on depression estimated by the three methods were close to each other (\(\gamma_{3}''\) = -.067, \(\textit{SE}\) = .016, \(\textit{p}\) \textless{} .001 for matched-pair UPI; \(\gamma_{3}''\) = -.072, \(\textit{SE}\) = .016, \(\textit{p}\) \textless{} .001 for RAPI; \(\gamma_{3}''\) = -.05, \(\textit{SE}\) = .014, \(\textit{p}\) = .001 for 2S-PA-Int), indicating that higher levels of self-esteem appeared to buffer or reduce the adverse impact of PED on depression. Overall, all the three methods were able to detect significant first-order effects and the interaction effect as hypothesized in the theory.
+
+\hypertarget{discussion}{%
+\section{Discussion}\label{discussion}}
+
+
+\end{document}
