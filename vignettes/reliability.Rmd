@@ -1,6 +1,6 @@
 ---
 title: "Reliability of Factor Scores"
-author: "Mark Lai"
+author: "Yixiao Li, Winnie Tse, Mark Lai"
 date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_vignette:
@@ -9,11 +9,25 @@ vignette: >
   %\VignetteIndexEntry{reliability}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
+  - \DeclareMathOperator{\Tr}{\mathrm{Tr}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+TODO:
+
+- [ ] Implement the three reliability estimation (quadratic root method as experimental)
+- [ ] Perform a small-scale simulation
+- [x] Write down math equations for all methods
+- [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
+
+In this vignette, we explore analytically the reliability of factor scores, and evaluate them using simulated data.
 
 ```{r}
 library(lavaan)
@@ -21,6 +35,103 @@ library(R2spa)
 library(tidyr)
 library(ggplot2)
 ```
+
+## Analytic Formula for Factor Scores
+
+### Theoretical Values
+
+> aka, using true parameter values to compute weights
+
+From a unidimensional factor model $\bv y= \bv \lambda \eta + \bv e$, for factor scores of the form
+
+$$
+\begin{aligned}
+  \tilde \eta & = \bv a' (\bv y - \hat {\bv \mu}) = \bv a' (\bv \nu + \bv \lambda \eta + \bv e - \bv \nu) \\
+  & = \bv a' \bv \lambda \eta + \bv a' \bv e,
+\end{aligned}
+$$
+
+where we set $\E(\eta)$ = 0 so that $\hat {\bv \mu}$ = $\bv \nu$, the theoretical reliability formula of factor scores, assuming no sampling errors in the weights is given by 
+
+$$
+\rho = \frac{(\bv a' \bv \lambda)^2}{(\bv a'\bv \lambda)^2 + \bv a' \bv \Theta \bv a},
+$$
+
+assuming that we set $\Var(\eta) = 1$.
+
+#### Regression factor scores
+
+With $\bv a$ = $(\bv \Sigma^{-1} \bv \lambda)$,
+
+$$
+\begin{align*}
+\text{Rel} 
+&= \frac{(\bv \lambda' \bv \Sigma^{-1} \bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}\bv \lambda \bv \lambda \bv \Sigma^{-1}\bv \lambda + \bv \lambda'\bv \Sigma^{-1}\bv \Theta \bv \Sigma^{-1}\bv \lambda} \\
+&= \frac{(\bv \lambda'\bv \Sigma^{-1}\bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}(\bv \lambda\bv \lambda'+\bv \Theta)\bv \Sigma^{-1}\bv \lambda} \\
+&= \frac{(\bv \lambda'\bv \Sigma^{-1}\bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}\bv \lambda} \\
+&= \bv a' \bv \lambda
+\end{align*}
+$$
+
+#### Bartlett factor scores
+
+With $\bv a$ = $\bv \Theta^{-1} \bv \lambda (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}$, and thus $\bv a' \bv \lambda = 1$,
+
+$$
+\begin{align*}
+\text{Rel} 
+&= \frac{1}{1 + (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1} \bv \lambda' \bv \Theta^{-1} \bv \Theta \bv \Theta^{-1} \bv \lambda (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}} \\
+&= \frac{1}{1 + (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}}
+\end{align*}
+$$
+
+### Sample Estimators
+
+When factor scores are computed using sample estimates of $\bv \lambda$ and $\bv \Theta$, we have $\hat{\bv \mu}$ = $\hat{\bv \nu}$, and
+
+$$
+\begin{aligned}
+  \tilde \eta & = \hat{\bv a}' (\bv y - \hat {\bv \mu}) = \hat{\bv a}' (\bv \nu + \bv \lambda \eta + \bv e - \hat{\bv \nu}) \\
+  & = \hat{\bv a}' \bv \lambda \eta + \hat{\bv a}'(\bv \nu - \hat{\bv \nu}) + \hat{\bv a}' \bv e,
+\end{aligned}
+$$
+
+where
+
+- $\bv {\hat a}$ = vector of estimated weights of length $p$
+- $\bv a$ = vector of true weights of length $p$,
+- $\bv y$ = vector of observed scores of length $p$,
+- $\lambda$ = vector of factor loadings of length $p$, 
+- $\eta$ = latent variable,
+- $\bv e$ = vector of measurement errors of length $p$,
+- $\Theta$ = $\Var(\bv e)$ = $p \times p$ variance-covariance matrix of errors,
+- $p$ = number of items.
+
+If we assume that $\hat{\bv a}$ and $\hat{\bv \nu}$ are independent, and $E(\hat{\bv a}) = \bv a$, $\Var(\hat{\bv a}) = V_{\hat a}$, $E(\hat{\bv \nu}) = \bv \nu$, $\Var(\hat{\bv \nu}) = V_{\hat \nu}$, then using law of total variance,
+
+$$
+\begin{aligned}
+  \Var(\tilde \eta) & = \E[\Var(\tilde \eta | \hat{\bv a})] + \Var[\E(\tilde \eta | \hat{\bv a})] \\
+  & = \E[\hat {\bv a}' \bv \lambda \bv \lambda' \hat{\bv a} + \bv a' V_{\hat \nu} \bv a + \hat {\bv a}' \bv \Theta \hat{\bv a}] + V[\hat{\bv a}' 0] \\
+  & = \bv a' \bv \lambda \bv \lambda' \bv a + \Tr(V_{\hat a} \bv \lambda \bv \lambda') + \bv a' V_{\hat \nu} \bv a + \Tr(V_{\hat a} V_{\hat \nu}) + \bv a' \bv \Theta \bv a + \Tr(V_{\hat a} \bv \Theta)
+\end{aligned}
+$$
+
+So, accounting for sampling error,
+
+$$
+\rho = \frac{(\bv a' \bv \lambda)^2 + \bv \lambda'V_{\hat a} \bv \lambda}{(\bv a' \bv \lambda)^2 + \bv a'\bv \Theta \bv a + \bv \lambda'V_{\hat a}\bv \lambda + \bv a' V_{\hat \nu} \bv a + \Tr(V_{\hat a} V_{\hat \nu}) + \Tr(\bv \Theta \bv V_{\hat a})}
+$$
+
+The sample estimates can be obtained by substituting in the sample estimates of $\bv \lambda$ and $\bv \Theta$ and using the corresponding form of $\bv a$.
+
+#### Quadratic formula for regression factor scores
+
+The reliability formula for the regression factor scores derived using a quadratic formula is
+
+$$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
+
+where $\theta_{corrected}$ is the corrected error term for the factor scores.
 
 ```{r}
 # Simulate small data with 6 items
@@ -39,32 +150,6 @@ fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
 )
 lavPredict(fit, fsm = TRUE)
 ```
-
-$$
-\begin{aligned}
-  \tilde \eta & = \hat a (y - \hat \mu) = \hat a [\nu + \lambda \eta + e - \hat \nu] \\
-  & = \hat a \lambda \eta + \hat a (\nu - \hat \nu) + \hat a e
-\end{aligned}
-$$
-
-Assuming that the sample model has $\eta$ standardized so that $E(\eta)$ = 0 and $V(\eta)$ = 1, we also have $\hat \nu_j$ = $\bar y_j$ = $\sum_i^n y_{ij} / n$. For now, we'll neglect the mean structure first. 
-
-Using law of total variance, and that $E(\hat a) = a$ and $V(\hat a) = V_{\hat a}$,
-
-$$
-\begin{aligned}
-  V(\tilde \eta) & = E[V(\tilde \eta | \hat a)] + V[E(\tilde \eta | \hat a)] \\
-  & = E[\hat a' \Sigma \hat a] + V[\hat a' 0] \\
-  & = a' \Sigma a + Tr[V_{\hat a} \Sigma] \\
-  & = Tr[(a a' + V_{\hat a}) \Sigma]
-\end{aligned}
-$$
-
-$$
-V(\tilde \eta) = V(\hat a \lambda \eta) + V(\hat a (\nu - \hat \nu)) + Cov(\hat a \lambda \eta, \hat a (\nu - \hat \nu)) + V(\hat a e)
-$$
-
-Let's call $\hat a \lambda \eta$ as component A, $\hat a (\nu - \hat \nu)$ as component B, and $\hat a e$ as component C.
 
 # Simulation of each component
 
@@ -110,7 +195,6 @@ true_rel + sum(diag(solve(true_sigma, vcov(pop_fit)[1:6, 1:6])))
 
 ```{r}
 #| eval: false
-num_sims <- 2000
 out <- matrix(ncol = 7, nrow = num_sims)
 
 # get_rel <- function(lam, dth, vc = NULL, method = c("adjust", "quad")) {
@@ -245,6 +329,7 @@ saveRDS(out, "vignettes/sim_results_reliability.RDS")
 
 
 ```{r}
+num_sims <- 2000
 # Create a table for raw biases: mean(estimated - true)
 # example: mean(out[, "no_adj_rel"] - out[, "true_rel"])
 out <- read.csv("sim_output.csv")
@@ -252,7 +337,8 @@ mean(out[, "no_adj_rel"] - out[, "true_rel"])
 
 # Creating a data frame
 data <- data.frame(
-  Type = c("no_adj_rel", "adj_rel", "quadratic", "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
+  Type = c("no_adj_rel", "adj_rel", "quadratic",
+           "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
   Raw_Biases = c(mean(out[, "no_adj_rel"] - out[, "true_rel"]), 
                  mean(out[, "adj_rel"] - out[, "true_rel"]), 
                  mean(out[, "quadratic"] - out[, "true_rel"]), 
@@ -291,52 +377,3 @@ bias_tab |>
   geom_hline(yintercept = 0)
 ```
 
-1. The reliability formula for regression factor scores assuming no sampling errors in the weights is given by 
-
-$$\rho = \frac{(a'\lambda)^2}{(a'\lambda)^2 + a'\Theta a}, $$
-
-which in matrix form is
-
-$$
-\begin{align*}
-\text{Rel} 
-&= \frac{(\lambda' \Sigma^{-1} \lambda)^2}{\lambda'\Sigma^{-1}\lambda \lambda \Sigma^{-1}\lambda + \lambda'\Sigma^{-1}\Theta \Sigma^{-1}\lambda} \\
-&= \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}(\lambda\lambda'+\Theta)\Sigma^{-1}\lambda} \\
-&= \frac{(\lambda'\Sigma^{-1}\lambda)^2}{\lambda'\Sigma^{-1}\lambda}
-\end{align*}
-$$
-
-2. The reliability formula for regression factor scores accounting for sampling error in the weights is given by
-
-$$\rho = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + \lambda'V_{\tilde{a}}\lambda + tr(\Theta V_{\tilde{a}})}$$
-The derivation for the reliability formula that accounts for sampling errors in the weights is as follows. Given $E(\tilde{a}=a, y=\lambda\eta+\varepsilon),V(\eta)=1,E(\eta)=0,V(\varepsilon)=\Theta,\eta\perp\varepsilon$, 
-
-
-$$
-\begin{aligned*}
-V(\tilde{a}'y) 
-  & = E[V(\tilde{a}'y|\eta)] + V[E(\tilde{a}'y|\eta)] \\
-  & = E[V(\tilde{a}'\lambda\eta + \tilde{a}'\varepsilon|\eta)]+V[E(\tilde{a}'\lambda\eta|\eta + E(\tilde{a}'\varepsilon)] \\
-  & = E[\eta^2\lambda^2V_{\tilde a} + a'\Theta a+tr(\Theta V_{\tilde a})] + V[a'\lambda\eta] \\
-  & = \lambda'V_{\tilde a}\lambda+a'\Theta a + tr(\Theta V_{\tilde a}) + (a'\lambda)^2 \\
-  \\
-  \\
-  & \text{Rel} = \frac{(a'\lambda)^2 + \lambda'V_{\tilde{a}}\lambda}{(a'\lambda)^2 + a'\Theta a + tr(\Theta V_{\tilde{a}}) + (a'\lambda)^2},  \\
-\end{aligned*}
-$$
-
-where $\tilde a$ = a vector of estimated weights of length $p$, $a$ = a vector of true weights of length $p$, $y$ = a vector of observed scores of length $p$, $\lambda$ = a vector of factor loadings of length $p$, $\eta$ = latent variable, $\varepsilon$ = a vector of measurement errors of length $p$, $\Theta$ = variance-covariance matrix of errors $p \times p$, $V_{\tilde a}$ = asymptotic covariance matrix of the estimated weights $p \times p$, and $p$ = number of items. 
-
-3. The reliability formula for the regression factor scores derived using a quadratic formula is
-
-$$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
-
-
-TODO:
-
-- [ ] Implement the three reliability estimation (quadratic root method as experimental)
-- [ ] Perform a small-scale simulation
-- [√] Write down math equations for all methods
-- [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
-
-Cov(\eta, a \lambda \eta) = (a \lambda)
