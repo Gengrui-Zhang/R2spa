@@ -262,15 +262,20 @@ create_fsL_names <- function(lv_names, fs_names) {
   t(out)
 }
 
-get_fs_dat_names <- function(lv_names, int = TRUE) {
+get_fs_mat_names <- function(lv_names, int = TRUE) {
   # Initialize data frame
   fs_names <- paste0("fs_", lv_names)
   se_names <- paste0("se_", fs_names)
   ev_names <- create_fsT_names(fs_names)
+  dimnames(ev_names) <- rep(list(fs_names), 2)
   ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
-  out <- c(
-    fs_names, se_names,
-    c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)]
+  dimnames(ld_names) <- list(fs_names, lv_names)
+  # out <- c(
+  #   fs_names, se_names,
+  #   c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)]
+  # )
+  out <- list(
+    fs = fs_names, se = se_names, ld = ld_names, ev = ev_names
   )
   if (int) {
     return(c(out, paste0("int_", fs_names)))
@@ -311,8 +316,14 @@ augment_lav_predict <- function(
       acov_rank <- rank(mp$id)
     }
     # Initialize empty data frame
-    fs_colnames <- get_fs_dat_names(colnames(fs),
+    fs_matnames <- get_fs_mat_names(colnames(fs),
                                     int = has_means)
+    fs_colnames <- unlist(
+      within(fs_matnames, expr = {
+        ld <- c(ld)
+        ev <- ev[upper.tri(ev, diag = TRUE)]
+      })
+    )
     fs_dat <- data.frame(
       matrix(NA,
         nrow = nrow(fs),
@@ -342,6 +353,9 @@ augment_lav_predict <- function(
   if (drop_list_single && length(out) == 1) {
     out <- out[[1]]
   }
+  attr(out, "ld") <- fs_matnames$ld
+  attr(out, "ev") <- fs_matnames$ev
+  attr(out, "int") <- fs_matnames$int
   out
 }
 
