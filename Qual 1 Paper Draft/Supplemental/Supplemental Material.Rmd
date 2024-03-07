@@ -1,16 +1,12 @@
 ---
-title             : "Supplemental Document: All-Pair UPI"
-shorttitle        : "Supplemental"
+title             : "Supplemental Document: Performance of All-Pair UPI on Estimating Latent Interaction Effect"
+# shorttitle        : "Supplemental"
 
 author: 
   - name          : "Gengrui (Jimmy) Zhang"
     affiliation   : "1"
     corresponding : yes    # Define only one corresponding author
     email         : "gengruiz@email.com"
-    role: # Contributorship roles (e.g., CRediT, https://credit.niso.org/)
-      - "Conceptualization"
-      - "Writing - Original Draft Preparation"
-      - "Writing - Review & Editing"
 
 affiliation:
   - id            : "1"
@@ -27,8 +23,13 @@ figurelist        : no
 tablelist         : no
 footnotelist      : no
 
-classoption       : "man"
+classoption       : "man, donotrepeattitle"
 output            : papaja::apa6_pdf
+
+header-includes:
+  - \usepackage{fancyhdr}
+  - \pagestyle{empty}
+  - \thispagestyle{empty}
 ---
 
 ```{r setup, include = FALSE}
@@ -56,7 +57,7 @@ sim_results <- sim %>%
          cor_xm = ifelse(cor_xm == 0, "0", cor_xm))
 ```
 
-# Performance of All-Pair UPI on Estimating $\gamma_{xm}$
+All-pair
 
 ```{r standardized bias (raw bias), message=FALSE, warning=FALSE}
 raw_bias <- sim_results %>%
@@ -94,7 +95,7 @@ for (col_idx in 3:ncol(raw_bias_wide)) {
 
 standardized_bias_table <- apa_table(standardized_bias,
                                     escape = F,
-                                    caption = "Standardized Bias (Raw Bias) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+                                    caption = "Standardized Bias (Raw Bias) for $\\gamma_{xm} (= 0.3)$ over 2,000 Replications.",
                                     align = c(rep("c", ncol(standardized_bias))),
                                     note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Raw biases are shown in pararenthese. Note that numerical values have been rounded to two decimal places for consistency, which means that some values, while very close to 0 but not exactly 0, are displayed as 0.")
 
@@ -152,7 +153,7 @@ for (i in 3:ncol(MAD_bias)) {
 
 MAD_bias_table <- apa_table(MAD_bias, 
             escape = F,
-            caption = "Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\\%$) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            caption = "Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\\%$) for $\\gamma_{xm} (= 0.3)$ over 2,000 Replications.",
             align = c(rep("c", ncol(MAD_bias))),
             note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances. Outlier proportions of SE are shown in parenthese and all the numbers were percentages.")
 MAD_bias_table
@@ -187,7 +188,7 @@ for (i in 3:ncol(coverage_wide)) {
 
 coverage_table <- apa_table(coverage_wide, 
             escape = F,
-            caption = "95 $\\%$ Confidence Interval (CI) Coverage Rate for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            caption = "95 $\\%$ Confidence Interval (CI) Coverage Rate for $\\gamma_{xm} (= 0.3)$ over 2,000 Replications.",
             align = c(rep("c", ncol(coverage))),
             note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.")
 
@@ -209,7 +210,7 @@ names(rmse_wide) <- c("$\\textit{N}$", "$Corr(\\xi_{x}, \\xi_{m})$", "Parallel",
 
 rmse_table <- apa_table(rmse_wide, 
             escape = F,
-            caption = "Root Mean Square Error (RMSE) for $\\gamma_{xm} (= 0.3)$ over 2000 Replications.",
+            caption = "Root Mean Square Error (RMSE) for $\\gamma_{xm} (= 0.3)$ over 2,000 Replications.",
             align = c(rep("c", ncol(rmse))),
             note = "$\\textit{N}$ = sample size; $Corr(\\xi_{x}, \\xi_{m})$ = correlation between $\\xi_{x}$ and $\\xi_{m}$; Parallel = items with identical factor loadings and error variances; Congeneric Factor = items with different factor loadings and identical error variances; Congeneric = items with different factor loadings and different error variances.")
 

@@ -3,7 +3,7 @@
 \PassOptionsToPackage{hyphens}{url}
 %
 \documentclass[
-  man]{apa6}
+  man, donotrepeattitle]{apa6}
 \usepackage{amsmath,amssymb}
 \usepackage{iftex}
 \ifPDFTeX
@@ -145,6 +145,9 @@
 
 \linenumbers
 \usepackage{csquotes}
+\usepackage{fancyhdr}
+\pagestyle{empty}
+\thispagestyle{empty}
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
@@ -152,22 +155,20 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same}
 \hypersetup{
-  pdftitle={Supplemental Document: All-Pair UPI},
+  pdftitle={Supplemental Document: Performance of All-Pair UPI on Estimating Latent Interaction Effect},
   pdfauthor={Gengrui (Jimmy) Zhang1},
   pdflang={en-EN},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 
-\title{Supplemental Document: All-Pair UPI}
+\title{Supplemental Document: Performance of All-Pair UPI on Estimating Latent Interaction Effect}
 \author{Gengrui (Jimmy) Zhang\textsuperscript{1}}
 \date{}
 
 
-\shorttitle{Supplemental}
+\shorttitle{SHORT TITLE}
 
 \authornote{
-
-The authors made the following contributions. Gengrui (Jimmy) Zhang: Conceptualization, Writing - Original Draft Preparation, Writing - Review \& Editing.
 
 Correspondence concerning this article should be addressed to Gengrui (Jimmy) Zhang. E-mail: \href{mailto:gengruiz@email.com}{\nolinkurl{gengruiz@email.com}}
 
@@ -178,15 +179,14 @@ Correspondence concerning this article should be addressed to Gengrui (Jimmy) Zh
 \begin{document}
 \maketitle
 
-\hypertarget{performance-of-all-pair-upi-on-estimating-gamma_xm}{%
-\section{\texorpdfstring{Performance of All-Pair UPI on Estimating \(\gamma_{xm}\)}{Performance of All-Pair UPI on Estimating \textbackslash gamma\_\{xm\}}}\label{performance-of-all-pair-upi-on-estimating-gamma_xm}}
+All-pair
 
 \begin{table}[tbp]
 
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -219,7 +219,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:MAD relative SE bias with outliers proportion}Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\%$) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:MAD relative SE bias with outliers proportion}Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\%$) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -252,7 +252,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:coverage rate}95 $\%$ Confidence Interval (CI) Coverage Rate for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:coverage rate}95 $\%$ Confidence Interval (CI) Coverage Rate for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -285,7 +285,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:rmse}Root Mean Square Error (RMSE) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:rmse}Root Mean Square Error (RMSE) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule

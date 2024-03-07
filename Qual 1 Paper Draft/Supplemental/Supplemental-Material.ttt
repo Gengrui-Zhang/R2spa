@@ -5,7 +5,7 @@
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:standardized bias (raw bias)}Standardized Bias (Raw Bias) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -39,7 +39,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:MAD relative SE bias with outliers proportion}Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\%$) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:MAD relative SE bias with outliers proportion}Robust Relative Standard Error (SE) Bias Ratio (Outlier Proportion of SE; $\%$) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -73,7 +73,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:coverage rate}95 $\%$ Confidence Interval (CI) Coverage Rate for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:coverage rate}95 $\%$ Confidence Interval (CI) Coverage Rate for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
@@ -107,7 +107,7 @@ $\textit{N}$ & \multicolumn{1}{c}{$Corr(\xi_{x}, \xi_{m})$} & \multicolumn{1}{c}
 \begin{center}
 \begin{threeparttable}
 
-\caption{\label{tab:rmse}Root Mean Square Error (RMSE) for $\gamma_{xm} (= 0.3)$ over 2000 Replications.}
+\caption{\label{tab:rmse}Root Mean Square Error (RMSE) for $\gamma_{xm} (= 0.3)$ over 2,000 Replications.}
 
 \begin{tabular}{ccccc}
 \toprule
