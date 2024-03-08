@@ -92,7 +92,7 @@ fs2r <- lavPredict(fit2,
 )
 acov_r <- attr(fs2r, "acov")[[1]]
 # Obtain tidy-ed factor scores data
-fs_dat <- R2spa:::augment_lav_predict(fit2)
+fs_dat <- R2spa::augment_lav_predict(fit2)
 # Run 2spa with OpenMx
 # Build OpenMx model
 fsreg_umx <- umxLav2RAM(
@@ -117,7 +117,7 @@ err_cov <- matrix(c(
 fs_dat[66:75, "fs_dem65"] <- NA
 tspa_mx <- tspa_mx_model(fsreg_umx,
   data = fs_dat,
-  mat_ld = cross_load, mat_vc = err_cov
+  mat_ld = cross_load, mat_ev = err_cov
 )
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
@@ -129,10 +129,11 @@ summary(tspa_mx_fit)
 
 ```{r}
 # Obtain tidy-ed factor scores data
-fsb_dat <- R2spa:::augment_lav_predict(fit2, method = "Bartlett")
+fsb_dat <- augment_lav_predict(fit2, method = "Bartlett")
 tspab_mx <- tspa_mx_model(fsreg_umx,
   data = fsb_dat,
-  mat_ld = cross_load, mat_vc = err_cov
+  mat_ld = attr(fsb_dat, which = "ld"),
+  mat_ev = attr(fsb_dat, which = "ev")
 )
 # Run OpenMx
 tspab_mx_fit <- mxRun(tspab_mx)
@@ -172,5 +173,5 @@ mg_fit2 <- cfa("
   data = cbind(pd2, group = rep(1:2, c(40, 35))),
   missing = "fiml", group = "group"
 )
-R2spa:::augment_lav_predict(mg_fit2)
+augment_lav_predict(mg_fit2)
 ```

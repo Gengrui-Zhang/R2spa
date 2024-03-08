@@ -387,7 +387,7 @@ lcov_umx <- umxLav2RAM(
 tspab_mx <- tspa_mx_model(lcov_umx,
   data = a2,
   mat_ld = attr(a2, which = "ld"),
-  mat_vc = attr(a2, which = "ev")
+  mat_ev = attr(a2, which = "ev")
 )
 # Run OpenMx
 tspab_mx_fit <- mxRun(tspab_mx)

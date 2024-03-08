@@ -232,7 +232,7 @@ tspa_mx <-
                 mxAlgebra(b3 * sqrt(vx) * sqrt(vm), name = "stdx_b3"),
                 mxCI(c("stdx_b1", "stdx_b2", "stdx_b3"))),
         data = fs_dat,
-        mat_ld = matL, mat_vc = matE)
+        mat_ld = matL, mat_ev = matE)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx, intervals = TRUE)
 # Summarize the results (takes a minute or so)
