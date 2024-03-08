@@ -284,6 +284,37 @@ get_fs_mat_names <- function(lv_names, int = TRUE) {
   }
 }
 
+#' Obtain factor scores and related definition variables from
+#' a `lavaan` object for 2S-PA analyses.
+#'
+#' This function obtained the factor scores, standard errors,
+#' loading matrix, and variance covariance matrix by calling
+#' the [lavaan::lavPredict()] function.
+#'
+#' @param lavobj A fitted [`lavaan::lavaan-class`] object
+#' @param method A character string indicating the scoring method to use.
+#'               Must be either `"regression"` or `"Bartlett"`.
+#' @param drop_list_single logical. Should the results be unlisted
+#'                         for single-group models?
+#' @param ... Additional arguments passed to [lavaan::lavPredict()]
+#' @return A `data.frame` containing the factor scores, the corresponding
+#'         standard errors, the loadings and cross-loadings of the factor
+#'         scores as indicators of the latent variables, the 
+#'         error variance-covariance matrix of the factor scores,
+#'         and the measurement intercepts.
+#'         In addition, three character matrices are added as attributes
+#'         that can be used as input to [tspa_mx_model()]:
+#' * `ld`: cross-loading matrix
+#' * `ev`: error variance-covariance matrix
+#' * `int`: measurement intercepts
+#' @export
+#' @examples
+#' library(lavaan)
+#' hs_model <- ' visual  =~ x1 + x2 + x3 '
+#' fit <- cfa(hs_model,
+#'            data = HolzingerSwineford1939,
+#'            group = "school")
+#' augment_lav_predict(fit)
 augment_lav_predict <- function(
     lavobj, method = c("regression", "Bartlett"),
     drop_list_single = TRUE, ...) {
@@ -293,8 +324,13 @@ augment_lav_predict <- function(
     lavobj,
     type = "lv", method = method,
     acov = TRUE,
-    drop.list.single.group = FALSE, ...
+    # drop.list.single.group = FALSE, ...
+    ...
   )
+  if (lavInspect(lavobj, what = "ngroups") == 1) {
+    fs_lst <- list(fs_lst)
+    attr(fs_lst, "acov") <- attr(fs_lst[[1]], "acov")
+  }
   pars <- lavInspect(lavobj, what = "est",
                      drop.list.single.group = FALSE)
   out <- vector("list", length = length(fs_lst))
