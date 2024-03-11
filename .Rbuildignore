@@ -7,4 +7,3 @@
 ^pkgdown$
 ^\.github$
 ^\.vscode$
-^vignettes/missing-data\.Rmd$

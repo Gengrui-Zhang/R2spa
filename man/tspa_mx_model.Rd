@@ -8,7 +8,7 @@ tspa_mx_model(
   mx_model,
   data,
   mat_ld,
-  mat_vc,
+  mat_ev,
   mat_int = NULL,
   fs_lv_names = NULL,
   ...
@@ -36,7 +36,7 @@ character values indicating the variable names in \code{data} for
 the corresponding loadings.
 }}
 
-\item{mat_vc}{Similar to \code{mat_ld} but for the error variance-covariance
+\item{mat_ev}{Similar to \code{mat_ld} but for the error variance-covariance
 matrix of the factor scores.}
 
 \item{mat_int}{Similar to \code{mat_ld} but for the measurement intercept
@@ -109,7 +109,7 @@ tspa_mx <-
   tspa_mx_model(fsreg_umx,
     data = fs_dat,
     mat_ld = cross_load,
-    mat_vc = err_cov
+    mat_ev = err_cov
   )
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)

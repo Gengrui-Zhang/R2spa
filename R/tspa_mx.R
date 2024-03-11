@@ -18,7 +18,7 @@
 #'   matching the factor score and latent variables, and the
 #'   character values indicating the variable names in `data` for
 #'   the corresponding loadings.
-#' @param mat_vc Similar to `mat_ld` but for the error variance-covariance
+#' @param mat_ev Similar to `mat_ld` but for the error variance-covariance
 #'               matrix of the factor scores.
 #' @param mat_int Similar to `mat_ld` but for the measurement intercept
 #'               matrix of the factor scores.
@@ -88,14 +88,14 @@
 #'   tspa_mx_model(fsreg_umx,
 #'     data = fs_dat,
 #'     mat_ld = cross_load,
-#'     mat_vc = err_cov
+#'     mat_ev = err_cov
 #'   )
 #' # Run OpenMx
 #' tspa_mx_fit <- mxRun(tspa_mx)
 #' # Summarize the results
 #' summary(tspa_mx_fit)
 
-tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
+tspa_mx_model <- function(mx_model, data, mat_ld, mat_ev,
                           mat_int = NULL,
                           fs_lv_names = NULL, ...) {
   str_name <- mx_model$name
@@ -119,17 +119,17 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
     names(dup_fs) <- names(fs_lv_names)
     data <- cbind(data, dup_fs)
   }
-  if (!isTRUE(attr(class(mat_vc), which = "package") == "OpenMx")) {
+  if (!isTRUE(attr(class(mat_ev), which = "package") == "OpenMx")) {
     mv_name <- mx_model$manifestVars
     if (!is.null(fs_lv_names)) {
       mv_name <- fs_lv_names[match(mv_name, table = names(fs_lv_names))]
     }
-    vc_ind <- match(mv_name, table = rownames(mat_vc))
-    if (any(is.na(vc_ind))) {
-      stop("`rownames(mat_vc)` must match the names of the ",
+    ev_ind <- match(mv_name, table = rownames(mat_ev))
+    if (any(is.na(ev_ind))) {
+      stop("`rownames(mat_ev)` must match the names of the ",
            "factor score variables.")
     }
-    mat_vc <- make_mx_vc(mat_vc[vc_ind, vc_ind])
+    mat_ev <- make_mx_vc(mat_ev[ev_ind, ev_ind])
   }
   if (!is.null(mat_int)) {
     if (!isTRUE(attr(class(mat_int), which = "package") == "OpenMx")) {
@@ -152,7 +152,7 @@ tspa_mx_model <- function(mx_model, data, mat_ld, mat_vc,
   mxModel(
     "2SPAD",
     mxData(observed = data, type = "raw"),
-    mx_model, mat_ld, mat_vc, mat_int,
+    mx_model, mat_ld, mat_ev, mat_int,
     mxMatrix(type = "Iden", nrow = q, ncol = q, name = "I"),
     mxAlgebraFromString(paste0("(L %*%", str_name,
                                ".F %*% solve(I - ", str_name, ".A)) %&% ",

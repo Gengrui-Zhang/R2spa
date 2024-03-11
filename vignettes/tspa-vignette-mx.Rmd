@@ -79,7 +79,7 @@ matE <- mxMatrix(
 
 ```{r}
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
-                         mat_ld = matL, mat_vc = matE,
+                         mat_ld = matL, mat_ev = matE,
                          fs_lv_names = c(ind60 = "fs_ind60",
                                          dem60 = "fs_dem60"))
 # Run OpenMx
@@ -94,7 +94,7 @@ mxStandardizeRAMpaths(tspa_mx_fit, SE = TRUE)$m1[1, ]
 # Alternative specification
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
                          mat_ld = attr(fs_dat, "fsL"),
-                         mat_vc = attr(fs_dat, "fsT"))
+                         mat_ev = attr(fs_dat, "fsT"))
 ```
 
 ### With Mean Structure
@@ -131,7 +131,7 @@ matE <- (matE + t(matE)) / 2
 matb <- t(as.matrix(attr(fs_dat, "fsb")))
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
                          mat_ld = attr(fs_dat, "fsL"),
-                         mat_vc = matE,
+                         mat_ev = matE,
                          mat_int = matb)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
@@ -256,14 +256,14 @@ fsreg_umx <- umxLav2RAM(
 
 ```{r}
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
-                         mat_ld = matL, mat_vc = matE)
+                         mat_ld = matL, mat_ev = matE)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results
 summary(tspa_mx_fit)
 ```
 
-Alternatively, one can use named matrices (`mat_ld` and `mat_vc`) to specify the names of the columns for the loading and error covariance matrices.
+Alternatively, one can use named matrices (`mat_ld` and `mat_ev`) to specify the names of the columns for the loading and error covariance matrices.
 
 ```{r}
 cross_load <- matrix(c("rel_fs2", NA, NA, "rel_fs1"), nrow = 2) |>
@@ -271,7 +271,7 @@ cross_load <- matrix(c("rel_fs2", NA, NA, "rel_fs1"), nrow = 2) |>
 err_cov <- matrix(c("ev_fs2", NA, NA, "ev_fs1"), nrow = 2) |>
     `dimnames<-`(rep(list(c("fs2", "fs1")), 2))
 tspa_mx <- tspa_mx_model(fsreg_umx, data = fs_dat,
-                         mat_ld = cross_load, mat_vc = err_cov)
+                         mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa_mx_fit <- mxRun(tspa_mx)
 # Summarize the results
@@ -405,7 +405,7 @@ err_cov <- matrix(c("ev_fs1", "ecov_fs1_fs2",
                     "ecov_fs1_fs2", "ev_fs2"), nrow = 2) |>
     `dimnames<-`(rep(list(c("F1", "F2")), 2))
 tspa_mx2 <- tspa_mx_model(fsreg_umx, data = fs_dat,
-                          mat_ld = cross_load, mat_vc = err_cov)
+                          mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa_mx2_fit <- mxRun(tspa_mx2)
 # Summarize the results
