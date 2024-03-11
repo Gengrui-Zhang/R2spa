@@ -278,7 +278,7 @@ get_fs_mat_names <- function(lv_names, int = TRUE) {
     fs = fs_names, se = se_names, ld = ld_names, ev = ev_names
   )
   if (int) {
-    return(c(out, paste0("int_", fs_names)))
+    return(c(out, int = paste0("int_", fs_names)))
   } else {
     return(out)
   }
