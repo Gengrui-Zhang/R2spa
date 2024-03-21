@@ -73,12 +73,12 @@
 
 
 <script src="categorical-interaction_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><script src="categorical-interaction_files/viz-1.8.2/viz.js"></script><link href="categorical-interaction_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet">
-<script src="categorical-interaction_files/grViz-binding-1.0.10/grViz.js"></script><div class="row">
+<script src="categorical-interaction_files/grViz-binding-1.0.11/grViz.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="" class="logo" alt=""><h1>Using Two-Stage Path Analysis with Definition Variables for Latent Interactions with Categorical Indicators</h1>
                         <h4 data-toc-skip class="author">Mark Lai</h4>
             
-            <h4 data-toc-skip class="date">2024-01-16</h4>
+            <h4 data-toc-skip class="date">2024-03-21</h4>
       
       
       <div class="d-none name"><code>categorical-interaction.Rmd</code></div>
@@ -304,7 +304,7 @@ is</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ?plot.MxModel options: std, means, digits, strip_zero, file, splines=T/F/ortho,..., min=, max =, same = , fixed, resid= 'circle|line|none'</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">DiagrammeR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DiagrammeR/man/grViz.html" class="external-link">grViz</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/OpenMx/man/omxGraphviz.html" class="external-link">omxGraphviz</a></span><span class="op">(</span><span class="va">fsreg_mx</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu">DiagrammeR</span><span class="fu">::</span><span class="fu"><a href="https://rich-iannone.github.io/DiagrammeR/reference/grViz.html" class="external-link">grViz</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/OpenMx/man/omxGraphviz.html" class="external-link">omxGraphviz</a></span><span class="op">(</span><span class="va">fsreg_mx</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; digraph "str" {</span></span>
 <span><span class="co">#&gt;   node [style=filled, fontname="Arial", fontsize=16];</span></span>
 <span><span class="co">#&gt;       /* Manifest Variables */</span></span>
@@ -373,26 +373,26 @@ is</p>
 <span><span class="co">#&gt;  </span></span>
 <span><span class="co">#&gt; free parameters:</span></span>
 <span><span class="co">#&gt;              name matrix  row  col      Estimate  Std.Error A</span></span>
-<span><span class="co">#&gt; 1              b1   m1.A  fsy  fsx  2.064624e-01 0.01898040  </span></span>
-<span><span class="co">#&gt; 2              b2   m1.A  fsy  fsm  2.989998e-01 0.01871068  </span></span>
-<span><span class="co">#&gt; 3              b3   m1.A  fsy fsxm -4.152434e-01 0.01870233  </span></span>
-<span><span class="co">#&gt; 4    fsy_with_fsy   m1.S  fsy  fsy  6.398847e-01 0.01957377  </span></span>
-<span><span class="co">#&gt; 5              vx   m1.S  fsx  fsx  9.991969e-01 0.02776722  </span></span>
-<span><span class="co">#&gt; 6    fsm_with_fsx   m1.S  fsx  fsm  4.455208e-01 0.01927466  </span></span>
-<span><span class="co">#&gt; 7              vm   m1.S  fsm  fsm  9.996933e-01 0.02685963  </span></span>
-<span><span class="co">#&gt; 8   fsx_with_fsxm   m1.S  fsx fsxm  2.425816e-02 0.02230940  </span></span>
-<span><span class="co">#&gt; 9   fsm_with_fsxm   m1.S  fsm fsxm  4.883994e-03 0.02200249  </span></span>
-<span><span class="co">#&gt; 10 fsxm_with_fsxm   m1.S fsxm fsxm  1.035316e+00 0.03836077  </span></span>
-<span><span class="co">#&gt; 11     one_to_fsy   m1.M    1  fsy  1.871730e-01 0.01613095  </span></span>
-<span><span class="co">#&gt; 12     one_to_fsx   m1.M    1  fsx -1.368763e-04 0.01615981  </span></span>
-<span><span class="co">#&gt; 13     one_to_fsm   m1.M    1  fsm -6.265502e-05 0.01587408  </span></span>
-<span><span class="co">#&gt; 14    one_to_fsxm   m1.M    1 fsxm  4.506424e-01 0.01832830  </span></span>
+<span><span class="co">#&gt; 1              b1   m1.A  fsy  fsx  2.064624e-01 0.01897723  </span></span>
+<span><span class="co">#&gt; 2              b2   m1.A  fsy  fsm  2.989998e-01 0.01870619  </span></span>
+<span><span class="co">#&gt; 3              b3   m1.A  fsy fsxm -4.152434e-01 0.01869847  </span></span>
+<span><span class="co">#&gt; 4    fsy_with_fsy   m1.S  fsy  fsy  6.398847e-01 0.01956885  </span></span>
+<span><span class="co">#&gt; 5              vx   m1.S  fsx  fsx  9.991969e-01 0.02776582  </span></span>
+<span><span class="co">#&gt; 6    fsm_with_fsx   m1.S  fsx  fsm  4.455208e-01 0.01927455  </span></span>
+<span><span class="co">#&gt; 7              vm   m1.S  fsm  fsm  9.996933e-01 0.02685778  </span></span>
+<span><span class="co">#&gt; 8   fsx_with_fsxm   m1.S  fsx fsxm  2.425816e-02 0.02230417  </span></span>
+<span><span class="co">#&gt; 9   fsm_with_fsxm   m1.S  fsm fsxm  4.883996e-03 0.02200107  </span></span>
+<span><span class="co">#&gt; 10 fsxm_with_fsxm   m1.S fsxm fsxm  1.035316e+00 0.03835927  </span></span>
+<span><span class="co">#&gt; 11     one_to_fsy   m1.M    1  fsy  1.871730e-01 0.01612887  </span></span>
+<span><span class="co">#&gt; 12     one_to_fsx   m1.M    1  fsx -1.368772e-04 0.01615666  </span></span>
+<span><span class="co">#&gt; 13     one_to_fsm   m1.M    1  fsm -6.265561e-05 0.01587288  </span></span>
+<span><span class="co">#&gt; 14    one_to_fsxm   m1.M    1 fsxm  4.506424e-01 0.01832363  </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; confidence intervals:</span></span>
 <span><span class="co">#&gt;                     lbound   estimate     ubound note</span></span>
 <span><span class="co">#&gt; m1.stdx_b1[1,1]  0.1693079  0.2063795  0.2436209     </span></span>
 <span><span class="co">#&gt; m1.stdx_b2[1,1]  0.2622028  0.2989540  0.3356675     </span></span>
-<span><span class="co">#&gt; m1.stdx_b3[1,1] -0.4563615 -0.4150129 -0.3757700     </span></span>
+<span><span class="co">#&gt; m1.stdx_b3[1,1] -0.4563615 -0.4150129 -0.3757701     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model Statistics: </span></span>
 <span><span class="co">#&gt;                |  Parameters  |  Degrees of Freedom  |  Fit (-2lnL units)</span></span>
@@ -410,8 +410,8 @@ is</p>
 <span><span class="co">#&gt; RMSEA:  0  [95% CI (NA, NA)]</span></span>
 <span><span class="co">#&gt; Prob(RMSEA &lt;= 0.05): NA</span></span>
 <span><span class="co">#&gt; To get additional fit indices, see help(mxRefModels)</span></span>
-<span><span class="co">#&gt; timestamp: 2024-01-16 07:13:24 </span></span>
-<span><span class="co">#&gt; Wall clock time: 144.9299 secs </span></span>
+<span><span class="co">#&gt; timestamp: 2024-03-21 20:57:44 </span></span>
+<span><span class="co">#&gt; Wall clock time: 147.9443 secs </span></span>
 <span><span class="co">#&gt; optimizer:  SLSQP </span></span>
 <span><span class="co">#&gt; OpenMx version number: 2.21.11 </span></span>
 <span><span class="co">#&gt; Need help?  See help(mxSummary)</span></span>
@@ -419,15 +419,15 @@ is</p>
 <span><span class="fu"><a href="https://rdrr.io/pkg/OpenMx/man/mxSE.html" class="external-link">mxSE</a></span><span class="op">(</span><span class="va">m1.stdx_b1</span>, <span class="va">tspa_mx_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Treating first argument as an expression</span></span>
 <span><span class="co">#&gt;            [,1]</span></span>
-<span><span class="co">#&gt; [1,] 0.01891785</span></span>
+<span><span class="co">#&gt; [1,] 0.01891419</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/OpenMx/man/mxSE.html" class="external-link">mxSE</a></span><span class="op">(</span><span class="va">m1.stdx_b2</span>, <span class="va">tspa_mx_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Treating first argument as an expression</span></span>
 <span><span class="co">#&gt;            [,1]</span></span>
-<span><span class="co">#&gt; [1,] 0.01868464</span></span>
+<span><span class="co">#&gt; [1,] 0.01868014</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/OpenMx/man/mxSE.html" class="external-link">mxSE</a></span><span class="op">(</span><span class="va">m1.stdx_b3</span>, <span class="va">tspa_mx_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Treating first argument as an expression</span></span>
 <span><span class="co">#&gt;            [,1]</span></span>
-<span><span class="co">#&gt; [1,] 0.02048485</span></span></code></pre></div>
+<span><span class="co">#&gt; [1,] 0.02048697</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside>

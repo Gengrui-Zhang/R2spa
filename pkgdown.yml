@@ -1,4 +1,4 @@
-pandoc: 2.19.2
+pandoc: 3.1.11
 pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
@@ -12,7 +12,7 @@ articles:
   tspa-growth-vignette: tspa-growth-vignette.html
   tspa-plot-vignette: tspa-plot-vignette.html
   tspa-vignette-mx: tspa-vignette-mx.html
-last_built: 2024-01-16T07:10Z
+last_built: 2024-03-21T20:54Z
 urls:
   reference: https://gengrui-zhang.github.io/R2spa/reference
   article: https://gengrui-zhang.github.io/R2spa/articles
