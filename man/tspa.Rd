@@ -12,6 +12,7 @@ tspa(
   se_fs = NULL,
   fsT = NULL,
   fsL = NULL,
+  fsb = NULL,
   ...
 )
 }
@@ -43,6 +44,10 @@ can be obtained from the output of \code{get_fs()} using
 \code{attr()} with the argument \code{which = "fsL"}.
 For details see the multiple-factors vignette:
 \code{vignette("multiple-factors", package = "R2spa")}.}
+
+\item{fsb}{A vector of intercepts for the factor scores \code{fs}, which can
+be obtained from the output of \code{get_fs()} using \code{attr()}
+with the argument \code{which = "fsb"}.}
 
 \item{...}{Additional arguments passed to \code{\link[lavaan]{sem}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}

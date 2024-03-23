@@ -92,27 +92,66 @@ get_fs_lavaan <- function(lavobj,
   } else {
     add_to_evfs <- rep(0, lavInspect(lavobj, what = "ngroups"))
   }
-  prepare_fs_dat <- function(y, est, add) {
-    fscore <- compute_fscore(y,
-                             lambda = est$lambda,
-                             theta = est$theta,
-                             psi = est$psi,
-                             nu = est$nu,
-                             alpha = est$alpha,
-                             method = method,
-                             fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "fsT") + add)
+  miss_pat <- lavobj@Data@Mp
+  prepare_fs_dat <- function(y, est, add, case_idx, mp) {
+    if (is.null(mp)) {
+      fscore <-
+        compute_fscore(y,
+          lambda = est$lambda,
+          theta = est$theta,
+          psi = est$psi,
+          nu = est$nu,
+          alpha = est$alpha,
+          method = method,
+          fs_matrices = TRUE
+        )
+      augment_fs(fscore, attr(fscore, which = "fsT") + add)
+    } else {
+      fscore <- matrix(NA, nrow = nrow(y), ncol = ncol(est$psi))
+      npat <- mp$npatterns
+      pats <- mp$pat
+      mis_idx <- mp$case.idx
+      for (m in seq_len(npat)) {
+        idx_m <- mis_idx[[m]]
+        pat_m <- pats[m, ]
+        fs_m <-
+          compute_fscore(y[idx_m, pat_m, drop = FALSE],
+            lambda = est$lambda[pat_m, , drop = FALSE],
+            theta = est$theta[pat_m, pat_m, drop = FALSE],
+            psi = est$psi,
+            nu = est$nu[pat_m, , drop = FALSE],
+            alpha = est$alpha,
+            method = method,
+            fs_matrices = TRUE
+          )
+        fs_dat <- augment_fs(fs_m, attr(fs_m, which = "fsT") + add)
+        if (m == 1) {
+          fscore <- as.data.frame(
+            matrix(NA, nrow = nrow(y), ncol = ncol(fs_dat)))
+          attributes(fscore) <-
+            c(attributes(fs_dat)[1:2],
+              list(row.names = rownames(fscore)),
+              attributes(fs_dat)[-(1:3)])
+        }
+        fscore[idx_m, ] <- fs_dat
+      }
+      fscore
+    }
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
-    out <- prepare_fs_dat(y, est, add_to_evfs[[1]])
+    out <- prepare_fs_dat(y, est = est, add = add_to_evfs[[1]],
+                          mp = miss_pat[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
       lavobj@Data@group.label
     )
     for (g in seq_along(fs_lst)) {
-      fs_lst[[g]] <- prepare_fs_dat(y[[g]], est[[g]], add_to_evfs[[g]])
+      fs_lst[[g]] <- prepare_fs_dat(
+        y[[g]], est = est[[g]], add = add_to_evfs[[g]],
+        mp = miss_pat[[g]]
+      )
       fs_lst[[g]][[group]] <- names(est[g])
     }
     attr_names <- setdiff(names(attributes(fs_lst[[1]])),
@@ -157,7 +196,7 @@ get_fs_lavaan <- function(lavobj,
   out
 }
 
-augment_fs <- function(est, fs, fs_ev) {
+augment_fs <- function(fs, fs_ev) {
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   # fs_se[is.nan(fs_se)] <- 0
   colnames(fs) <- paste0("fs_", colnames(fs))
@@ -297,6 +336,7 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
     mats <- list(mats)
   }
   out <- vector("list", ngrp)
+  mp <- lavobj@Data@Mp
   for (g in seq_len(ngrp)) {
     free <- frees[[g]]
     mat <- mats[[g]]
@@ -306,14 +346,27 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
         mat[[l]][which(free[[l]] == i)] <- par[i]
       }
     }
-    a <- do.call(compute_a_from_mat,
-                 args = c(method, mat[c("lambda", "psi", "theta")]))
-    if (what == "a") {
-      out[[g]] <- a
-    } else if (what == "evfs") {
-      out[[g]] <- a %*% mat$theta %*% t(a)
-    } else if (what == "ldfs") {
-      out[[g]] <- a %*% mat$lambda
+    pat <- mp[[g]]$pat
+    if (is.null(pat)) {
+      pat <- matrix(TRUE, nrow = 1, ncol = ncol(mat$theta))
+    }
+    num_mp <- nrow(pat)
+    out[[g]] <- vector("list", num_mp)
+    for (m in seq_len(num_mp)) {
+      idx <- which(pat[m, ])
+      a <- do.call(compute_a_from_mat,
+                   args = c(method, mat[c("lambda", "psi", "theta")],
+                            idx = list(idx)))
+      if (what == "a") {
+        out[[g]][[m]] <- a
+      } else if (what == "evfs") {
+        out[[g]][[m]] <- a %*% mat$theta[idx, idx, drop = FALSE] %*% t(a)
+      } else if (what == "ldfs") {
+        out[[g]][[m]] <- a %*% mat$lambda[idx, , drop = FALSE]
+      }
+      if (num_mp == 1) {
+        out[[g]] <- out[[g]][[1]]
+      }
     }
   }
   out
@@ -324,7 +377,11 @@ compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
 }
 
 compute_a_from_mat <- function(method = c("regression", "Bartlett"),
-                               lambda, theta, psi = NULL) {
+                               lambda, theta, psi = NULL, idx = NULL) {
+  if (!is.null(idx)) {
+    lambda <- lambda[idx, , drop = FALSE]
+    theta <- theta[idx, idx, drop = FALSE]
+  }
   method <- match.arg(method)
   if (method == "regression") {
     if (is.null(psi)) {
