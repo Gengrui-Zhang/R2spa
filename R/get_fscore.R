@@ -17,7 +17,7 @@
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
 #'              [tspa()] results. This is currently ignored.
-#' @param reliability Local. Whether to return the reliability of factor
+#' @param reliability Logical. Whether to return the reliability of factor
 #'                    scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
@@ -136,17 +136,30 @@ get_fs_lavaan <- function(lavobj,
   }
   if (reliability) {
     if (corrected_fsT) {
-      ev_fs <- out[1, grepl("ev_fs", names(out))]
-      if (length(ev_fs) > 1) {
+      multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
+                            length(attr(out, "fsb")[[1]]) > 1,
+                            length(attr(out, "fsb")) > 1)
+      if (multifactor) {
         warning("Compution of reliability for a multi-factor model is not ",
                 "currently supported. ")
       } else {
-        attr(out, "reliability") <- compute_rel(
-          fsL = attr(out, "fsL"),
-          ev_fs = ev_fs,
-          psi = est$psi,
-          method = method
-        )
+        if (length(group) == 0) {
+          attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
+        } else {
+          ngroup <- length(out)
+          rels <- rep(NA, ngroup)
+          vc_all <- vcov(lavobj)
+          int_terms <- grepl("~1", rownames(vc_all))
+          vc_rel <- vc_all[!int_terms, !int_terms]
+          vc_dim <- dim(vc_rel)[1] / ngroup
+          for (g in seq_len(ngroup)) {
+            vc_ind <- (g - 1) * vc_dim + seq_len(vc_dim)
+            vc <- vc_rel[vc_ind, vc_ind]
+            rels[g] <- compute_rel(est[[g]], vc)
+          }
+          group_n <- lavInspect(lavobj, what = "norig")
+          attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+        }
       }
     } else {
       warning("Computing the reliability of factor scores requires the ",
@@ -416,12 +429,30 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   jac %*% lavaan::vcov(fit) %*% t(jac)
 }
 
-compute_rel <- function(fsL, ev_fs, psi,
-                        method = c("regression", "Bartlett")) {
-  method <- match.arg(method)
-  if (method == "regression") {
-    return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
-  } else if (method == "Bartlett") {
-    return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
-  }
+compute_rel <- function(est, vc) {
+  lam <- est$lambda
+  th <- est$theta
+  sigma <- tcrossprod(lam) + th
+  ahat <- crossprod(lam, solve(sigma))
+
+  jac_a <- lavaan::lav_func_jacobian_complex(
+    function(x) {
+      R2spa:::compute_a_from_mat(
+        lambda = x[seq_along(lam)],
+        theta = diag(x[-(seq_along(lam))]),
+        psi = matrix(1)
+      )
+    },
+    c(lam, diag(th))
+  )
+  va <- jac_a %*% vc %*% t(jac_a)
+  aa <- crossprod(ahat) + va
+  sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
+
+  # method <- match.arg(method)
+  # if (method == "regression") {
+  #   return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
+  # } else if (method == "Bartlett") {
+  #   return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
+  # }
 }
