@@ -87,6 +87,7 @@ get_fs_lavaan <- function(lavobj,
                           reliability = FALSE) {
   est <- lavInspect(lavobj, what = "est")
   y <- lavInspect(lavobj, what = "data")
+  if (reliability) corrected_fsT <- TRUE
   if (corrected_fsT) {
     add_to_evfs <- correct_evfs(lavobj, method = method)
   } else {
@@ -135,36 +136,30 @@ get_fs_lavaan <- function(lavobj,
     attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
   }
   if (reliability) {
-    if (corrected_fsT) {
-      multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
-                            length(attr(out, "fsb")[[1]]) > 1,
-                            length(attr(out, "fsb")) > 1)
-      if (multifactor) {
-        warning("Compution of reliability for a multi-factor model is not ",
-                "currently supported. ")
-      } else {
-        if (length(group) == 0) {
-          attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
-        } else {
-          ngroup <- length(out)
-          rels <- rep(NA, ngroup)
-          vc_all <- vcov(lavobj)
-          int_terms <- grepl("~1", rownames(vc_all))
-          vc_rel <- vc_all[!int_terms, !int_terms]
-          vc_dim <- dim(vc_rel)[1] / ngroup
-          for (g in seq_len(ngroup)) {
-            vc_ind <- (g - 1) * vc_dim + seq_len(vc_dim)
-            vc <- vc_rel[vc_ind, vc_ind]
-            rels[g] <- compute_rel(est[[g]], vc)
-          }
-          group_n <- lavInspect(lavobj, what = "norig")
-          attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
-        }
-      }
+    multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
+                          length(attr(out, "fsb")[[1]]) > 1,
+                          length(attr(out, "fsb")) > 1)
+    if (multifactor) {
+      warning("Compution of reliability for a multi-factor model is not ",
+              "currently supported. ")
     } else {
-      warning("Computing the reliability of factor scores requires the ",
-              "corrected error variance estimates. ",
-              "Specify `corrected_fsT = TRUE` to proceed. ")
+      if (length(group) == 0) {
+        attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
+      } else {
+        ngroup <- length(out)
+        rels <- rep(NA, ngroup)
+        vc_all <- vcov(lavobj)
+        int_terms <- grepl("~1", rownames(vc_all))
+        vc_rel <- vc_all[!int_terms, !int_terms]
+        vc_dim <- dim(vc_rel)[1] / ngroup
+        for (g in seq_len(ngroup)) {
+          vc_ind <- (g - 1) * vc_dim + seq_len(vc_dim)
+          vc <- vc_rel[vc_ind, vc_ind]
+          rels[g] <- compute_rel(est[[g]], vc)
+        }
+        group_n <- lavInspect(lavobj, what = "norig")
+        attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+      }
     }
   }
   out
