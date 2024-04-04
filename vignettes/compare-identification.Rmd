@@ -1,10 +1,10 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "Comparing Methods for Standardized Structural Coefficients"
+author: "Mark Lai"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{compare-identification}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -26,7 +26,7 @@ library(R2spa)
 ```{r}
 set.seed(1116)
 # Low reliability, high SE for measurement parameters
-num_obs <- 100
+num_obs <- 50
 beta <- .7
 Lambda <- matrix(c(.8, .5, .6, rep(0, 6), .6, .7, .5), ncol = 2)
 Theta <- diag(.75, nrow(Lambda))
@@ -85,7 +85,9 @@ m2spa1 <- tspa(" fy ~ fx",
 standardizedSolution(m2spa1, type = "std.lv")
 ```
 
-Corrected Standard Errors
+### Corrected Standard Errors
+
+Using information matrix
 
 ```{r}
 v1 <- attr(fs, "vfsLT")[c(5, 7), c(5, 7)]
@@ -158,7 +160,9 @@ jac <- numDeriv::jacobian(
 vc_corrected <- jac %*% (vcov(m2spa1) + correction) %*% t(jac)
 ```
 
-Correction using jacobian (similar to using the information matrix)
+### Correction using jacobian
+
+This is similar to above, but use the first derivative instead of the information matrix
 
 Let $\gamma_1$ be the vector of paramters in stage 1 analyses that are used as input for stage 2, and $\gamma_2$ be the vector of structural parameters in stage 2 analyses. In large samples, we assume $\hat \gamma_1$ $\sim$ $N(\gamma_1, V_{\hat \gamma_1})$, and $\hat \gamma_2 | \gamma_1$ $\sim$ $N(\gamma_2, V_{\hat \gamma_2 | \gamma_1})$, where $V_{\hat \gamma_2 | \gamma_1}$ is the naive variance assuming $\gamma_1$ is known. Using the law of total variance,
 
@@ -191,6 +195,7 @@ vc_corrected2 <- lavInspect(m2spa1, what = "vcov.std")[1, 1] +
 <!-- Corrected SE with Bayesian priors
 
 ```{r}
+#| include: false
 #| eval: false
 kl_gam <- function(ab, mu, sigma) {
   integrate(
@@ -279,6 +284,8 @@ vc_corrected3 <- lavInspect(m2spa2, what = "vcov.std")[5:6, 5:6] +
 
 ### Corrected SE with Monte Carlo Method
 
+Simulating new $\theta^*$ values from a multivariate normal distribution
+
 ```{r}
 # 1. Simulate new error variables
 sim_ep <- MASS::mvrnorm(200,
@@ -291,6 +298,53 @@ vc_corrected_mc <- lavInspect(m2spa2, what = "vcov.std")[5:6, 5:6] +
   cov(t(new_est))
 ```
 
+<!--
+
+## Approach 6: 2S-PA with both loading and error (regression scores)
+
+```{r}
+#| eval: false
+fsr <- get_fs_lavaan(cfa_fit, method = "regression", vfsLT = TRUE)
+m2spa3 <- tspa(" fy ~ fx",
+  data = fsr,
+  fsT = attr(fsr, "fsT"), fsL = attr(fsr, "fsL")
+)
+standardizedSolution(m2spa3, type = "std.lv")
+```
+
+### Correction using jacobian
+
+```{r}
+#| eval: false
+std_est <- function(ldev) {
+  fsL1 <- attr(m2spa3, which = "fsL")
+  fsL1[] <- ldev[1:4]
+  fsT1 <- attr(m2spa3, which = "fsT")
+  fsT1[lower.tri(fsT1, diag = TRUE)] <- ldev[5:7]
+  fsT1[1, 2] <- fsT1[2, 1]
+  mm2spa3 <- tspa(" fy ~ fx",
+    data = fsr,
+    fsT = fsT1, fsL = fsL1
+  )
+  standardizedSolution(mm2spa3, type = "std.lv")$est.std[8]
+}
+std_est(c(
+  attr(m2spa3, which = "fsL"),
+  attr(m2spa3, which = "fsT")[c(1, 2, 4)]
+))
+# Jacobian
+grad_std <- numDeriv::grad(std_est,
+  x = c(
+    attr(m2spa3, which = "fsL"),
+    attr(m2spa3, which = "fsT")[c(1, 2, 4)]
+  )
+)
+vc_corrected4 <- lavInspect(m2spa3, what = "vcov.std")[1, 1] +
+  t(grad_std) %*% attr(fsr, which = "vfsLT") %*% grad_std
+```
+
+-->
+
 ## Comparisons
 
 ```{r}
@@ -301,8 +355,8 @@ cbind(
   `2spa-ev` = unlist(standardizedSolution(m2spa1)[8, c("est.std", "se")]),
   `2spa-ev-cor` = c(.70, sqrt(diag(vc_corrected)[1])),
   `2spa-rel` = unlist(standardizedSolution(m2spa2)[6, c("est.std", "se")]),
-  `2spa-rel-cor1` = c(.70, sqrt(diag(vc_corrected3))[1]),
-  `2spa-rel-cor2` = c(.70, sqrt(diag(vc_corrected_mc))[1])
+  `2spa-rel-cor1` = c(.70, sqrt(diag(vc_corrected3)[1])),
+  `2spa-rel-cor2` = c(.70, sqrt(diag(vc_corrected_mc)[1]))
 )
 ```
 
@@ -347,6 +401,22 @@ unstd2std <- function(par, par_id, obj) {
     est = est1,
     GLIST = glist1
   )$est[par_id]
+}
+
+std_est <- function(ev, obj) {
+  fsT1 <- attr(obj, which = "fsT")
+  diag(fsT1) <- ev
+  mobj <- tspa(" fy ~ fx",
+    data = fs,
+    fsT = fsT1, fsL = attr(fs, "fsL")
+  )
+  standardizedSolution(mobj, type = "std.lv")$est.std[8]
+}
+
+compute_std_est <- function(ep, mod) {
+  mod_tmp <- gsub("ep2", ep[2], mod)
+  mod_tmp <- gsub("ep1", ep[1], mod_tmp)
+  standardizedSolution(sem(mod_tmp, data = fs))$est[6:7]
 }
 
 est <- se <- matrix(nrow = 7, ncol = num_sim)
@@ -395,18 +465,9 @@ for (r in seq_len(num_sim)) {
   tspa1_est <- standardizedSolution(m2spa1)[8, ]
   ### Corrected Standard Errors
   v1 <- attr(fs, "vfsLT")[c(5, 7), c(5, 7)]
-  std_est <- function(ev) {
-    fsT1 <- attr(m2spa1, which = "fsT")
-    diag(fsT1) <- ev
-    mm2spa1 <- tspa(" fy ~ fx",
-      data = fs,
-      fsT = fsT1, fsL = attr(fs, "fsL")
-    )
-    standardizedSolution(mm2spa1, type = "std.lv")$est.std[8]
-  }
   # Gradient
   grad_std <- numDeriv::grad(std_est,
-    x = diag(attr(fs, "fsT"))
+    x = diag(attr(fs, "fsT")), obj = m2spa1
   )
   vc_corrected2 <- lavInspect(m2spa1, what = "vcov.std")[1, 1] +
     t(grad_std) %*% v1 %*% grad_std
@@ -432,14 +493,9 @@ for (r in seq_len(num_sim)) {
   tspa2_est <- standardizedSolution(m2spa2)[6, ]
 
   ## Corrected standard errors
-  compute_std_est <- function(ep) {
-    mod_tmp <- gsub("ep2", ep[2], mod2)
-    mod_tmp <- gsub("ep1", ep[1], mod_tmp)
-    standardizedSolution(sem(mod_tmp, data = fs))$est[6:7]
-  }
   # Jacobian
   jac_std <- numDeriv::jacobian(compute_std_est,
-    x = diag(attr(fs, "fsT"))
+    x = diag(attr(fs, "fsT")), mod = mod2
   )
   vc_corrected3 <- lavInspect(m2spa2, what = "vcov.std")[5:6, 5:6] +
     jac_std %*% v1 %*% t(jac_std)
@@ -479,7 +535,7 @@ se <- lst$se
 ```
 
 ```{r}
-rowMeans(est)
-rowMeans(se)
-apply(est, MARGIN = 1, FUN = sd)
+rowMeans(est, na.rm = TRUE)
+rowMeans(se, na.rm = TRUE)
+apply(est, MARGIN = 1, FUN = sd, na.rm = TRUE)
 ```
