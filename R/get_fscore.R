@@ -146,19 +146,22 @@ get_fs_lavaan <- function(lavobj,
       if (length(group) == 0) {
         attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
       } else {
-        ngroup <- length(out)
-        rels <- rep(NA, ngroup)
-        vc_all <- vcov(lavobj)
-        int_terms <- grepl("~1", rownames(vc_all))
-        vc_rel <- vc_all[!int_terms, !int_terms]
-        vc_dim <- dim(vc_rel)[1] / ngroup
-        for (g in seq_len(ngroup)) {
-          vc_ind <- (g - 1) * vc_dim + seq_len(vc_dim)
-          vc <- vc_rel[vc_ind, vc_ind]
-          rels[g] <- compute_rel(est[[g]], vc)
+        if (any(unlist(lapply(est, \(x) x$psi)) != 1)) {
+          warning("Computation of reliability for multiple groups is ",
+                  "currently supported if `std.lv = TRUE`. ")
+          attr(out, "reliability") <- NULL
+        } else {
+          ngroup <- length(out)
+          vc_all <- vcov(lavobj)
+          rels <- lapply(seq_len(ngroup), \(g) {
+            ind <- lavInspect(lavobj, what = "free")[[g]]
+            vc_ind <- c(ind$lambda, diag(ind$theta))
+            vc <- vc_all[vc_ind, vc_ind]
+            compute_rel(est[[g]], vc, method)
+          }) |> unlist()
+          group_n <- lavInspect(lavobj, what = "norig")
+          attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
         }
-        group_n <- lavInspect(lavobj, what = "norig")
-        attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
       }
     }
   }
@@ -424,7 +427,8 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   jac %*% lavaan::vcov(fit) %*% t(jac)
 }
 
-compute_rel <- function(est, vc) {
+compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
   lam <- est$lambda
   th <- est$theta
   sigma <- tcrossprod(lam) + th
@@ -433,6 +437,7 @@ compute_rel <- function(est, vc) {
   jac_a <- lavaan::lav_func_jacobian_complex(
     function(x) {
       R2spa:::compute_a_from_mat(
+        method = method,
         lambda = x[seq_along(lam)],
         theta = diag(x[-(seq_along(lam))]),
         psi = matrix(1)
