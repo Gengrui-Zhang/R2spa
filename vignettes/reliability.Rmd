@@ -186,80 +186,8 @@ sum(diag(tcrossprod(lam) %*% aa)) /
 
 ```{r}
 #| eval: false
-# num_sims <- 100000
-# out <- matrix(nrow = 6 * 6, ncol = num_sims)
-
-# for (i in seq_len(num_sims)) {
-#   # eta <- rnorm(num_obs)
-#   # err <- matrix(
-#   #   rnorm(num_obs * length(lambda), sd = sqrt(theta)),
-#   #   ncol = num_obs
-#   # )
-#   # y <- t(
-#   #   tcrossprod(lambda, eta) + err
-#   # )
-#   y <- MASS::mvrnorm(num_obs, mu = lambda * 0,
-#                      Sigma = true_sigma)
-#   inv_covy <- solve(cov(y) * (num_obs - 1) / num_obs)
-#   out[, i] <- inv_covy
-#   # covy <- cov(y)
-#   # out[, i] <- covy[lower.tri(covy, diag = TRUE)]
-# }
-# # rowMeans(out) / (true_sigma[lower.tri(true_sigma, diag = TRUE)])
-# mean(rowMeans(out) / solve(true_sigma))
-# # mean(rowMeans(out) / solve(true_sigma)[lower.tri(true_sigma, diag = TRUE)])
-# num_obs / (num_obs - length(lambda) - 2)
-```
-
-```{r}
-#| eval: false
+num_sims <- 2000
 out <- matrix(ncol = 7, nrow = num_sims)
-
-# get_rel <- function(lam, dth, vc = NULL, method = c("adjust", "quad")) {
-#   sigma <- tcrossprod(lam) + diag(dth)
-#   if (is.null(vc)) {
-#     # Formula 1 (no adjustment)
-#     crossprod(lam, solve(sigma, lam))
-#   } else {
-#     method <- match.arg(method)
-#     jac_a <- lavaan::lav_func_jacobian_complex(
-#       function(x) {
-#         R2spa:::compute_a_from_mat(
-#           lambda = x[1:6],
-#           theta = diag(x[7:12]),
-#           psi = matrix(1)
-#         )
-#       },
-#       c(lam, dth)
-#     )
-#     va <- jac_a %*% vc %*% t(jac_a)
-#     ahat <- crossprod(lam, solve(sigma))
-#     aa <- crossprod(ahat) + va
-#     if (method == "adjust") {
-#       # Formula 2: adjust for both error and true variances
-#       sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
-#     } else if (method == "quad") {
-#       # Formula 3: solve quadratic equation with adjusted error
-#       ev_fs <- sum(diag(diag(dth) %*% aa))
-#       (1 + sqrt(1 - 4 * ev_fs)) / 2
-#     }
-#   }
-# }
-
-# bc_rel <- function(fit, nsim = 500, adjust = FALSE, ...) {
-#   mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vcov(fit))
-#   if (adjust) {
-#     vc <- vcov(fit)
-#   } else {
-#     vc <- NULL
-#   }
-#   mc_rel <- apply(mc_sim, MARGIN = 1,
-#                   FUN = \(x) get_rel(x[1:6], x[7:12], vc = vc, ...))
-#   2 * with(
-#     lavInspect(fit, what = "est"),
-#     get_rel(lambda, dth = diag(theta), vc = vc, ...)
-#   ) - mean(mc_rel) # bias-corrected
-# } # Seems reasonable when n = 100
 
 # Function for getting all versions
 all_rel <- function(lam, th, vc) {
@@ -323,15 +251,9 @@ for (i in seq_len(num_sims)) {
   true_rel <- cor(tilde_eta, eta)^2
   est_a <- attr(tilde_eta, "fsm")[[1]]
   out[i, ] <- c(
-    true_rel, # est_a %*% lambda, est_a %*% diag(theta) %*% t(est_a),
-    # est_a %*% pars_fit$lambda, # need clarification
-    # est_a %*% pars_fit$theta %*% t(est_a),
-    # all_bc_rel(fit)
+    true_rel, 
     all_rel(pars_fit$lambda, pars_fit$theta, vcov(fit)), 
     all_bc_rel(fit)
-    # crossprod(pars_fit$lambda, solve(true_sigma, pars_fit$lambda)),
-    # crossprod(lambda, solve(lavInspect(fit, what = "sigma"), lambda)),
-    # sum(diag(vcov(pop_fit)[1:6, 1:6] %*% lavInspect(fit, what = "sigma")))
     )
   setTxtProgressBar(
     txtProgressBar(min = 0, max = num_sims, style = 3, width = 50, char = "="), 
@@ -347,14 +269,9 @@ saveRDS(out, "vignettes/sim_results_reliability.RDS")
 
 
 ```{r}
-num_sims <- 2000
-# Create a table for raw biases: mean(estimated - true)
-# example: mean(out[, "no_adj_rel"] - out[, "true_rel"])
+# Mean bias
 out <- read.csv("sim_output.csv")
-mean(out[, "no_adj_rel"] - out[, "true_rel"])
-
-# Creating a data frame
-data <- data.frame(
+data.frame(
   Type = c("no_adj_rel", "adj_rel", "quadratic",
            "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
   Raw_Biases = c(mean(out[, "no_adj_rel"] - out[, "true_rel"]), 
@@ -365,29 +282,23 @@ data <- data.frame(
                  mean(out[, "quadratic_bc"] - out[, "true_rel"], na.rm = TRUE))
 )
 
-# Displaying the data frame
-print(data)
-
-# Create a table for RMSE: sqrt(1 / num_sims * sum(estimated - true)^2)
-# example: sqrt(1 / num_sims * sum(out[, "no_adj_rel"] - out[, "true_rel"])^2)
-RMSE_data <- data.frame(
-  Type = c("no_adj_rel", "adj_rel", "quadratic", "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
-  RMSE = c(sqrt(1 / num_sims * sum(out[, "no_adj_rel"] - out[, "true_rel"])^2),
-           sqrt(1 / num_sims * sum(out[, "adj_rel"] - out[, "true_rel"])^2),
-           sqrt(1 / num_sims * sum(out[, "quadratic"] - out[, "true_rel"])^2),
-           sqrt(1 / num_sims * sum(out[, "no_adj_rel_bc"] - out[, "true_rel"])^2),
-           sqrt(1 / num_sims * sum(out[, "adj_rel_bc"] - out[, "true_rel"])^2),
-           sqrt(1 / num_sims * sum(out[, "quadratic_bc"] - out[, "true_rel"], na.rm = TRUE)^2))
+# RMSE: 
+data.frame(
+  Type = c("no_adj_rel", "adj_rel", "quadratic",
+           "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),,
+  RMSE = c(sqrt(mean((out[, "no_adj_rel"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "adj_rel"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "quadratic"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "no_adj_rel_bc"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "adj_rel_bc"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "quadratic_bc"] - out[, "true_rel"])^2, na.rm = TRUE)))
 )
-print(RMSE_data)
 
 ```
 
 ```{r}
 # Boxplot to compare the bias across formula
-bias_tab <- data.frame(no_adj_rel = out[, "no_adj_rel"] - out[, "true_rel"], 
-                       adj_rel = out[, "adj_rel"] - out[, "true_rel"], 
-                       quadratic = out[, "quadratic"] - out[, "true_rel"]) |>
+bias_tab <- as.data.frame(out[, -1] - out[, 1]) |>
   pivot_longer(everything(), names_to = "formula", values_to = "bias")
 bias_tab |>
   ggplot(aes(x = formula, y = bias, col = formula)) +
