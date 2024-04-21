@@ -17,7 +17,7 @@
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
 #'              [tspa()] results. This is currently ignored.
-#' @param reliability Local. Whether to return the reliability of factor
+#' @param reliability Logical. Whether to return the reliability of factor
 #'                    scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
@@ -87,6 +87,7 @@ get_fs_lavaan <- function(lavobj,
                           reliability = FALSE) {
   est <- lavInspect(lavobj, what = "est")
   y <- lavInspect(lavobj, what = "data")
+  if (reliability) corrected_fsT <- TRUE
   if (corrected_fsT) {
     add_to_evfs <- correct_evfs(lavobj, method = method)
   } else {
@@ -174,23 +175,33 @@ get_fs_lavaan <- function(lavobj,
     attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
   }
   if (reliability) {
-    if (corrected_fsT) {
-      ev_fs <- out[1, grepl("ev_fs", names(out))]
-      if (length(ev_fs) > 1) {
-        warning("Compution of reliability for a multi-factor model is not ",
-                "currently supported. ")
-      } else {
-        attr(out, "reliability") <- compute_rel(
-          fsL = attr(out, "fsL"),
-          ev_fs = ev_fs,
-          psi = est$psi,
-          method = method
-        )
-      }
+    multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
+                          length(attr(out, "fsb")[[1]]) > 1,
+                          length(attr(out, "fsb")) > 1)
+    if (multifactor) {
+      warning("Compution of reliability for a multi-factor model is not ",
+              "currently supported. ")
     } else {
-      warning("Computing the reliability of factor scores requires the ",
-              "corrected error variance estimates. ",
-              "Specify `corrected_fsT = TRUE` to proceed. ")
+      if (length(group) == 0) {
+        attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
+      } else {
+        if (any(unlist(lapply(est, \(x) x$psi)) != 1)) {
+          warning("Computation of reliability for multiple groups is ",
+                  "currently supported if `std.lv = TRUE`. ")
+          attr(out, "reliability") <- NULL
+        } else {
+          ngroup <- length(out)
+          vc_all <- vcov(lavobj)
+          rels <- lapply(seq_len(ngroup), \(g) {
+            ind <- lavInspect(lavobj, what = "free")[[g]]
+            vc_ind <- c(ind$lambda, diag(ind$theta))
+            vc <- vc_all[vc_ind, vc_ind]
+            compute_rel(est[[g]], vc, method)
+          }) |> unlist()
+          group_n <- lavInspect(lavobj, what = "norig")
+          attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+        }
+      }
     }
   }
   out
@@ -473,12 +484,32 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   jac %*% lavaan::vcov(fit) %*% t(jac)
 }
 
-compute_rel <- function(fsL, ev_fs, psi,
-                        method = c("regression", "Bartlett")) {
+compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
-  if (method == "regression") {
-    return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
-  } else if (method == "Bartlett") {
-    return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
-  }
+  lam <- est$lambda
+  th <- est$theta
+  sigma <- tcrossprod(lam) + th
+  ahat <- crossprod(lam, solve(sigma))
+
+  jac_a <- lavaan::lav_func_jacobian_complex(
+    function(x) {
+      R2spa:::compute_a_from_mat(
+        method = method,
+        lambda = x[seq_along(lam)],
+        theta = diag(x[-(seq_along(lam))]),
+        psi = matrix(1)
+      )
+    },
+    c(lam, diag(th))
+  )
+  va <- jac_a %*% vc %*% t(jac_a)
+  aa <- crossprod(ahat) + va
+  sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
+
+  # method <- match.arg(method)
+  # if (method == "regression") {
+  #   return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
+  # } else if (method == "Bartlett") {
+  #   return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
+  # }
 }
