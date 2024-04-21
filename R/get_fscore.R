@@ -183,7 +183,8 @@ get_fs_lavaan <- function(lavobj,
               "currently supported. ")
     } else {
       if (length(group) == 0) {
-        attr(out, "reliability") <- compute_rel(est, vcov(lavobj))
+        attr(out, "reliability") <- compute_rel(est, vcov(lavobj),
+                                                method = method)
       } else {
         if (any(unlist(lapply(est, \(x) x$psi)) != 1)) {
           warning("Computation of reliability for multiple groups is ",
@@ -488,6 +489,9 @@ compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   lam <- est$lambda
   th <- est$theta
+  if (ncol(lam) > 1) {
+    stop("reliability is only supported for unidimensional models.")
+  }
   sigma <- tcrossprod(lam) + th
   ahat <- crossprod(lam, solve(sigma))
 
