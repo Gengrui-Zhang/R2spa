@@ -98,13 +98,13 @@ get_fs_lavaan <- function(lavobj,
     if (is.null(mp)) {
       fscore <-
         compute_fscore(y,
-          lambda = est$lambda,
-          theta = est$theta,
-          psi = est$psi,
-          nu = est$nu,
-          alpha = est$alpha,
-          method = method,
-          fs_matrices = TRUE
+                       lambda = est$lambda,
+                       theta = est$theta,
+                       psi = est$psi,
+                       nu = est$nu,
+                       alpha = est$alpha,
+                       method = method,
+                       fs_matrices = TRUE
         )
       augment_fs(fscore, attr(fscore, which = "fsT") + add)
     } else {
@@ -117,13 +117,13 @@ get_fs_lavaan <- function(lavobj,
         pat_m <- pats[m, ]
         fs_m <-
           compute_fscore(y[idx_m, pat_m, drop = FALSE],
-            lambda = est$lambda[pat_m, , drop = FALSE],
-            theta = est$theta[pat_m, pat_m, drop = FALSE],
-            psi = est$psi,
-            nu = est$nu[pat_m, , drop = FALSE],
-            alpha = est$alpha,
-            method = method,
-            fs_matrices = TRUE
+                         lambda = est$lambda[pat_m, , drop = FALSE],
+                         theta = est$theta[pat_m, pat_m, drop = FALSE],
+                         psi = est$psi,
+                         nu = est$nu[pat_m, , drop = FALSE],
+                         alpha = est$alpha,
+                         method = method,
+                         fs_matrices = TRUE
           )
         fs_dat <- augment_fs(fs_m, attr(fs_m, which = "fsT") + add)
         if (m == 1) {
@@ -183,25 +183,37 @@ get_fs_lavaan <- function(lavobj,
               "currently supported. ")
     } else {
       if (length(group) == 0) {
-        attr(out, "reliability") <- compute_rel(est, vcov(lavobj),
-                                                method = method)
-      } else {
-        if (any(unlist(lapply(est, \(x) x$psi)) != 1)) {
-          warning("Computation of reliability for multiple groups is ",
-                  "currently supported if `std.lv = TRUE`. ")
-          attr(out, "reliability") <- NULL
-        } else {
-          ngroup <- length(out)
-          vc_all <- vcov(lavobj)
-          rels <- lapply(seq_len(ngroup), \(g) {
-            ind <- lavInspect(lavobj, what = "free")[[g]]
-            vc_ind <- c(ind$lambda, diag(ind$theta))
-            vc <- vc_all[vc_ind, vc_ind]
-            compute_rel(est[[g]], vc, method)
-          }) |> unlist()
-          group_n <- lavInspect(lavobj, what = "norig")
-          attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+        is_std.lv <- est$psi == 1
+        if (is_std.lv) {
+          attr(out, "reliability") <- compute_rel(est, vcov(lavobj),
+                                                  method = method)
         }
+      } else {
+        is_std.lv = all(unlist(lapply(est, \(x) x$psi)) == 1)
+        if (is_std.lv) {
+          diag_theta <- lapply(est,
+                               \(x) all(x$theta[!diag(nrow(x$theta))] == 0))
+          if (all(unlist(diag_theta))) {
+            ngroup <- length(out)
+            vc_all <- vcov(lavobj)
+            rels <- lapply(seq_len(ngroup), \(g) {
+              ind <- lavInspect(lavobj, what = "free")[[g]]
+              vc_ind <- c(ind$lambda, diag(ind$theta))
+              vc <- vc_all[vc_ind, vc_ind]
+              compute_rel(est[[g]], vc, method = method)
+            }) |> unlist()
+            group_n <- lavInspect(lavobj, what = "norig")
+            attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+          } else {
+            warning("Only diagonal theta matrix is currently supported. ")
+            attr(out, "reliability") <- NULL
+          }
+        }
+      }
+      if (!is_std.lv) {
+        warning("Computation of reliability for multiple groups is ",
+                "currently supported if `std.lv = TRUE`. ")
+        attr(out, "reliability") <- NULL
       }
     }
   }
