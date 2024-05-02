@@ -139,6 +139,8 @@ where $\theta_{corrected}$ is the corrected error term for the factor scores.
 
 ## Empirical Example
 
+### Regression Factor Scores
+
 ```{r}
 # Three items from the classic Holzinger and Swineford (1939) data
 cfa_fit <- cfa("
@@ -175,14 +177,36 @@ get_fs_lavaan(cfa_fit, reliability = TRUE) |>
   attr(which = "reliability")
 ```
 
+### Bartlett Factor Scores
+
 ```{r}
-#| include: false
-#| eval: false
-# # Uncorrected reliability of Bartlett factor scores
-# fsb <- lavPredict(cfa_fit, method = "Bartlett", fsm = TRUE, acov = TRUE)
-# 1 / (1 + attr(fsb, "acov")[[1]])
-# # Empirical reliability of Bartlett factor scores
-# (var(fsb) - attr(fsb, "acov")[[1]]) / var(fsb)
+# Uncorrected reliability of Bartlett factor scores
+fsb <- lavPredict(cfa_fit, method = "Bartlett", fsm = TRUE, acov = TRUE)
+1 / (1 + attr(fsb, "acov")[[1]])
+# Empirical reliability of regression factor scores
+(var(fsb) - attr(fsb, "acov")[[1]]) / var(fsb)
+```
+
+```{r}
+# Corrected reliability of regression factor scores
+get_a <- function(lambda, theta) {
+  thinv_lam <- solve(theta, lambda)
+  solve(crossprod(lambda, thinv_lam), t(thinv_lam))
+}
+lam <- lavInspect(cfa_fit, what = "est")$lambda
+th <- lavInspect(cfa_fit, what = "est")$theta
+jac_a <- lavaan::lav_func_jacobian_complex(
+  \(x) get_a(x[1:3], diag(x[4:6])),
+  x = c(lam, diag(th))
+)
+# Estimated sampling variance of weights
+va <- jac_a %*% vcov(cfa_fit)[1:6, 1:6] %*% t(jac_a)
+aa <- tcrossprod(t(get_a(lam, th))) + va
+sum(diag(tcrossprod(lam) %*% aa)) /
+  sum(diag(cfa_fit@implied$cov[[1]] %*% aa))
+# Or using `get_fs_lavaan` (need to be fixed)
+R2spa::get_fs_lavaan(cfa_fit, method = "Bartlett", reliability = TRUE) |>
+  attr(which = "reliability")
 ```
 
 ## Simulations
