@@ -20,12 +20,16 @@ header-includes:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+<!--
+
 TODO:
 
-- [ ] Implement the three reliability estimation (quadratic root method as experimental)
-- [ ] Perform a small-scale simulation
+- [p] Implement the three reliability estimation (quadratic root method as experimental)
+- [x] Perform a small-scale simulation
 - [x] Write down math equations for all methods
 - [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
+
+-->
 
 In this vignette, we explore analytically the reliability of factor scores, and evaluate them using simulated data.
 
@@ -133,61 +137,70 @@ $$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
 
 where $\theta_{corrected}$ is the corrected error term for the factor scores.
 
+## Empirical Example
+
 ```{r}
-set.seed(1247)
-# Simulate small data with 6 items
+# Three items from the classic Holzinger and Swineford (1939) data
+cfa_fit <- cfa("
+  visual =~ x1 + x2 + x3
+",
+  data = HolzingerSwineford1939,
+  std.lv = TRUE
+)
+# Uncorrected reliability of regression factor scores
+fsr <- lavPredict(cfa_fit, fsm = TRUE, acov = TRUE)
+attr(fsr, "fsm")[[1]] %*% lavInspect(cfa_fit, what = "est")$lambda
+# Empirical reliability of regression factor scores
+var(fsr) / (var(fsr) + attr(fsr, "acov")[[1]])
+```
+
+```{r}
+# Corrected reliability of regression factor scores
+get_a <- function(lambda, theta) {
+  solve(tcrossprod(lambda) + theta, lambda)
+}
+lam <- lavInspect(cfa_fit, what = "est")$lambda
+th <- lavInspect(cfa_fit, what = "est")$theta
+jac_a <- lavaan::lav_func_jacobian_complex(
+  \(x) get_a(x[1:3], diag(x[4:6])),
+  x = c(lam, diag(th))
+)
+# Estimated sampling variance of weights
+va <- jac_a %*% vcov(cfa_fit)[1:6, 1:6] %*% t(jac_a)
+aa <- tcrossprod(get_a(lam, th)) + va
+sum(diag(tcrossprod(lam) %*% aa)) /
+  sum(diag(cfa_fit@implied$cov[[1]] %*% aa))
+# Or using `get_fs_lavaan`
+get_fs_lavaan(cfa_fit, reliability = TRUE) |>
+  attr(which = "reliability")
+```
+
+```{r}
+#| include: false
+#| eval: false
+# # Uncorrected reliability of Bartlett factor scores
+# fsb <- lavPredict(cfa_fit, method = "Bartlett", fsm = TRUE, acov = TRUE)
+# 1 / (1 + attr(fsb, "acov")[[1]])
+# # Empirical reliability of Bartlett factor scores
+# (var(fsb) - attr(fsb, "acov")[[1]]) / var(fsb)
+```
+
+## Simulations
+
+```{r}
+#| eval: false
+set.seed(2356)
 lambda <- seq(.3, .9, length.out = 6)
 theta <- 1 - lambda^2
 num_obs <- 100
 
-eta <- rnorm(num_obs)
-y <- t(
-  tcrossprod(lambda, eta) + rnorm(num_obs * length(lambda), sd = sqrt(theta))
-)
-# Run cfa
-fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
-  data = data.frame(y) |> setNames(paste0("y", seq_along(lambda))),
-  std.lv = TRUE,
-  meanstructure = TRUE
-)
-fs <- lavPredict(fit, fsm = TRUE)
-head(fs)
-```
-
-# Simulation of each component
-
-```{r}
-# Population matrix
-true_sigma <- tcrossprod(lambda) + diag(theta)
-(true_rel <- crossprod(lambda, solve(true_sigma, lambda)))
-# Squared correlation
-cor(eta, fs)^2
-# Sample estimate of reliability, ignoring error
-(est_rel <- with(lavInspect(fit, what = "est"), {
-  crossprod(lambda, solve(fit@implied$cov[[1]], lambda))
-}))
-# Corrected reliability estimator
-# Factor score function using parameter estimates
-get_a <- function(lambda, theta) {
-  solve(tcrossprod(lambda) + diag(theta), lambda)
-}
-lam <- lavInspect(fit, what = "est")$lambda
-th <- lavInspect(fit, what = "est")$theta
-jac_a <- lavaan::lav_func_jacobian_complex(
-  \(x) get_a(x[1:6], x[7:12]),
-  x = c(lam, diag(th))
-)
-va <- jac_a %*% vcov(fit)[1:12, 1:12] %*% t(jac_a)
-aa <- tcrossprod(get_a(lam, diag(th))) + va
-vnu <- vcov(fit)[13:18, 13:18]
-sum(diag(tcrossprod(lam) %*% aa)) /
-  sum(diag((fit@implied$cov[[1]] + vnu) %*% aa))
-```
-
-```{r}
-#| eval: false
 num_sims <- 2000
 out <- matrix(ncol = 7, nrow = num_sims)
+
+# Copy function for computing a
+get_a <- function(lambda, theta) {
+  solve(tcrossprod(lambda) + theta, lambda)
+}
 
 # Function for getting all versions
 all_rel <- function(lam, th, vc) {
@@ -197,16 +210,13 @@ all_rel <- function(lam, th, vc) {
   rel1 <- ahat %*% lam
 
   jac_a <- lavaan::lav_func_jacobian_complex(
-    function(x) {
-      R2spa:::compute_a_from_mat(
-        lambda = x[seq_along(lam)],
-        theta = diag(x[-(seq_along(lam))]),
-        psi = matrix(1)
-      )
+    function(x, p) {
+      get_a(x[seq_len(p)], theta = diag(x[-(seq_len(p))]))
     },
-    c(lam, diag(th))
+    x = c(lam, diag(th)),
+    p = length(lam)
   )
-  va <- jac_a %*% vcov(fit) %*% t(jac_a)
+  va <- jac_a %*% vc %*% t(jac_a)
   aa <- crossprod(ahat) + va
   # Formula 2: adjust for both error in weights and true variances
   rel2 <- sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
@@ -251,16 +261,16 @@ for (i in seq_len(num_sims)) {
   true_rel <- cor(tilde_eta, eta)^2
   est_a <- attr(tilde_eta, "fsm")[[1]]
   out[i, ] <- c(
-    true_rel, 
-    all_rel(pars_fit$lambda, pars_fit$theta, vcov(fit)), 
+    true_rel,
+    all_rel(pars_fit$lambda, pars_fit$theta, vcov(fit)),
     all_bc_rel(fit)
-    )
+  )
   setTxtProgressBar(
     txtProgressBar(min = 0, max = num_sims, style = 3, width = 50, char = "="), 
     i
   )
 }
-colnames(out) <- c("true_rel", "no_adj_rel", "adj_rel", "quadratic", 
+colnames(out) <- c("true_rel", "no_adj_rel", "adj_rel", "quadratic",
                    "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc")
 
 # save the file
@@ -270,7 +280,7 @@ saveRDS(out, "vignettes/sim_results_reliability.RDS")
 
 ```{r}
 # Mean bias
-out <- read.csv("sim_output.csv")
+out <- readRDS("sim_results_reliability.RDS")
 data.frame(
   Type = c("no_adj_rel", "adj_rel", "quadratic",
            "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
@@ -280,7 +290,8 @@ data.frame(
                  mean(out[, "no_adj_rel_bc"] - out[, "true_rel"]), 
                  mean(out[, "adj_rel_bc"] - out[, "true_rel"]), 
                  mean(out[, "quadratic_bc"] - out[, "true_rel"], na.rm = TRUE))
-)
+) |>
+  knitr::kable(digits = 3)
 
 # RMSE: 
 data.frame(
@@ -292,8 +303,8 @@ data.frame(
            sqrt(mean((out[, "no_adj_rel_bc"] - out[, "true_rel"])^2)),
            sqrt(mean((out[, "adj_rel_bc"] - out[, "true_rel"])^2)),
            sqrt(mean((out[, "quadratic_bc"] - out[, "true_rel"])^2, na.rm = TRUE)))
-)
-
+) |>
+  knitr::kable(digits = 3)
 ```
 
 ```{r}
