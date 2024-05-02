@@ -310,18 +310,28 @@ test_that("Correction factor is similar with single or multiple groups", {
 
 ########## Computing reliability ##########
 
-test_that("Regression factor scores", {
+test_that("Reliability of regression factor scores", {
   fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
-               corrected_fsT = TRUE, reliability = TRUE)
-  expect_equal(as.vector(attr(fs, "reliability")), .9790008,
+               corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE)
+  expect_equal(attr(fs, "reliability"), .9607411,
                tolerance = 1e-7)
 })
 
-test_that("Bartlett factor scores", {
+test_that("Reliability of Bartlett factor scores", {
   fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
-               corrected_fsT = TRUE, reliability = TRUE, method = "Bartlett")
-  expect_equal(as.vector(attr(fs, "reliability")), .9790008,
+               corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE,
+               method = "Bartlett")
+  expect_equal(attr(fs, "reliability"), .9603882,
                tolerance = 1e-7)
+})
+
+test_that("Reliability of regression fs > reliability of Bartlett fs", {
+  rel_reg <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+                    corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE)
+  rel_bart <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+                     corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE,
+                     method = "Bartlett")
+  expect_gt(attr(rel_reg, "reliability"), attr(rel_bart, "reliability"))
 })
 
 
