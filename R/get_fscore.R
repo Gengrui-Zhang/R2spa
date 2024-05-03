@@ -270,10 +270,6 @@ get_fs_mat_names <- function(lv_names, int = TRUE) {
   dimnames(ev_names) <- rep(list(fs_names), 2)
   ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
   dimnames(ld_names) <- list(fs_names, lv_names)
-  # out <- c(
-  #   fs_names, se_names,
-  #   c(ld_names), ev_names[upper.tri(ev_names, diag = TRUE)]
-  # )
   out <- list(
     fs = fs_names, se = se_names, ld = ld_names, ev = ev_names
   )
@@ -324,7 +320,6 @@ augment_lav_predict <- function(
     lavobj,
     type = "lv", method = method,
     acov = TRUE,
-    # drop.list.single.group = FALSE, ...
     ...
   )
   if (lavInspect(lavobj, what = "ngroups") == 1) {
