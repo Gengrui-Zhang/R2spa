@@ -208,6 +208,188 @@ augment_fs <- function(fs, fs_ev) {
   fs_dat
 }
 
+augment_fs2 <- function(fs, fsL, fsT, fsb = NULL) {
+  fs_se <- sqrt(diag(fsT))
+  fs_lds <- c(fsL)
+  fs_evs <- fsT[upper.tri(fsT, diag = TRUE)]
+  fs_vec <- c(fs_se, fs_lds, fs_evs)
+  if (!is.null(fsb)) {
+    fs_vec <- c(fs_vec, fsb)
+  }
+  cbind(as.data.frame(fs), matrix(fs_vec, nrow = 1))
+}
+
+compute_lav_fs_matrices <- function(
+  acov, psi = NULL, alpha = NULL,
+  method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    fsL <- diag(nrow(acov)) - acov %*% solve(psi)
+    fsT <- fsL %*% acov
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- alpha - fsL %*% alpha
+    }
+  } else if (method == "Bartlett") {
+    fsL <- diag(nrow(acov))
+    fsT <- acov
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- rep(0, nrow(acov))
+    }
+  }
+  return(list(fsL = fsL, fsT = fsT, fsb = fsb))
+}
+
+create_fsT_names <- function(fs_names) {
+  out <- outer(fs_names,
+    Y = fs_names,
+    FUN = paste, sep = "_"
+  )
+  out[lower.tri(out)] <- t(out)[lower.tri(out)]
+  out[] <- paste0("ecov_", out)
+  diag(out) <- paste0("ev_", fs_names)
+  out
+}
+
+create_fsL_names <- function(lv_names, fs_names) {
+  out <- outer(lv_names,
+    Y = fs_names, FUN = paste,
+    sep = "_by_"
+  )
+  t(out)
+}
+
+get_fs_mat_names <- function(lv_names, int = TRUE) {
+  # Initialize data frame
+  fs_names <- paste0("fs_", lv_names)
+  se_names <- paste0("se_", fs_names)
+  ev_names <- create_fsT_names(fs_names)
+  dimnames(ev_names) <- rep(list(fs_names), 2)
+  ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
+  dimnames(ld_names) <- list(fs_names, lv_names)
+  out <- list(
+    fs = fs_names, se = se_names, ld = ld_names, ev = ev_names
+  )
+  if (int) {
+    return(c(out, int = paste0("int_", fs_names)))
+  } else {
+    return(out)
+  }
+}
+
+#' Obtain factor scores and related definition variables from
+#' a `lavaan` object for 2S-PA analyses.
+#'
+#' This function obtained the factor scores, standard errors,
+#' loading matrix, and variance covariance matrix by calling
+#' the [lavaan::lavPredict()] function.
+#'
+#' @param lavobj A fitted [`lavaan::lavaan-class`] object
+#' @param method A character string indicating the scoring method to use.
+#'               Must be either `"regression"` or `"Bartlett"`.
+#' @param drop_list_single logical. Should the results be unlisted
+#'                         for single-group models?
+#' @param ... Additional arguments passed to [lavaan::lavPredict()]
+#' @return A `data.frame` containing the factor scores, the corresponding
+#'         standard errors, the loadings and cross-loadings of the factor
+#'         scores as indicators of the latent variables, the 
+#'         error variance-covariance matrix of the factor scores,
+#'         and the measurement intercepts.
+#'         In addition, three character matrices are added as attributes
+#'         that can be used as input to [tspa_mx_model()]:
+#' * `ld`: cross-loading matrix
+#' * `ev`: error variance-covariance matrix
+#' * `int`: measurement intercepts
+#' @export
+#' @examples
+#' library(lavaan)
+#' hs_model <- ' visual  =~ x1 + x2 + x3 '
+#' fit <- cfa(hs_model,
+#'            data = HolzingerSwineford1939,
+#'            group = "school")
+#' augment_lav_predict(fit)
+augment_lav_predict <- function(
+    lavobj, method = c("regression", "Bartlett"),
+    drop_list_single = TRUE, ...) {
+  method <- match.arg(method)
+  mp_lst <- lavobj@Data@Mp
+  fs_lst <- lavaan::lavPredict(
+    lavobj,
+    type = "lv", method = method,
+    acov = TRUE,
+    ...
+  )
+  if (lavInspect(lavobj, what = "ngroups") == 1) {
+    fs_lst <- list(fs_lst)
+    attr(fs_lst, "acov") <- attr(fs_lst[[1]], "acov")
+  }
+  pars <- lavInspect(lavobj, what = "est",
+                     drop.list.single.group = FALSE)
+  out <- vector("list", length = length(fs_lst))
+  names(out) <- names(fs_lst)
+  has_means <- lavInspect(lavobj, what = "meanstructure")
+  for (g in seq_along(fs_lst)) {
+    mp <- mp_lst[[g]]
+    fs <- fs_lst[[g]]
+    if (is.null(mp)) {
+      case_idx <- list(seq_len(nrow(fs)))
+      acov_g <- list(attr(fs_lst, "acov")[[g]])
+      acov_rank <- 1
+    } else {
+      case_idx <- mp$case.idx
+      # Somehow lavaan sort the `acov` output by the missing data pattern and
+      # does not match the order of the missing pattern
+      # So need to find the order first
+      acov_g <- attr(fs_lst, "acov")[[g]]
+      acov_rank <- rank(mp$id)
+    }
+    # Initialize empty data frame
+    fs_matnames <- get_fs_mat_names(colnames(fs),
+                                    int = has_means)
+    fs_colnames <- unlist(
+      within(fs_matnames, expr = {
+        ld <- c(ld)
+        ev <- ev[upper.tri(ev, diag = TRUE)]
+      })
+    )
+    fs_dat <- data.frame(
+      matrix(NA,
+        nrow = nrow(fs),
+        ncol = length(fs_colnames),
+        dimnames = list(NULL, fs_colnames)
+      )
+    )
+    psi <- pars[[g]]$psi
+    alpha <- pars[[g]]$alpha
+    for (i in seq_along(case_idx)) {
+      mat_idx <- acov_rank[i]
+      fs_matrices <- compute_lav_fs_matrices(
+        acov = acov_g[[mat_idx]],
+        psi = psi,
+        alpha = alpha,
+        method = method
+      )
+      fs_dat[case_idx[[i]], ] <- augment_fs2(
+        fs[case_idx[[i]], , drop = FALSE],
+        fsL = fs_matrices$fsL,
+        fsT = fs_matrices$fsT,
+        fsb = fs_matrices$fsb
+      )
+    }
+    out[[g]] <- fs_dat
+  }
+  if (drop_list_single && length(out) == 1) {
+    out <- out[[1]]
+  }
+  attr(out, "ld") <- fs_matnames$ld
+  attr(out, "ev") <- fs_matnames$ev
+  attr(out, "int") <- fs_matnames$int
+  out
+}
+
 #' Compute factor scores
 #'
 #' @param y An N x p matrix where each row is a response vector. If there
