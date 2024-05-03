@@ -7,3 +7,6 @@
 ^pkgdown$
 ^\.github$
 ^\.vscode$
+^vignettes/mm\.Rmd
+^vignettes/reliability-adjustment-vs-error\.Rmd
+^vignettes/reliability-multivariate\.Rmd
