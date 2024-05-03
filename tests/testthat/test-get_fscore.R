@@ -1,5 +1,6 @@
 # Loading packages and functions
 library(lavaan)
+library(umx)
 
 ########## Single-group example ##########
 
@@ -336,3 +337,94 @@ test_that("Reliability of regression fs > reliability of Bartlett fs", {
 
 
 
+test_that("augment_lav_predict() works for complete data",
+  code = {
+    cfa_single <- cfa(model = hs_model_2,
+                      data = HolzingerSwineford1939)
+    a0 <- augment_lav_predict(cfa_single, drop_list_single = FALSE)
+    expect_type(a0, type = "list")
+    a1 <- augment_lav_predict(cfa_single)
+    expect_equal(as.matrix(a1[, 1:3]),
+                 as.matrix(lavPredict(cfa_single)),
+                 ignore_attr = TRUE)
+    a2 <- augment_lav_predict(cfa_single, method = "Bartlett")
+    expect_equal(a2,
+                 get_fs_lavaan(cfa_single, method = "Bartlett"),
+                 ignore_attr = TRUE)
+    # Mean structure
+    cfa_multi <- cfa(model = hs_model_2,
+                     data = HolzingerSwineford1939[sample(301), ],
+                     group = "school")
+    a3 <- augment_lav_predict(cfa_multi)
+    fs_multi <- get_fs_lavaan(cfa_multi)
+    expect_equal(a3[[1]][, 1:21],
+                 fs_multi[[1]][, 1:21],
+                 ignore_attr = TRUE)
+    expect_equal(a3[[2]][, 1:21],
+                 fs_multi[[2]][, 1:21],
+                 ignore_attr = TRUE)
+  }
+)
+
+hs <- HolzingerSwineford1939
+# introduce missing data
+set.seed(1334)
+hs[!rbinom(301, size = 1, prob = 0.7), 7] <- NA
+hs[!rbinom(301, size = 1, prob = 0.7), 8] <- NA
+hs[!rbinom(301, size = 1, prob = 0.7), 9] <- NA
+# Mean structure
+cfa_multi <- cfa(model = hs_model_2,
+                 data = hs[sample(301), ],
+                 group = "school",
+                 missing = "fiml")
+a3 <- augment_lav_predict(cfa_multi)
+
+cfa_fiml <- cfa(
+  model = hs_model_2, data = hs, missing = "fiml",
+  estimator = "MLR"
+)
+a2 <- augment_lav_predict(cfa_fiml, method = "Bartlett")
+
+test_that("augment_lav_predict() works for missing data",
+  code = {
+    cfa_lw <- cfa(model = hs_model_2, data = hs, bounds = TRUE,
+                  meanstructure = TRUE)
+    expect_no_error(augment_lav_predict(cfa_lw))
+    # NA for cases with x1, x2, x3 all missing
+    expect_true(all(is.na(
+      a2$fs_visual[which(rowSums(!is.na(hs[, 7:9])) == 0)]))
+    )
+    fs_multi <- get_fs_lavaan(cfa_multi)
+    expect_equal(a3[[1]][, 1:21],
+                 fs_multi[[1]][, 1:21],
+                 ignore_attr = TRUE)
+    expect_equal(a3[[2]][, 1:21],
+                 fs_multi[[2]][, 1:21],
+                 ignore_attr = TRUE)
+  }
+)
+
+lcov_umx <- umxLav2RAM(
+  "
+    visual ~~ textual + speed
+    textual ~~ speed
+    visual + textual + speed ~ 1
+  ",
+  printTab = FALSE
+)
+tspab_mx <- tspa_mx_model(lcov_umx,
+  data = a2,
+  mat_ld = attr(a2, which = "ld"),
+  mat_ev = attr(a2, which = "ev")
+)
+# Run OpenMx
+tspab_mx_fit <- mxRun(tspab_mx)
+
+test_that("tspa_mx() gives similar results as lavaan with missing data", 
+  code = {
+    expect_equal(tspab_mx_fit$m1$S$values,
+                 expected = lavInspect(cfa_fiml, what = "est")$psi,
+                 tolerance = 1e-5,
+                 ignore_attr = TRUE)
+  }
+)
