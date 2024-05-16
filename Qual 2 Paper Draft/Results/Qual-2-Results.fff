@@ -1,5 +1,0 @@
-\begin{figure*}[hbt]
-\ifnextchar[{\eatarg}{}
-
-\includegraphics[size=\small]{Qual-2-Results_files/figure-latex/interaction plot-1} \caption{ }(\#fig:interaction plot)
-\end{figure*}
