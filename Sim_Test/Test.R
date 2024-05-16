@@ -1,0 +1,350 @@
+seed_value <- 14577
+set.seed(seed_value)
+
+library(semTools)
+library(lavaan)
+library(semPlot)
+library(SimDesign)
+library(MASS)
+library(mnormt)
+library(dplyr)
+library(tidyverse)
+library(MBESS)
+devtools::load_all(".")
+
+# Data Generation
+
+# Helper Function
+generate_sem_data <- function(N, model, Alpha, Phi, Lambda, Gamma, Theta, SD_y) {
+  # Generate scores for observed items: x1 - x3, m1 - m3
+  eta_scores <- rmnorm(N, mean = Alpha, varcov = Phi) # Factor scores
+  # Generate eta scores with interaction
+  eta_scores_int <- cbind(eta_scores, eta_scores[,1]*eta_scores[,2])
+  delta <- rmnorm(N, mean = rep(0, length(diag(Theta))), varcov = Theta) # Errors/Residuals of Indicators
+  item_scores <- tcrossprod(eta_scores, Lambda) + delta # Item/Indicator scores
+
+  y_scores <- tcrossprod(eta_scores_int, Gamma) + rnorm(N, 0, SD_y) # Y scores / DV scores
+
+  # Parsing formula
+  indicator_terms <- unlist(strsplit(gsub(" ", "",
+                                          unlist(strsplit(model, "\n"))[grep("=~",
+                                                                             unlist(strsplit(model, "\n")))]),
+                                     split = "=~"))
+  indicator_vars <- indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "FALSE"]
+  indicator_num <- as.vector(unlist(lapply(strsplit(indicator_terms[grepl("+", indicator_terms, fixed = TRUE) == "TRUE"],
+                                                    split = "+", fixed = TRUE), length)))
+
+  df <- as.data.frame(cbind(item_scores, y_scores))
+  names <- list()
+  for (n in seq(length(indicator_vars))) {
+    names[[n]] <- tolower(paste0(indicator_vars[n], seq(indicator_num[n])))
+  }
+  colnames(df) <- c(unlist(names), "Y")
+  return(df)
+}
+
+DESIGNFACTOR <- createDesign(
+  N = c(100, 250, 500),
+  cor_xm = c(0, 0.3, 0.6), # correlation between latent x and m / error variance of Y
+  rel = c(0.7, 0.8, 0.9)
+  # Add 0 vs 0.3 as a condition
+)
+
+FIXED_PARAMETER <- list(model = '
+                                  # Measurement Model
+                                    X =~ x1 + x2 + x3
+                                    M =~ m1 + m2 + m3
+                                  # Structural Model
+                                    Y ~ b1*X + b2*M + b3*X:M
+                                  # Define Standardized Coefficients
+                                    X ~~ v1*X
+                                    M ~~ v2*M
+                                    beta1 := b1*sqrt(v1)
+                                    beta2 := b2*sqrt(v2)
+                                    beta3 := b3*sqrt(v1)*sqrt(v2)
+                                  ',
+                        mu_x = 0, # latent mean of x: fixed at 0
+                        mu_m = 0, # latent mean of m: fixed at 0,
+                        mu_xm = 0,
+                        beta = list(beta1 = 1,
+                                    beta2 = 0.9,
+                                    beta3 = 0.75),
+                        gamma = list(xy = 0.3, # linear effects of x and y: fixed at 0.3
+                                     my = 0.3, # linear effects of x and y: fixed at 0.3
+                                     xmy = 0) # Type I error
+)
+
+
+GenData <- function (condition, fixed_objects = NULL) {
+  N <- condition$N # Sample size
+  cor_xm <- condition$cor_xm # latent correlation: varied
+
+  if (cor_xm == 0) {
+    sd_y <- 0.9055
+  } else if (cor_xm == 0.3) {
+    sd_y <- 0.8752
+  } else if (cor_xm == 0.6) {
+    sd_y <- 0.8438
+  }
+
+  # Error variances
+  if (condition$rel == 0.7) {
+    rel_val <- c(1.32, 0.99, 0.69)
+  } else if (condition$rel == 0.8) {
+    rel_val <- c(0.77, 0.58, 0.40)
+  } else if (condition$rel == 0.9) {
+    rel_val <- c(0.34, 0.26, 0.18)
+  }
+
+  Alpha <- c(fixed_objects$mu_x, fixed_objects$mu_m) # Latent means
+  Beta <- rbind(unname(unlist(fixed_objects$beta))) # Measurement parameter
+  Phi <- matrix(c(1, condition$cor_xm,
+                  condition$cor_xm, 1), nrow = 2) # latent var/cov
+  Lambda <- cbind(c(Beta, rep(0, 3)),
+                  c(rep(0, 3), Beta)) # factor loadings
+  Theta <- diag(rel_val,
+                nrow = 6)
+  Gamma <- rbind(unname(unlist(fixed_objects$gamma)))
+  SD_y <- sd_y
+
+  generate_sem_data(N,
+                    model = fixed_objects$model,
+                    Alpha = Alpha,
+                    Phi = Phi,
+                    Lambda = Lambda,
+                    Theta = Theta,
+                    Gamma = Gamma,
+                    SD_y = SD_y
+  )
+}
+
+extract_res <- function (condition, dat, fixed_objects = NULL) {
+
+  # Fit using rapi function
+  fit_rapi <- rapi(model = fixed_objects$model,
+                   data = dat)
+  if (lavInspect(fit_rapi, what = "converged")) {
+    rapi_est <- coef(fit_rapi, type = "user")["beta3"]
+    rapi_se <- sqrt(vcov(fit_rapi, type = "user")["beta3", "beta3"])
+  } else {
+    rapi_est <- NA
+    rapi_se <- NA
+  }
+  # Fit using upi function
+  fit_upi <- upi(model = fixed_objects$model,
+                 data = dat,
+                 mode = "all")
+  if (lavInspect(fit_upi, what = "converged")) {
+    upi_est <- coef(fit_upi, type = "user")["beta3"]
+    upi_se <- sqrt(vcov(fit_upi, type = "user")["beta3", "beta3"])
+  } else {
+    upi_est <- NA
+    upi_se <- NA
+  }
+  # Fit using tspa function
+  fs_dat <- get_fs(dat,
+                   model ='
+                             X =~ x1 + x2 + x3
+                             M =~ m1 + m2 + m3
+                             ',
+                   method = "Bartlett",
+                   std.lv = TRUE)
+  Y <- dat$Y
+  fs_dat <- cbind(fs_dat, Y)
+  fit_tspa <- tspa(model = "Y ~ b1*X + b2*M + b3*X:M
+                              beta1 := b1 * sqrt(v1)
+                              beta2 := b2 * sqrt(v2)
+                              beta3 := b3 * sqrt(v1) * sqrt(v2)",
+                   data = fs_dat,
+                   se = list(X = fs_dat$fs_X_se[1],
+                             M = fs_dat$fs_M_se[1]))
+  if (lavInspect(fit_tspa, what = "converged")) {
+    tspa_est <- coef(fit_tspa, type = "user")["beta3"]
+    tspa_se <- sqrt(vcov(fit_tspa, type = "user")["beta3", "beta3"])
+  } else {
+    tspa_est <- NA
+    tspa_se <- NA
+  }
+  # Extract parameter estimates and standard errors
+  paret <- c(rapi_est, rapi_se, upi_est, upi_se, tspa_est, tspa_se)
+  names(paret) <- c("rapi_yint_est", "rapi_yint_se",
+                    "upi_yint_est", "upi_yint_se",
+                    "tspa_yint_est", "tspa_yint_se")
+  return(paret)
+}
+
+evaluate_res <- function (condition, results, fixed_objects = NULL) {
+
+  # Population parameter for null hypothesis
+  pop_par <- 0
+
+  # Separate estimates and se
+  results_est <- as.data.frame(results[colnames(results)[grepl("_est", colnames(results))]])
+  results_se <- as.data.frame(results[colnames(results)[grepl("_se", colnames(results))]])
+
+  # Descriptive of SEs
+  descriptive <- function(est, se, type = NULL) {
+    output <- numeric(ncol(est))
+    if (type == "SD") {
+      output <- apply(est, 2L, sd, na.rm = T)
+    } else if (type == "MeanSE") {
+      output <- apply(se, 2, mean, na.rm = T)
+    } else if (type == "MedianSE") {
+      output <- apply(se, 2, median, na.rm = TRUE)
+    } else if (type == "MAD") {
+      output <- apply(est, 2, function(x) mad(x, na.rm = TRUE))
+    }
+    return(output)
+  }
+
+  # Helper function: robust bias
+  robust_bias <- function(est, se, pop_par, trim = 0, type = NULL) {
+    output <- numeric(ncol(est))
+    for (i in seq_len(ncol(est))) {
+      if (type == "raw") {
+        output[i] <- mean((est[,i] - pop_par), na.rm = TRUE)
+      } else if (type == "standardized") {
+        output[i] <- (mean(est[,i], na.rm = TRUE) - pop_par)/sd(est[,i], na.rm = TRUE)
+      } else if (type == "trim") {
+        output[i] <- mean(est[,i], trim = trim, na.rm = TRUE) - pop_par
+      } else if (type == "median") {
+        output[i] <- (median(est[,i], na.rm = TRUE) - pop_par) / mad(est[,i], na.rm = TRUE)
+      } else {
+        output[i] <- (mean(est[,i], trim = trim, na.rm = TRUE) - pop_par) / sd(est[,i], na.rm = TRUE)
+      }
+    }
+    names(output) <- colnames(est)
+    return(output)
+  }
+
+  # Helper function: relative SE bias
+  rse_bias <- function(est, est_se, trim = 0, type = "raw") {
+    if (type == "raw") {
+      est_se <- as.matrix(est_se)
+      est <- as.matrix(est)
+      est_se_mean <- apply(est_se, 2, mean, na.rm = T)
+      emp_sd <- apply(est, 2L, sd, na.rm = T)
+      rse_bias <- est_se_mean / emp_sd - 1
+    } else if (type == "median") {
+      est_se <- as.matrix(est_se)
+      est <- as.matrix(est)
+      est_se_median <- apply(est_se, 2, median, na.rm = TRUE)
+      emp_mad <- apply(est, 2, function(x) mad(x, na.rm = TRUE))
+      rse_bias <- est_se_median / emp_mad - 1
+    } else if (type == "trim") {
+      est_se <- as.matrix(est_se)
+      est <- as.matrix(est)
+      est_se_mean <- apply(est_se, 2, mean, trim = trim, na.rm = TRUE)
+      emp_sd <- apply(est, 2L, sd, na.rm = T)
+      rse_bias <- est_se_mean / emp_sd - 1
+    }
+    return(rse_bias)
+  }
+
+  # Helper function: detecting outliers for SE
+  outlier_se <- function(est_se) {
+    results <- c()
+    for(column in names(est_se)) {
+      # Calculate Q1, Q3, and IQR
+      Q1 <- quantile(est_se[[column]], 0.25, na.rm = TRUE)
+      Q3 <- quantile(est_se[[column]], 0.75, na.rm = TRUE)
+      IQR <- Q3 - Q1
+      # Determine outliers
+      lower_bound <- (Q1 - 1.5 * IQR)
+      upper_bound <- (Q3 + 1.5 * IQR)
+      outliers <- est_se[[column]][est_se[[column]] < lower_bound | est_se[[column]] > upper_bound]
+      # Calculate the percentage of outliers
+      percentage <- length(outliers) / sum(!is.na(est_se[[column]])) * 100
+      results[column] <- percentage
+    }
+    return(results)
+  }
+
+  # Helper functuion for calculating coverage rate
+  coverage_rate <- function(est, est_se, pop) {
+    ci_est <- list()
+    est_se <- as.matrix(est_se)
+    est <- as.matrix(est)
+    lo.95 <- est - qnorm(.975)*est_se
+    hi.95 <- est + qnorm(.975)*est_se
+    for (i in seq_len(length(colnames(est)))) {
+      ci_est[[i]] <- cbind(lo.95[,i], hi.95[,i])
+      names(ci_est)[i] <- colnames(est)[i]
+    }
+    ci_est <- lapply(ci_est, na.omit)
+    return(unlist(lapply(ci_est, ECR, parameter = pop)))
+  }
+
+  # Helper function for convergence rate
+  convergence_rate <- function(est) {
+    apply(est, 2, function(x) 1-(sum(is.na(x)) / length(x)))
+  }
+
+  c(raw_bias = robust_bias(results_est,
+                           results_se,
+                           pop_par,
+                           type = "raw"),
+    std_bias = robust_bias(results_est,
+                           results_se,
+                           pop_par,
+                           type = "standardized"),
+    trim_bias = robust_bias(results_est,
+                            results_se,
+                            pop_par,
+                            trim = 0.2,
+                            type = "trim"), # 20% trimmed mean
+    stdMed_bias = robust_bias(results_est,
+                              results_se,
+                              pop_par,
+                              type = "median"),
+    coverage = coverage_rate(results_est,
+                             results_se,
+                             pop = pop_par),
+    type_I = 1 - coverage_rate(results_est,
+                               results_se,
+                               pop = pop_par),
+    rmse = RMSE(na.omit(results_est),
+                parameter = pop_par),
+    raw_rse_bias = rse_bias(results_est,
+                            results_se,
+                            type = "raw"),
+    stdMed_rse_bias = rse_bias(results_est,
+                               results_se,
+                               type = "median"),
+    SD = descriptive(results_est,
+                     results_se,
+                     type = "SD"),
+    MeanSE = descriptive(results_est,
+                         results_se,
+                         type = "MeanSE"),
+    MedianSE = descriptive(results_est,
+                           results_se,
+                           type = "MedianSE"),
+    MAD = descriptive(results_est,
+                      results_se,
+                      type = "MAD"),
+    trim_rse_bias = rse_bias(results_est,
+                             results_se,
+                             trim = 0.2,
+                             type = "trim"),
+    outlier_se = outlier_se(results_se),
+    convergence_rate = convergence_rate(results_est)
+  )
+}
+
+# Run 2000 replications
+
+All_02252024 <- runSimulation(design = DESIGNFACTOR,
+                              replications = 2000,
+                              generate = GenData,
+                              analyse = extract_res,
+                              summarise = evaluate_res,
+                              fixed_objects = FIXED_PARAMETER,
+                              save = TRUE,
+                              save_results = TRUE,
+                              filename = "All_02252024",
+                              control = list(allow_na = TRUE),
+                              parallel = TRUE,
+                              ncores = min(4L, parallel::detectCores() - 1))
+
+All_02252024$seed_value <- seed_value
