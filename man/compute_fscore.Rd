@@ -8,10 +8,11 @@ compute_fscore(
   y,
   lambda,
   theta,
-  psi,
+  psi = NULL,
   nu = NULL,
   alpha = NULL,
   method = c("regression", "Bartlett"),
+  center_y = TRUE,
   acov = FALSE,
   fs_matrices = FALSE
 )
@@ -33,12 +34,15 @@ is only one observation, it should be a matrix of one row.}
 \item{method}{A character string indicating the method for computing factor
 scores. Currently, only "regression" is supported.}
 
+\item{center_y}{Logical indicating whether \code{y} should be mean-centered.
+Default to \code{TRUE}.}
+
 \item{acov}{Logical indicating whether the asymptotic covariance matrix
 of factor scores should be returned as an attribute.}
 
 \item{fs_matrices}{Logical indicating whether covariances of the error
-portion of factor scores (\code{av_efs}), factor score
-loading matrix (\eqn{A}; \code{fsA}) and intercept vector
+portion of factor scores (\code{fsT}), factor score
+loading matrix (\eqn{L}; \code{fsL}) and intercept vector
 (\eqn{b}; \code{fsb}) should be returned.
 The loading and intercept matrices are the implied
 loadings and intercepts by the model when using the

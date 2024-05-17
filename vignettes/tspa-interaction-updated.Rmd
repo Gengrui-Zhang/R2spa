@@ -381,6 +381,7 @@ fit_tspa <- tspa(model = "Y ~ b1*X + b2*M + b3*X:M
                           beta2 := b2 * sqrt(v2)
                           beta3 := b3 * sqrt(v1) * sqrt(v2)",
                    data = fs_dat,
+                   reliability = NULL,
                    se = list(X = fs_dat$fs_X_se[1],
                              M = fs_dat$fs_M_se[1]))
 summary(fit_tspa)
