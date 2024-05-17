@@ -184,38 +184,21 @@ get_fs_lavaan <- function(lavobj,
     } else {
       if (length(group) == 0) {
         is_std.lv <- est$psi == 1
-        if (is_std.lv) {
-          attr(out, "reliability") <- compute_rel(est, vcov(lavobj),
-                                                  method = method)
-        }
+        attr(out, "reliability") <-
+          compute_fsrel(lavobj, method = method)[[1]]
       } else {
-        is_std.lv = all(unlist(lapply(est, \(x) x$psi)) == 1)
-        if (is_std.lv) {
-          diag_theta <- lapply(est,
-                               \(x) all(x$theta[!diag(nrow(x$theta))] == 0))
-          if (all(unlist(diag_theta))) {
-            ngroup <- length(out)
-            vc_all <- vcov(lavobj)
-            rels <- lapply(seq_len(ngroup), \(g) {
-              ind <- lavInspect(lavobj, what = "free")[[g]]
-              vc_ind <- c(ind$lambda, diag(ind$theta))
-              vc <- vc_all[vc_ind, vc_ind]
-              compute_rel(est[[g]], vc, method = method)
-            }) |> unlist()
-            group_n <- lavInspect(lavobj, what = "norig")
-            rels[g + 1] <- sum(rels * group_n / sum(group_n))
-            attr(out, "reliability") <-
-              setNames(as.list(rels), c(lavobj@Data@group.label, "overall"))
-          } else {
-            warning("Only diagonal theta matrix is currently supported. ")
-            attr(out, "reliability") <- NULL
-          }
-        }
+        is_std.lv = all(unlist(lapply(est, function(x) x$psi)) == 1)
+        rels <- compute_fsrel(lavobj, method = method)
+        group_n <- lavInspect(lavobj, what = "norig")
+        rels[g + 1] <- sum(unlist(rels) * group_n / sum(group_n))
+        attr(out, "reliability") <-
+          setNames(rels, c(lavobj@Data@group.label, "overall"))
       }
       if (!is_std.lv) {
-        warning("Computation of reliability for multiple groups is ",
-                "currently supported if `std.lv = TRUE`. ")
-        attr(out, "reliability") <- NULL
+        warning(
+          "Computation of reliability may not be accurate when ",
+          "the latent variables are not standardized. "
+        )
       }
     }
   }
@@ -681,46 +664,37 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   jac %*% lavaan::vcov(fit) %*% t(jac)
 }
 
-compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
+compute_fsrel <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
-  lam <- est$lambda
-  th <- est$theta
-  if (ncol(lam) > 1) {
-    stop("reliability is only supported for unidimensional models.")
+  ngrp <- lavInspect(fit, what = "ngroups")
+  est_fits <- lavInspect(fit, what = "est")
+  sigmas <- lavInspect(fit, "implied")
+  if (ngrp == 1) {
+    est_fits <- list(est_fits)
+    sigmas <- list(sigmas)
   }
-  sigma <- tcrossprod(lam) + th
-  # ahat <- crossprod(lam, solve(sigma))
-
-  jac_a <- lavaan::lav_func_jacobian_complex(
-    function(x) {
-      R2spa:::compute_a_from_mat(
-        method = method,
-        lambda = x[seq_along(lam)],
-        theta = diag(x[-(seq_along(lam))]),
-        psi = matrix(1)
-      )
-    },
-    c(lam, diag(th))
-  )
-  va <- jac_a %*% vc %*% t(jac_a)
-  # aa <- crossprod(ahat) + va
-  aa <- tcrossprod(get_a(lam, th, method)) + va
-  sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
-
-  # method <- match.arg(method)
-  # if (method == "regression") {
-  #   return((1 + sqrt(1 - 4 * ev_fs / psi)) / 2)
-  # } else if (method == "Bartlett") {
-  #   return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
-  # }
-}
-
-get_a <- function(lambda, theta, method = c("regression", "Bartlett")) {
-  method <- match.arg(method)
-  if (method == "regression") {
-    solve(tcrossprod(lambda) + theta, lambda)
-  } else if (method == "Bartlett") {
-    thinv_lam <- solve(theta, lambda)
-    t(solve(crossprod(lambda, thinv_lam), t(thinv_lam)))
+  vc_fit <- vcov(fit)
+  a <- compute_a(coef(fit), lavobj = fit, method = method)
+  outs <- vector("list", ngrp)
+  for (g in seq_len(ngrp)) {
+    est_fit <- est_fits[[g]]
+    lam <- est_fit$lambda
+    psi <- est_fit$psi
+    if (ncol(lam) > 1) {
+      stop("reliability is only supported for unidimensional models.")
+    }
+    jac_a <- lavaan::lav_func_jacobian_complex(
+      function(x, fit, method) {
+        compute_a(x, lavobj = fit, method = method)[[g]]
+      },
+      coef(fit),
+      fit = fit,
+      method = method
+    )
+    va <- jac_a %*% vc_fit %*% t(jac_a)
+    aa <- crossprod(a[[g]]) + va
+    outs[[g]] <- sum(diag(lam %*% psi %*% t(lam) %*% aa)) /
+      sum(diag(sigmas[[g]]$cov %*% aa))
   }
+  outs
 }

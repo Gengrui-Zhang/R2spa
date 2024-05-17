@@ -326,6 +326,13 @@ test_that("Reliability of Bartlett factor scores", {
                tolerance = 1e-7)
 })
 
+test_that("Reliability with non-diagonal theta", {
+  mod1 <- "visual =~ x1 + x2 + x3 + x9"
+  fit1 <- cfa(model = mod1, data = HolzingerSwineford1939)
+  fit2 <- cfa(model = c(mod1, "x1 ~~ x9"), data = HolzingerSwineford1939)
+  expect_gt(compute_fsrel(fit1)[[1]], compute_fsrel(fit2)[[1]])
+})
+
 # test_that("Reliability of regression fs > reliability of Bartlett fs", {
 #   rel_reg <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
 #                     corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE)
