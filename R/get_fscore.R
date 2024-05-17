@@ -203,7 +203,9 @@ get_fs_lavaan <- function(lavobj,
               compute_rel(est[[g]], vc, method = method)
             }) |> unlist()
             group_n <- lavInspect(lavobj, what = "norig")
-            attr(out, "reliability") <- sum(rels * group_n / sum(group_n))
+            rels[g + 1] <- sum(rels * group_n / sum(group_n))
+            attr(out, "reliability") <-
+              setNames(as.list(rels), c(lavobj@Data@group.label, "overall"))
           } else {
             warning("Only diagonal theta matrix is currently supported. ")
             attr(out, "reliability") <- NULL
@@ -687,7 +689,7 @@ compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
     stop("reliability is only supported for unidimensional models.")
   }
   sigma <- tcrossprod(lam) + th
-  ahat <- crossprod(lam, solve(sigma))
+  # ahat <- crossprod(lam, solve(sigma))
 
   jac_a <- lavaan::lav_func_jacobian_complex(
     function(x) {
@@ -701,7 +703,8 @@ compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
     c(lam, diag(th))
   )
   va <- jac_a %*% vc %*% t(jac_a)
-  aa <- crossprod(ahat) + va
+  # aa <- crossprod(ahat) + va
+  aa <- tcrossprod(get_a(lam, th, method)) + va
   sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
 
   # method <- match.arg(method)
@@ -710,4 +713,14 @@ compute_rel <- function(est, vc, method = c("regression", "Bartlett")) {
   # } else if (method == "Bartlett") {
   #   return(1 / (1 + solve(t(fsL) %*% solve(ev_fs) %*% fsL)))
   # }
+}
+
+get_a <- function(lambda, theta, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    solve(tcrossprod(lambda) + theta, lambda)
+  } else if (method == "Bartlett") {
+    thinv_lam <- solve(theta, lambda)
+    t(solve(crossprod(lambda, thinv_lam), t(thinv_lam)))
+  }
 }
