@@ -8,21 +8,11 @@
 #' @return A data frame of product indicators for interaction terms,
 #'         with their loadings and standard errors.
 #'
+#' @importFrom utils combn
+#'
 #' @export
-#'
-#' @examples
-#' int_ind(fs_dat,
-#'         fs_name = c("fs_x", "fs_m", "fs_z"),
-#'         se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-#'         loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"),
-#'         model = "fs_x:fs_m + fs_x:fs_z")
-#'
-#' int_ind(fs_dat,
-#'         fs_name = c("fs_x", "fs_m", "fs_z"),
-#'         se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-#'         loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
 
-int_ind <- function (dat, fs_name, se, loading, model = NULL) {
+get_fs_int <- function (dat, fs_name, se, loading, model = NULL) {
 
   # Connect fs and se
   fs_list <- mapply(function(x, y, z) list(name = x, se = y, loading = z),

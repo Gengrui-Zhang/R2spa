@@ -87,18 +87,18 @@ head(fs_dat)
 
 ```{r Demonstrating int_ind() function}
 # With specified model
-ind_1 <- int_ind(fs_dat,
-                 fs_name = c("fs_x", "fs_m", "fs_z"),
-                 se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-                 loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"),
-                 model = "fs_x:fs_m + fs_x:fs_z")
+ind_1 <- get_fs_int(fs_dat,
+                    fs_name = c("fs_x", "fs_m", "fs_z"),
+                    se = c("fs_x_se", "fs_m_se", "fs_z_se"),
+                    loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"),
+                    model = "fs_x:fs_m + fs_x:fs_z")
 head(ind_1)
 
 # Without specified model
-ind_2 <- int_ind(fs_dat,
-                 fs_name = c("fs_x", "fs_m", "fs_z"),
-                 se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-                 loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
+ind_2 <- get_fs_int(fs_dat,
+                    fs_name = c("fs_x", "fs_m", "fs_z"),
+                    se = c("fs_x_se", "fs_m_se", "fs_z_se"),
+                    loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
 head(ind_2)
 ```
 
