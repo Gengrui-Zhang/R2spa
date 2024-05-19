@@ -10,13 +10,15 @@
 #'               "regression" to be consistent with
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
-#' @param corrected_fsT Logical. Whether to correct for the the sampling
+#' @param corrected_fsT Logical. Whether to correct for the sampling
 #'                      error in the factor score weights when computing
 #'                      the error variance estimates of factor scores.
 #' @param vfsLT Logical. Whether to return the covariance matrix of `fsT`
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
 #'              [tspa()] results. This is currently ignored.
+#' @param reliability Logical. Whether to return the reliability of factor
+#'                    scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix `"fs_"`),
@@ -57,6 +59,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
                    corrected_fsT = FALSE,
                    vfsLT = FALSE,
+                   reliability = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -70,7 +73,8 @@ get_fs <- function(data, model = NULL, group = NULL,
   fit <- cfa(model, data = data, group = group, ...)
   get_fs_lavaan(lavobj = fit, method = method,
                 corrected_fsT = corrected_fsT,
-                vfsLT = vfsLT)
+                vfsLT = vfsLT,
+                reliability = reliability)
 }
 
 #' @inherit get_fs
@@ -79,9 +83,11 @@ get_fs <- function(data, model = NULL, group = NULL,
 get_fs_lavaan <- function(lavobj,
                           method = c("regression", "Bartlett"),
                           corrected_fsT = FALSE,
-                          vfsLT = FALSE) {
+                          vfsLT = FALSE,
+                          reliability = FALSE) {
   est <- lavInspect(lavobj, what = "est")
   y <- lavInspect(lavobj, what = "data")
+  if (reliability) corrected_fsT <- TRUE
   if (corrected_fsT) {
     add_to_evfs <- correct_evfs(lavobj, method = method)
   } else {
@@ -92,13 +98,13 @@ get_fs_lavaan <- function(lavobj,
     if (is.null(mp)) {
       fscore <-
         compute_fscore(y,
-          lambda = est$lambda,
-          theta = est$theta,
-          psi = est$psi,
-          nu = est$nu,
-          alpha = est$alpha,
-          method = method,
-          fs_matrices = TRUE
+                       lambda = est$lambda,
+                       theta = est$theta,
+                       psi = est$psi,
+                       nu = est$nu,
+                       alpha = est$alpha,
+                       method = method,
+                       fs_matrices = TRUE
         )
       augment_fs(fscore, attr(fscore, which = "fsT") + add)
     } else {
@@ -111,13 +117,13 @@ get_fs_lavaan <- function(lavobj,
         pat_m <- pats[m, ]
         fs_m <-
           compute_fscore(y[idx_m, pat_m, drop = FALSE],
-            lambda = est$lambda[pat_m, , drop = FALSE],
-            theta = est$theta[pat_m, pat_m, drop = FALSE],
-            psi = est$psi,
-            nu = est$nu[pat_m, , drop = FALSE],
-            alpha = est$alpha,
-            method = method,
-            fs_matrices = TRUE
+                         lambda = est$lambda[pat_m, , drop = FALSE],
+                         theta = est$theta[pat_m, pat_m, drop = FALSE],
+                         psi = est$psi,
+                         nu = est$nu[pat_m, , drop = FALSE],
+                         alpha = est$alpha,
+                         method = method,
+                         fs_matrices = TRUE
           )
         fs_dat <- augment_fs(fs_m, attr(fs_m, which = "fsT") + add)
         if (m == 1) {
@@ -167,6 +173,34 @@ get_fs_lavaan <- function(lavobj,
   }
   if (vfsLT) {
     attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
+  }
+  if (reliability) {
+    multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
+                          length(attr(out, "fsb")[[1]]) > 1,
+                          length(attr(out, "fsb")) > 1)
+    if (multifactor) {
+      warning("Compution of reliability for a multi-factor model is not ",
+              "currently supported. ")
+    } else {
+      if (length(group) == 0) {
+        is_std.lv <- est$psi == 1
+        attr(out, "reliability") <-
+          compute_fsrel(lavobj, method = method)[[1]]
+      } else {
+        is_std.lv = all(unlist(lapply(est, function(x) x$psi)) == 1)
+        rels <- compute_fsrel(lavobj, method = method)
+        group_n <- lavInspect(lavobj, what = "norig")
+        rels[g + 1] <- sum(unlist(rels) * group_n / sum(group_n))
+        attr(out, "reliability") <-
+          setNames(rels, c(lavobj@Data@group.label, "overall"))
+      }
+      if (!is_std.lv) {
+        warning(
+          "Computation of reliability may not be accurate when ",
+          "the latent variables are not standardized. "
+        )
+      }
+    }
   }
   out
 }
@@ -628,4 +662,39 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   jac <- compute_grad_ld_evfs(fit, method = method)
   jac %*% lavaan::vcov(fit) %*% t(jac)
+}
+
+compute_fsrel <- function(fit, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  ngrp <- lavInspect(fit, what = "ngroups")
+  est_fits <- lavInspect(fit, what = "est")
+  sigmas <- lavInspect(fit, "implied")
+  if (ngrp == 1) {
+    est_fits <- list(est_fits)
+    sigmas <- list(sigmas)
+  }
+  vc_fit <- vcov(fit)
+  a <- compute_a(coef(fit), lavobj = fit, method = method)
+  outs <- vector("list", ngrp)
+  for (g in seq_len(ngrp)) {
+    est_fit <- est_fits[[g]]
+    lam <- est_fit$lambda
+    psi <- est_fit$psi
+    if (ncol(lam) > 1) {
+      stop("reliability is only supported for unidimensional models.")
+    }
+    jac_a <- lavaan::lav_func_jacobian_complex(
+      function(x, fit, method) {
+        compute_a(x, lavobj = fit, method = method)[[g]]
+      },
+      coef(fit),
+      fit = fit,
+      method = method
+    )
+    va <- jac_a %*% vc_fit %*% t(jac_a)
+    aa <- crossprod(a[[g]]) + va
+    outs[[g]] <- sum(diag(lam %*% psi %*% t(lam) %*% aa)) /
+      sum(diag(sigmas[[g]]$cov %*% aa))
+  }
+  outs
 }

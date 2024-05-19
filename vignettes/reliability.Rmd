@@ -1,0 +1,347 @@
+---
+title: "Reliability of Factor Scores"
+author: "Yixiao Li, Winnie Tse, Mark Lai"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{reliability}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
+  - \DeclareMathOperator{\Tr}{\mathrm{Tr}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!--
+
+TODO:
+
+- [p] Implement the three reliability estimation (quadratic root method as experimental)
+- [x] Perform a small-scale simulation
+- [x] Write down math equations for all methods
+- [ ] Theoretical exploration of added uncertainty due to (a) small sample and (b) number of items. 
+
+-->
+
+In this vignette, we explore analytically the reliability of factor scores, and evaluate them using simulated data.
+
+```{r}
+library(lavaan)
+library(R2spa)
+library(tidyr)
+library(ggplot2)
+```
+
+## Analytic Formula for Factor Scores
+
+### Theoretical Values
+
+> aka, using true parameter values to compute weights
+
+From a unidimensional factor model $\bv y= \bv \lambda \eta + \bv e$, for factor scores of the form
+
+$$
+\begin{aligned}
+  \tilde \eta & = \bv a' (\bv y - \hat {\bv \mu}) = \bv a' (\bv \nu + \bv \lambda \eta + \bv e - \bv \nu) \\
+  & = \bv a' \bv \lambda \eta + \bv a' \bv e,
+\end{aligned}
+$$
+
+where we set $\E(\eta)$ = 0 so that $\hat {\bv \mu}$ = $\bv \nu$, the theoretical reliability formula of factor scores, assuming no sampling errors in the weights is given by 
+
+$$
+\rho = \frac{(\bv a' \bv \lambda)^2}{(\bv a'\bv \lambda)^2 + \bv a' \bv \Theta \bv a},
+$$
+
+assuming that we set $\Var(\eta) = 1$.
+
+#### Regression factor scores
+
+With $\bv a$ = $(\bv \Sigma^{-1} \bv \lambda)$,
+
+$$
+\begin{align*}
+\text{Rel} 
+&= \frac{(\bv \lambda' \bv \Sigma^{-1} \bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}\bv \lambda \bv \lambda \bv \Sigma^{-1}\bv \lambda + \bv \lambda'\bv \Sigma^{-1}\bv \Theta \bv \Sigma^{-1}\bv \lambda} \\
+&= \frac{(\bv \lambda'\bv \Sigma^{-1}\bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}(\bv \lambda\bv \lambda'+\bv \Theta)\bv \Sigma^{-1}\bv \lambda} \\
+&= \frac{(\bv \lambda'\bv \Sigma^{-1}\bv \lambda)^2}{\bv \lambda'\bv \Sigma^{-1}\bv \lambda} \\
+&= \bv a' \bv \lambda
+\end{align*}
+$$
+
+#### Bartlett factor scores
+
+With $\bv a$ = $\bv \Theta^{-1} \bv \lambda (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}$, and thus $\bv a' \bv \lambda = 1$,
+
+$$
+\begin{align*}
+\text{Rel} 
+&= \frac{1}{1 + (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1} \bv \lambda' \bv \Theta^{-1} \bv \Theta \bv \Theta^{-1} \bv \lambda (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}} \\
+&= \frac{1}{1 + (\bv \lambda' \bv \Theta^{-1} \bv \lambda)^{-1}}
+\end{align*}
+$$
+
+### Sample Estimators
+
+When factor scores are computed using sample estimates of $\bv \lambda$ and $\bv \Theta$, we have $\hat{\bv \mu}$ = $\hat{\bv \nu}$, and
+
+$$
+\begin{aligned}
+  \tilde \eta & = \hat{\bv a}' (\bv y - \hat {\bv \mu}) = \hat{\bv a}' (\bv \nu + \bv \lambda \eta + \bv e - \hat{\bv \nu}) \\
+  & = \hat{\bv a}' \bv \lambda \eta + \hat{\bv a}'(\bv \nu - \hat{\bv \nu}) + \hat{\bv a}' \bv e,
+\end{aligned}
+$$
+
+where
+
+- $\bv {\hat a}$ = vector of estimated weights of length $p$
+- $\bv a$ = vector of true weights of length $p$,
+- $\bv y$ = vector of observed scores of length $p$,
+- $\lambda$ = vector of factor loadings of length $p$, 
+- $\eta$ = latent variable,
+- $\bv e$ = vector of measurement errors of length $p$,
+- $\Theta$ = $\Var(\bv e)$ = $p \times p$ variance-covariance matrix of errors,
+- $p$ = number of items.
+
+If we assume that $\hat{\bv a}$ and $\hat{\bv \nu}$ are independent, and $E(\hat{\bv a}) = \bv a$, $\Var(\hat{\bv a}) = V_{\hat a}$, $E(\hat{\bv \nu}) = \bv \nu$, $\Var(\hat{\bv \nu}) = V_{\hat \nu}$, then using law of total variance,
+
+$$
+\begin{aligned}
+  \Var(\tilde \eta) & = \E[\Var(\tilde \eta | \hat{\bv a})] + \Var[\E(\tilde \eta | \hat{\bv a})] \\
+  & = \E[\hat {\bv a}' \bv \lambda \bv \lambda' \hat{\bv a} + \bv a' V_{\hat \nu} \bv a + \hat {\bv a}' \bv \Theta \hat{\bv a}] + V[\hat{\bv a}' 0] \\
+  & = \bv a' \bv \lambda \bv \lambda' \bv a + \Tr(V_{\hat a} \bv \lambda \bv \lambda') + \bv a' V_{\hat \nu} \bv a + \Tr(V_{\hat a} V_{\hat \nu}) + \bv a' \bv \Theta \bv a + \Tr(V_{\hat a} \bv \Theta)
+\end{aligned}
+$$
+
+So, accounting for sampling error,
+
+$$
+\rho = \frac{(\bv a' \bv \lambda)^2 + \bv \lambda'V_{\hat a} \bv \lambda}{(\bv a' \bv \lambda)^2 + \bv a'\bv \Theta \bv a + \bv \lambda'V_{\hat a}\bv \lambda + \bv a' V_{\hat \nu} \bv a + \Tr(V_{\hat a} V_{\hat \nu}) + \Tr(\bv \Theta \bv V_{\hat a})}
+$$
+
+The sample estimates can be obtained by substituting in the sample estimates of $\bv \lambda$ and $\bv \Theta$ and using the corresponding form of $\bv a$.
+
+#### Quadratic formula for regression factor scores
+
+The reliability formula for the regression factor scores derived using a quadratic formula is
+
+$$\text{Rel} = \frac{1\pm\sqrt{1 - 4\theta_{corrected}/\psi}}{2}$$
+
+where $\theta_{corrected}$ is the corrected error term for the factor scores.
+
+## Empirical Example
+
+### Regression Factor Scores
+
+```{r}
+# Three items from the classic Holzinger and Swineford (1939) data
+cfa_fit <- cfa("
+  visual =~ x1 + x2 + x3
+",
+  data = HolzingerSwineford1939,
+  std.lv = TRUE
+)
+# Uncorrected reliability of regression factor scores
+fsr <- lavPredict(cfa_fit, fsm = TRUE, acov = TRUE)
+attr(fsr, "fsm")[[1]] %*% lavInspect(cfa_fit, what = "est")$lambda
+# Empirical reliability of regression factor scores
+var(fsr) / (var(fsr) + attr(fsr, "acov")[[1]])
+```
+
+```{r}
+# Corrected reliability of regression factor scores
+get_a <- function(lambda, theta) {
+  solve(tcrossprod(lambda) + theta, lambda)
+}
+lam <- lavInspect(cfa_fit, what = "est")$lambda
+th <- lavInspect(cfa_fit, what = "est")$theta
+jac_a <- lavaan::lav_func_jacobian_complex(
+  \(x) get_a(x[1:3], diag(x[4:6])),
+  x = c(lam, diag(th))
+)
+# Estimated sampling variance of weights
+va <- jac_a %*% vcov(cfa_fit)[1:6, 1:6] %*% t(jac_a)
+aa <- tcrossprod(get_a(lam, th)) + va
+sum(diag(tcrossprod(lam) %*% aa)) /
+  sum(diag(cfa_fit@implied$cov[[1]] %*% aa))
+# Or using `get_fs_lavaan`
+get_fs_lavaan(cfa_fit, reliability = TRUE) |>
+  attr(which = "reliability")
+```
+
+### Bartlett Factor Scores
+
+```{r}
+# Uncorrected reliability of Bartlett factor scores
+fsb <- lavPredict(cfa_fit, method = "Bartlett", fsm = TRUE, acov = TRUE)
+1 / (1 + attr(fsb, "acov")[[1]])
+# Empirical reliability of regression factor scores
+(var(fsb) - attr(fsb, "acov")[[1]]) / var(fsb)
+```
+
+```{r}
+# Corrected reliability of regression factor scores
+get_a <- function(lambda, theta) {
+  thinv_lam <- solve(theta, lambda)
+  solve(crossprod(lambda, thinv_lam), t(thinv_lam))
+}
+lam <- lavInspect(cfa_fit, what = "est")$lambda
+th <- lavInspect(cfa_fit, what = "est")$theta
+jac_a <- lavaan::lav_func_jacobian_complex(
+  \(x) get_a(x[1:3], diag(x[4:6])),
+  x = c(lam, diag(th))
+)
+# Estimated sampling variance of weights
+va <- jac_a %*% vcov(cfa_fit)[1:6, 1:6] %*% t(jac_a)
+aa <- tcrossprod(t(get_a(lam, th))) + va
+sum(diag(tcrossprod(lam) %*% aa)) /
+  sum(diag(cfa_fit@implied$cov[[1]] %*% aa))
+# Or using `get_fs_lavaan` (need to be fixed)
+R2spa::get_fs_lavaan(cfa_fit, method = "Bartlett", reliability = TRUE) |>
+  attr(which = "reliability")
+```
+
+## Simulations
+
+```{r}
+#| eval: false
+set.seed(2356)
+lambda <- seq(.3, .9, length.out = 6)
+theta <- 1 - lambda^2
+num_obs <- 100
+
+num_sims <- 2000
+out <- matrix(ncol = 7, nrow = num_sims)
+
+# Copy function for computing a
+get_a <- function(lambda, theta) {
+  solve(tcrossprod(lambda) + theta, lambda)
+}
+
+# Function for getting all versions
+all_rel <- function(lam, th, vc) {
+  sigma <- tcrossprod(lam) + th
+  ahat <- crossprod(lam, solve(sigma))
+  # Formula 1: no adjustment
+  rel1 <- ahat %*% lam
+
+  jac_a <- lavaan::lav_func_jacobian_complex(
+    function(x, p) {
+      get_a(x[seq_len(p)], theta = diag(x[-(seq_len(p))]))
+    },
+    x = c(lam, diag(th)),
+    p = length(lam)
+  )
+  va <- jac_a %*% vc %*% t(jac_a)
+  aa <- crossprod(ahat) + va
+  # Formula 2: adjust for both error in weights and true variances
+  rel2 <- sum(diag(tcrossprod(lam) %*% aa)) / sum(diag(sigma %*% aa))
+
+  ev_fs <- sum(diag(th %*% aa))
+  # Formula 3: solve quadratic equation with adjusted error
+  rel3 <- (1 + sqrt(1 - 4 * ev_fs)) / 2
+
+  c(rel1, rel2, rel3)
+}
+
+# Function for getting all bias-corrected versions
+all_bc_rel <- function(fit, nsim = 500) {
+  vc <- vcov(fit)
+  mc_sim <- MASS::mvrnorm(nsim, mu = coef(fit), Sigma = vc)
+  mc_rel <- apply(mc_sim, MARGIN = 1,
+                  FUN = function(x) {
+                    all_rel(x[1:6], th = diag(x[7:12]), vc = vc)
+                  })
+  2 * with(
+    lavInspect(fit, what = "est"),
+    all_rel(lambda, th = theta, vc = vc)
+  ) - rowMeans(mc_rel) # bias-corrected
+}
+
+for (i in seq_len(num_sims)) {
+  eta <- rnorm(num_obs)
+  err <- matrix(
+    rnorm(num_obs * length(lambda), sd = sqrt(theta)),
+    ncol = num_obs
+  )
+  y <- t(
+    tcrossprod(lambda, eta) + err
+  )
+  # Run cfa
+  fit <- cfa("f =~ y1 + y2 + y3 + y4 + y5 + y6",
+    data = data.frame(y) |> setNames(paste0("y", seq_along(lambda))),
+    std.lv = TRUE
+  )
+  pars_fit <- lavInspect(fit, what = "est")
+  tilde_eta <- lavPredict(fit, fsm = TRUE)
+  true_rel <- cor(tilde_eta, eta)^2
+  est_a <- attr(tilde_eta, "fsm")[[1]]
+  out[i, ] <- c(
+    true_rel,
+    all_rel(pars_fit$lambda, pars_fit$theta, vcov(fit)),
+    all_bc_rel(fit)
+  )
+  setTxtProgressBar(
+    txtProgressBar(min = 0, max = num_sims, style = 3, width = 50, char = "="), 
+    i
+  )
+}
+colnames(out) <- c("true_rel", "no_adj_rel", "adj_rel", "quadratic",
+                   "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc")
+
+# save the file
+saveRDS(out, "vignettes/sim_results_reliability.RDS")
+```
+
+
+```{r}
+# Mean bias
+out <- readRDS("sim_results_reliability.RDS")
+data.frame(
+  Type = c("no_adj_rel", "adj_rel", "quadratic",
+           "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
+  Raw_Biases = c(mean(out[, "no_adj_rel"] - out[, "true_rel"]), 
+                 mean(out[, "adj_rel"] - out[, "true_rel"]), 
+                 mean(out[, "quadratic"] - out[, "true_rel"]), 
+                 mean(out[, "no_adj_rel_bc"] - out[, "true_rel"]), 
+                 mean(out[, "adj_rel_bc"] - out[, "true_rel"]), 
+                 mean(out[, "quadratic_bc"] - out[, "true_rel"], na.rm = TRUE))
+) |>
+  knitr::kable(digits = 3)
+
+# RMSE: 
+data.frame(
+  Type = c("no_adj_rel", "adj_rel", "quadratic",
+           "no_adj_rel_bc", "adj_rel_bc", "quadratic_bc"),
+  RMSE = c(sqrt(mean((out[, "no_adj_rel"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "adj_rel"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "quadratic"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "no_adj_rel_bc"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "adj_rel_bc"] - out[, "true_rel"])^2)),
+           sqrt(mean((out[, "quadratic_bc"] - out[, "true_rel"])^2, na.rm = TRUE)))
+) |>
+  knitr::kable(digits = 3)
+```
+
+```{r}
+#| out-width: "80%"
+#| fig-width: 5
+# Boxplot to compare the bias across formula
+bias_tab <- as.data.frame(out[, -1] - out[, 1]) |>
+  pivot_longer(everything(), names_to = "formula", values_to = "bias")
+bias_tab |>
+  ggplot(aes(x = formula, y = bias, col = formula)) +
+  geom_boxplot() +
+  geom_hline(yintercept = 0) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+

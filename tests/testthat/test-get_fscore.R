@@ -280,16 +280,16 @@ test_that(
 )
 
 fs_config <- get_fs(HolzingerSwineford1939,
-  hs_model_2,
-  group = "school",
-  corrected_fsT = TRUE
+                    hs_model_2,
+                    group = "school",
+                    corrected_fsT = TRUE
 )
 
 fs_metric <- get_fs(HolzingerSwineford1939,
-  hs_model_2,
-  group = "school",
-  group.equal = "loadings",
-  corrected_fsT = TRUE
+                    hs_model_2,
+                    group = "school",
+                    group.equal = "loadings",
+                    corrected_fsT = TRUE
 )
 
 fs_single <- get_fs(
@@ -308,6 +308,41 @@ test_that("Correction factor is similar with single or multiple groups", {
   d2 <- fst2[[1]] - fst2[[2]]
   expect_lt(mean(abs(d2)), mean(abs(d1)))
 })
+
+########## Computing reliability ##########
+
+test_that("Reliability of regression factor scores", {
+  fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+               corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE)
+  expect_equal(attr(fs, "reliability"), .9607411,
+               tolerance = 1e-7)
+})
+
+test_that("Reliability of Bartlett factor scores", {
+  fs <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+               corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE,
+               method = "Bartlett")
+  expect_equal(attr(fs, "reliability"), .9607457,
+               tolerance = 1e-7)
+})
+
+test_that("Reliability with non-diagonal theta", {
+  mod1 <- "visual =~ x1 + x2 + x3 + x9"
+  fit1 <- cfa(model = mod1, data = HolzingerSwineford1939)
+  fit2 <- cfa(model = c(mod1, "x1 ~~ x9"), data = HolzingerSwineford1939)
+  expect_gt(compute_fsrel(fit1)[[1]], compute_fsrel(fit2)[[1]])
+})
+
+# test_that("Reliability of regression fs > reliability of Bartlett fs", {
+#   rel_reg <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+#                     corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE)
+#   rel_bart <- get_fs(PoliticalDemocracy[c("x1", "x2", "x3")],
+#                      corrected_fsT = TRUE, reliability = TRUE, std.lv = TRUE,
+#                      method = "Bartlett")
+#   expect_gt(attr(rel_reg, "reliability"), attr(rel_bart, "reliability"))
+# })
+
+
 
 test_that("augment_lav_predict() works for complete data",
   code = {
