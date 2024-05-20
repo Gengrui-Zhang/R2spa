@@ -1,0 +1,326 @@
+---
+title: "Corrected Standard Errors"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{corrected-se}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+header-includes:
+  - \DeclareMathOperator{\Var}{\mathrm{Var}}
+  - \DeclareMathOperator{\E}{\mathrm{E}}
+  - \newcommand{\bv}[1]{\boldsymbol{\mathbf{#1}}}  %APA-consistent bold
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette shows how to obtain Taylor-series corrected standard errors in 2S-PA, accounting for the uncertainty in the weights for obtaining the factor scores. It is described in [this paper](https://doi.org/10.1007/s00181-020-01942-z).
+
+The second-stage estimation treats as known the loading matrix and the error covariance matrix of the factor scores as indicators of the true latent latent variables. However, those are estimates based on the first-stage measurement model. When the sample size is large and/or the reliability of the factor scores are high, the uncertainty in the estimated loading and error covariance matrix is generally negligible. Otherwise, a first-order correction on the standard errors of the second-stage estimation is possible, as illustrated below.
+
+## First-order correction for SE
+
+$$\hat V_{\gamma, c} = \hat V_{\gamma} + \boldsymbol{J}_\boldsymbol{\gamma}(\hat{\boldsymbol{\theta}}) \hat V_{\theta} \boldsymbol{J}_\boldsymbol{\gamma}(\hat{\boldsymbol{\theta}})^\top,$$
+
+where $\boldsymbol{J}_\boldsymbol{\gamma}$ is the Jacobian matrix of $\hat{\boldsymbol{\gamma}}$ with respect to $\boldsymbol{\theta}$, or
+
+$$\hat V_{\gamma, c} = \hat V_{\gamma} + (\boldsymbol{H}_\gamma)^{-1} \left(\frac{\partial^2 \ell}{\partial \theta \partial \gamma^\top}\right) \hat V_{\theta} \left(\frac{\partial^2 \ell}{\partial \theta \partial \gamma^\top}\right)^\top (\boldsymbol{H}_\gamma)^{-1},$$
+
+where $V_{\gamma}$ is the naive covariance matrix of the structural parameter estimates $\hat{\boldsymbol{\gamma}}$ assuming the measurement error variance parameter, $\boldsymbol{\theta}$, is known, $\boldsymbol{H}_\gamma$ is the Hessian matrix of the log-likelihood $\ell$ with respect to $\hat{\boldsymbol{\gamma}}$, and $V_{\theta}$ can be obtained in the first-stage measurement model analysis.
+
+```{r load-pkg, message = FALSE}
+library(lavaan)
+library(R2spa)
+library(numDeriv)
+library(boot)
+```
+
+This example is based on the Political Democracy data used in <https://lavaan.ugent.be/tutorial/sem.html> and as an example in Bollen (1989)'s book.
+
+## Separate Measurement Models
+
+```{r}
+model <- '
+  # latent variable definitions
+     ind60 =~ x1 + x2 + x3
+     dem60 =~ y1 + y2 + y3 + y4
+
+  # regressions
+    dem60 ~ ind60
+'
+```
+
+```{r}
+cfa_ind60 <- cfa("ind60 =~ x1 + x2 + x3", data = PoliticalDemocracy)
+# Regression factor scores
+fs1 <- get_fs_lavaan(cfa_ind60, vfsLT = TRUE)
+# Delta method variance of (loading, intercept)
+vldev1 <- attr(fs1, which = "vfsLT")
+cfa_dem60 <- cfa("dem60 =~ y1 + y2 + y3 + y4",
+                 data = PoliticalDemocracy)
+# Regression factor scores
+fs2 <- get_fs_lavaan(cfa_dem60, vfsLT = TRUE)
+# Delta method variance of (loading, intercept)
+vldev2 <- attr(fs2, which = "vfsLT")
+fs_dat <- data.frame(
+  fs_ind60 = fs1$fs_ind60,
+  fs_dem60 = fs2$fs_dem60
+)
+# Combine sampling variance of loading and error variance
+# Note: loadings first, then error variance
+vldev <- block_diag(vldev1, vldev2)[c(1, 3, 2, 4), c(1, 3, 2, 4)]
+```
+
+```{r}
+# 2S-PA
+# Assemble loadings
+ld <- block_diag(attr(fs1, which = "fsL"),
+                 attr(fs2, which = "fsL"))
+ev <- block_diag(attr(fs1, which = "fsT"),
+                 attr(fs2, which = "fsT"))
+tspa_fit <- tspa(model = "dem60 ~ ind60",
+                 data = fs_dat,
+                 fsL = ld,
+                 fsT = ev)
+# Unadjusted covariance
+vcov(tspa_fit)
+# Adjusted covariance matrix
+(vc_cor <- vcov_corrected(tspa_fit, vfsLT = vldev, which_free = c(1, 4, 5, 7)))
+# Corrected standard errors
+sqrt(diag(vc_cor))
+```
+
+Standardized solution
+
+```{r}
+tspa_est_std <- function(ld_ev) {
+  ld1 <- ld
+  ev1 <- ev
+  ld1[c(1, 4)] <- ld_ev[1:2]
+  ev1[c(1, 4)] <- ld_ev[3:4]
+  tfit <- tspa(model = "dem60 ~ ind60",
+               data = fs_dat,
+               fsL = ld1,
+               fsT = ev1)
+  standardizedSolution(tfit)$est.std[8]
+}
+tspa_est_std(c(ld[c(1, 4)], ev[c(1, 4)]))
+# Jacobian
+jac_std <- numDeriv::jacobian(tspa_est_std,
+                              x = c(ld[c(1, 4)], ev[c(1, 4)]))
+# Corrected standard error
+sqrt(
+  standardizedSolution(tspa_fit)[8, "se"]^2 +
+    jac_std %*% vldev %*% t(jac_std)
+)
+```
+
+Compare to joint structural and measurement model
+
+```{r}
+sem_fit <- sem(model, data = PoliticalDemocracy)
+# Larger standard error
+(vc_j <- 
+  vcov(sem_fit)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")])
+sqrt(diag(vc_j))
+```
+
+Bootstrap Standard Errors
+
+```{r, eval = FALSE, echo = TRUE}
+run_tspa <- function(df, inds) {
+  fs_ind60 <- get_fs(data = df[inds, ], model = "ind60 =~ x1 + x2 + x3",
+                     se = "none", test = "none")
+  fs_dem60 <- get_fs(data = df[inds, ], model = "dem60 =~ y1 + y2 + y3 + y4",
+                     se = "none", test = "none")
+  fs_dat <- cbind(fs_ind60, fs_dem60)
+  # Assemble loadings
+  ld <- block_diag(attr(fs_ind60, which = "fsL"),
+                   attr(fs_dem60, which = "fsL"))
+  ev <- block_diag(attr(fs_ind60, which = "fsT"),
+                   attr(fs_dem60, which = "fsT"))
+  tspa_fit <- tspa(model = "dem60 ~ ind60",
+                   data = fs_dat,
+                   fsL = ld,
+                   fsT = ev,
+                   test = "none")
+  coef(tspa_fit)
+}
+boo <- boot(PoliticalDemocracy, statistic = run_tspa, R = 1999)
+```
+
+```{r, eval = FALSE, include = FALSE}
+saveRDS(boo, file = "boo_separate.RDS")
+```
+
+```{r, include = FALSE}
+boo <- readRDS("boo_separate.RDS")
+```
+
+```{r}
+# Use MAD to downweigh outlying replications
+boo$t |>
+    apply(MARGIN = 2, FUN = mad) |>
+    setNames(c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"))
+```
+
+The standard errors seem to diverge slightly among methods. SE(`dem60~ind60`) with bootstrap is the lowest. SE(`ind60~~ind60`) with the joint model is particularly higher than the other two. SE(`dem60~~dem60`) is the lowest with the corrected 2S-PA. It should be pointed out that the joint model and 2S-PA are different estimators.
+
+```{r, eval = FALSE}
+run_sem <- function(df, inds) {
+  sem_fit <- sem(model, data = df[inds, ], se = "none", test = "none")
+  coef(sem_fit)
+}
+boo <- boot(PoliticalDemocracy, statistic = run_sem, R = 999)
+```
+
+## Joint Measurement Model
+
+```{r}
+cfa_joint <- cfa("ind60 =~ x1 + x2 + x3
+                  dem60 =~ y1 + y2 + y3 + y4",
+                 data = PoliticalDemocracy)
+# Factor score
+fs_joint <- get_fs_lavaan(cfa_joint, vfsLT = TRUE)
+# Delta method variance
+vldev_joint <- attr(fs_joint, which = "vfsLT")
+```
+
+```{r}
+tspa_fit2 <- tspa(model = "dem60 ~ ind60",
+                  data = fs_joint,
+                  fsT = attr(fs_joint, "fsT"),
+                  fsL = attr(fs_joint, "fsL"))
+# Unadjusted covariance
+vcov(tspa_fit2)
+# Adjusted covariance
+(vc2_cor <- vcov_corrected(tspa_fit2, vfsLT = vldev_joint))
+# Corrected standard errors
+sqrt(diag(vc2_cor))
+```
+
+Bootstrap Standard Errors
+
+```{r, eval = FALSE}
+run_tspa2 <- function(df, inds) {
+  fs_joint <- get_fs(df[inds, ],
+                     model = "ind60 =~ x1 + x2 + x3
+                              dem60 =~ y1 + y2 + y3 + y4",
+                     se = "none", test = "none")
+  tspa_fit2 <- tspa(model = "dem60 ~ ind60",
+                    data = fs_joint,
+                    fsT = attr(fs_joint, "fsT"),
+                    fsL = attr(fs_joint, "fsL"),
+                    test = "none")
+  coef(tspa_fit2)
+}
+boo2 <- boot(PoliticalDemocracy, statistic = run_tspa2, R = 1999)
+# run_tspa2b <- function(df, inds) {
+#   fsb_joint <- get_fs(df[inds, ],
+#                       model = "ind60 =~ x1 + x2 + x3
+#                               dem60 =~ y1 + y2 + y3 + y4",
+#                       se = "none", test = "none", method = "Bartlett")
+#   tspa_fit2b <- tspa(model = "dem60 ~ ind60",
+#                      data = fsb_joint,
+#                      fsT = attr(fsb_joint, "fsT"),
+#                      fsL = diag(2),
+#                      test = "none")
+#   coef(tspa_fit2b)
+# }
+# boo2b <- boot(PoliticalDemocracy, statistic = run_tspa2b, R = 4999)
+# run_sem2 <- function(df, inds) {
+#   sem_fit <- sem(model, data = df[inds, ])
+#   coef(sem_fit)[c(6, 14, 15)]
+# }
+# boo2j <- boot(PoliticalDemocracy, statistic = run_sem2, R = 4999)
+```
+
+```{r, eval = FALSE, include = FALSE}
+saveRDS(boo2, file = "boo_joint.RDS")
+```
+
+```{r, include = FALSE}
+boo2 <- readRDS("boo_joint.RDS")
+```
+
+```{r}
+# Use MAD to downweigh outlying replications
+boo2$t |>
+    apply(MARGIN = 2, FUN = mad) |>
+    setNames(c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"))
+```
+
+### With Bartlett's Method
+
+```{r}
+# Factor score
+fsb_joint <- get_fs(PoliticalDemocracy,
+                    model = "ind60 =~ x1 + x2 + x3
+                             dem60 =~ y1 + y2 + y3 + y4",
+                    method = "Bartlett",
+                    vfsLT = TRUE)
+vldevb_joint <- attr(fsb_joint, which = "vfsLT")
+```
+
+```{r}
+tspa_fit2b <- tspa(model = "dem60 ~ ind60",
+                   data = fsb_joint,
+                   fsT = attr(fsb_joint, "fsT"),
+                   fsL = diag(2) |>
+                       `dimnames<-`(list(c("fs_ind60", "fs_dem60"),
+                                         c("ind60", "dem60"))))
+# Unadjusted covariance matrix
+vcov(tspa_fit2b)
+# Adjusted covariance matrix
+(vc2b_cor <- vcov_corrected(
+    tspa_fit2b,
+    # Exclude fixed loadings and error variance
+    vfsLT = vldevb_joint[c(5, 7), c(5, 7)],
+    # Specify which elements are free (error variances only)
+    which_free = c(5, 7)))
+# Corrected standard errors
+sqrt(diag(vc2b_cor))
+```
+
+## Multiple Groups
+
+```{r}
+# Multigroup, three-factor example
+mod <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed =~ x7 + x8 + x9
+"
+# Factor scores based on partial invariance
+fs_dat <- get_fs(HolzingerSwineford1939, model = mod, std.lv = TRUE,
+                 group = "school",
+                 group.equal = c("loadings", "intercepts"),
+                 group.partial = c("visual=~x2", "x7~1"))
+fit <- cfa(mod,
+           data = HolzingerSwineford1939,
+           std.lv = TRUE,
+           group = "school",
+           group.equal = c("loadings", "intercepts"),
+           group.partial = c("visual=~x2", "x7~1"))
+fs_dat <- get_fs_lavaan(fit)
+vldev <- R2spa:::vcov_ld_evfs(fit)
+```
+
+```{r}
+tspa_fit <- tspa(model = "visual ~~ textual + speed
+                          textual ~~ speed",
+                 data = fs_dat,
+                 group = "school",
+                 fsL = attr(fs_dat, which = "fsL"),
+                 fsT = attr(fs_dat, which = "fsT"))
+# Unadjusted covariance
+vcov(tspa_fit)[c(1:6, 10:15), c(1:6, 10:15)]
+# Adjusted covariance
+vcov_corrected(tspa_fit, vfsLT = vldev)[c(1:6, 10:15), c(1:6, 10:15)]
+```

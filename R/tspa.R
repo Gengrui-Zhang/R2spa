@@ -10,31 +10,89 @@
 #' @param reliability A numeric vector representing the reliability indexes
 #'                    of each latent factor. Currently \code{tspa()} does not
 #'                    support the reliability argument. Please use \code{se}.
-#' @param se A numeric vector representing the standard errors of each latent
-#'           factor for single-group 2S-PA. A list or data frame storing
-#'           the standard errors of each group in each latent factor for
-#'           multigroup 2S-PA.
+#' @param se Deprecated to avoid conflict with the argument of the same name
+#'           in [lavaan::lavaan()].
+#' @param se_fs A numeric vector representing the standard errors of each
+#'              factor score variable for single-group 2S-PA. A list or data
+#'              frame storing the standard errors of each group in each latent
+#'              factor for multigroup 2S-PA.
+#' @param fsT An error variance-covariance matrix of the factor scores, which
+#'            can be obtained from the output of \code{get_fs()} using
+#'            \code{attr()} with the argument \code{which = "fsT"}.
+#' @param fsL A matrix of loadings and cross-loadings from the
+#'            latent variables to the factor scores \code{fs}, which
+#'            can be obtained from the output of \code{get_fs()} using
+#'            \code{attr()} with the argument \code{which = "fsL"}.
+#'            For details see the multiple-factors vignette:
+#'            \code{vignette("multiple-factors", package = "R2spa")}.
+#' @param fsb A vector of intercepts for the factor scores \code{fs}, which can
+#'            be obtained from the output of \code{get_fs()} using \code{attr()}
+#'            with the argument \code{which = "fsb"}.
 #' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return An object of classy7777777777777777777777777777777777777y \code{lavaan}, with an attribute \code{tspaModel}
 #'         that contains the model syntax.
+#'
 #' @export
+#'
 #' @examples
 #' library(lavaan)
-#' ### single-group example
 #'
+#' # single-group, two-factor example, factor scores obtained separately
 #' # get factor scores
 #' fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
 #'                        model = "ind60 =~ x1 + x2 + x3")
 #' fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
 #'                        model = "dem60 =~ y1 + y2 + y3 + y4")
 #' fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
-#'
 #' # tspa model
 #' tspa(model = "dem60 ~ ind60", data = fs_dat,
-#'      se = c(ind60 = 0.1213615, dem60 = 0.6756472))
+#'      se_fs = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
+#'                dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
 #'
-#' ### multigroup example
+#' # single-group, three-factor example
+#' mod2 <- "
+#'   # latent variables
+#'     ind60 =~ x1 + x2 + x3
+#'     dem60 =~ y1 + y2 + y3 + y4
+#'     dem65 =~ y5 + y6 + y7 + y8
+#' "
+#' fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+#' tspa(model = "dem60 ~ ind60
+#'               dem65 ~ ind60 + dem60",
+#'      data = fs_dat2,
+#'      fsT = attr(fs_dat2, "fsT"),
+#'      fsL = attr(fs_dat2, "fsL"))
+#'
+#' # multigroup, two-factor example
+#' mod3 <- "
+#'   # latent variables
+#'     visual =~ x1 + x2 + x3
+#'     speed =~ x7 + x8 + x9
+#' "
+#' fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
+#'                   group = "school")
+#' tspa(model = "visual ~ speed",
+#'      data = fs_dat3,
+#'      fsT = attr(fs_dat3, "fsT"),
+#'      fsL = attr(fs_dat3, "fsL"),
+#'      group = "school")
+#'
+#' # multigroup, three-factor example
+#' mod4 <- "
+#'   # latent variables
+#'     visual =~ x1 + x2 + x3
+#'     textual =~ x4 + x5 + x6
+#'     speed =~ x7 + x8 + x9
+#' "
+#' fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
+#'                   group = "school")
+#' tspa(model = "visual ~ speed
+#'               textual ~ visual + speed",
+#'      data = fs_dat4,
+#'      fsT = attr(fs_dat4, "fsT"),
+#'      fsL = attr(fs_dat4, "fsL"),
+#'      group = "school")
 #'
 #' # get factor scores
 #' fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
@@ -43,252 +101,182 @@
 #' fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
 #'                        model = "speed =~ x7 + x8 + x9",
 #'                        group = "school")
-#' fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+#' fs_hs <- cbind(do.call(rbind, fs_dat_visual),
+#'                do.call(rbind, fs_dat_speed))
 #'
-#' \dontrun{
 #' # tspa model
 #' tspa(model = "visual ~ speed",
 #'      data = fs_hs,
-#'      se = data.frame(visual = c(0.3391326, 0.311828),
-#'                      speed = c(0.2786875, 0.2740507)),
+#'      se_fs = data.frame(visual = c(0.3391326, 0.311828),
+#'                         speed = c(0.2786875, 0.2740507)),
 #'      group = "school",
 #'      group.equal = "regressions")
 #'
 #' # manually adding equality constraints on the regression coefficients
 #' tspa(model = "visual ~ c(b1, b1) * speed",
 #'      data = fs_hs,
-#'      se = list(visual = c(0.3391326, 0.311828),
-#'                speed = c(0.2786875, 0.2740507)),
+#'      se_fs = list(visual = c(0.3391326, 0.311828),
+#'                   speed = c(0.2786875, 0.2740507)),
 #'      group = "school")
-#' }
 
 
+tspa <- function(model, data, reliability = NULL, se = "standard",
+                 se_fs = NULL, fsT = NULL, fsL = NULL, fsb = NULL, ...) {
 
+  if (!inherits(model, "character")) {
+    stop("The structural path model provided is not a string.")
+  }
 
-# # modify for multiple group tspa model
-# tspa <- function(model, data, reliability = NULL, se = NULL) {
-#   var <- names(reliability)
-#   len <- length(reliability)
-#
-#   if (len < 2) {
-#     stop("Reliability len is smaller than 2, unable to build model. Reliability needs to consist of at least 2 variables.");
-#   }
-#   col <- colnames(data)
-#   fs <- paste0("fs_", var)
-#
-#   if (length(fs) < 2) {
-#     stop("Data column len is smaller than 2, unable to build model. Data needs to consist of at least 2 columns.");
-#   }
-#
-#   tspaModel <- rep(NA, len)
-#   latent_var <- rep(NA, len)
-#   error_constraint <- rep(NA, len)
-#   latent_variance <- rep(NA, len)
-#   reliability_constraint <- rep(NA, len)
-#
-#   if(fs %in% col == FALSE) {
-#     stop("data columns does not match with reliability")
-#   }
-#
-#   for (x in 1:len) {
-#     latent_var[x] <- paste0(var[x], " =~ 1 * ", fs[x], "\n")
-#     error_constraint[x] <- paste0(fs[x], " ~~ ev", x, " * ", fs[x], "\n")
-#     latent_variance[x] <- paste0(var[x], " ~~ v", x, " * ", var[x], "\n")
-#     reliability_constraint[x] <- paste0("v", x, " == ", toString(reliability[x]), " / ", toString(1 - reliability[x]), " * ev", x, "\n")
-#   }
-#
-#   latent_var_str <- paste(latent_var, collapse="")
-#   error_constraint_str <- paste(error_constraint, collapse="")
-#   latent_variance_str <- paste(latent_variance, collapse="")
-#   reliability_constraint_str <- paste(reliability_constraint, collapse="")
-#   tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, "\n", reliability_constraint_str)
-#
-#   tspa_fit <- sem(model = tspaModel,
-#                   data  = data)
-#
-#   # tspaModel <- cat(tspaModel)
-#   attributes(tspa_fit)$tspaModel <- tspaModel
-#   # to access the attribute, use attr(x,"tspaModel")
-#   return (tspa_fit)
-# }
-
-tspa <- function(model, data, reliability = NULL, se = NULL, ...) {
-  if (is.null(reliability) == FALSE){
+  if (!is.null(reliability)) {
     stop("tspa() currently does not support reliability model")
   }
-  if (!is.data.frame(se)) {
-    se <- as.data.frame(as.list(se))
-  }
-  # Detect if there are interaction terms, then compute the corresponding factor score and se.
-  if(grepl(":", model) == TRUE) {
-    data <- get_fsint(model, data)
-    names_se <- names(se)
-    se <- cbind(se, as.data.frame(data[,colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
-                                                         grepl("se", colnames(data),
-                                                               fixed = TRUE) == TRUE]])[1, ])
-    names(se) <- c(names_se, gsub("fs_|_se", "", colnames(data)[grepl(".", colnames(data), fixed = TRUE) &
-                                                                  grepl("se", colnames(data),
-                                                                        fixed = TRUE) == TRUE]))
+  if (!is.character(se)) {
+    warning("using `se` to set se for factor scores is deprecated. ",
+            "use `se_fs` instead.")
   }
 
-  if(nrow(se) == 1){
-    tspaModel <- tspaSingleGroup(model, data, se)
-  } else if(nrow(se) > 1){
-    tspaModel <- tspaMultipleGroupSe(model, data, se)
+  if (!is.data.frame(se_fs)) {
+    se_fs <- as.data.frame(as.list(se_fs))
+  }
+  multigroup <- nrow(se_fs) > 1 | is.list(fsT)
+
+  if (xor(is.null(fsT), is.null(fsL))) {
+    stop("Please provide both or none of fsT and fsL.")
+  }
+
+  if (!is.null(fsT)) {
+    fs_names <- ifelse(multigroup, colnames(fsT[[1]]), colnames(fsT))
+    dat_names <- ifelse(multigroup, names(data[[1]]), names(data))
+    names_match <- lapply(fs_names, function(x) x %in% dat_names) |> unlist()
+    if (any(!names_match)) {
+      stop(
+        "Names of factor score variables do not match those in the input data."
+      )
+    }
+  }
+
+  if (multigroup && is.null(list(...)[["group"]])) {
+    stop("Please specify 'group = ' to fit a multigroup model in lavaan.")
+  }
+
+  if (is.null(fsT)) { # single-factor measurement model
+    tspaModel <- tspa_sf(model, data, se_fs)
+  } else { # multi-factor measurement model
+    tspaModel <- tspa_mf(model, data, fsT, fsL, fsb)
+    if (inherits(data, "list")) {
+      data <- do.call(rbind, data)
+    }
   }
 
   tspa_fit <- sem(model = tspaModel,
                   data  = data,
-                  bounds = TRUE,
+                  se = se,
                   ...)
-  attributes(tspa_fit)$tspaModel <- tspaModel # to access the attribute, use attr(x,"tspaModel")
-  return (tspa_fit)
-  #
-  #   var <- names(reliability)
-  #   len <- length(reliability)
-  #   group <- length(reliability[1])
-  #
-  #   if (len < 2) {
-  #     stop("Reliability len is smaller than 2, unable to build model. Reliability needs to consist of at least 2 variables.");
-  #   }
-  #   col <- colnames(data)
-  #   fs <- paste0("fs_", var)
-  #
-  #   if (length(fs) < 2) {
-  #     stop("Data column len is smaller than 2, unable to build model. Data needs to consist of at least 2 columns.");
-  #   }
-  #
-  #   tspaModel <- rep(NA, len)
-  #   latent_var <- rep(NA, len)
-  #   error_constraint <- rep(NA, len)
-  #   latent_variance <- rep(NA, len)
-  #   reliability_constraint <- rep(NA, len)
-  #
-  #   # if(fs %in% col == FALSE) {
-  #   #   stop("data columns does not match with reliability")
-  #   # }
-  #
-  #   for (x in 1:len) {
-  #       # latent variables fx =~ c(1, 1, 1, 1) * fs_fx
-  #       latent_var[x] <- paste0(var[x], "=~ c(", paste0(rep(1, group), collapse = ", "), ") * ", fs[x], "\n")
-  #
-  #       # constrain the errors fs_fx ~~ c(ev11, ev12, ev13, ev14) * fs_fx
-  #       error_constraint[x] <- paste0(fs[x], "~~ c(", paste0(paste0(rep(paste0("ev",x), group), 1:group), collapse = ", "), ") * ", fs[x], "\n")
-  #
-  #       # latent variances fx ~~ c(v11, v12, v13, v14) * fx
-  #       latent_variance[x] <- paste0(var[x], " ~~ c(", paste0(paste0(rep(paste0("v",x), group), 1:group), collapse = ", "), ") * ", var[x], "\n")
-  #
-  #       # reliability constraints v21 == (0.8854708 / (1 - 0.8854708)) * ev21 - b1^2 * v11
-  #       if(x == 1) {
-  #           reliability_constraint[x] <- paste0("v", x, 1:group, " == ", toString(reliability[x]), " / ", toString(1 - reliability[x]),
-  #                                             " * ev", x, 1:group, "\n")
-  #       }
-  #       else {
-  #           reliability_constraint[x] <- paste0("v", x, 1:group, " == ", toString(reliability[x]), " / ", toString(1 - reliability[x]),
-  #                                           " * ev", x, 1:group, "- b", x - 1, "^2 * v", x - 1, 1:group, "\n")
-  #       }
-  #   }
-  #
-  #   # for now we only assume there's fx and fy, fy ~ c(b1, b1, b1, b1) * fx1 + c(b1, b1, b1, b1) * fx2
-  #   model <- paste0(var[2]," ~ c(", paste0(rep("b1", group), collapse = ", "), ") * ", var[1])
-  #
-  #   # organize into one tspa model
-  #   latent_var_str <- paste(latent_var, collapse="")
-  #   error_constraint_str <- paste(error_constraint, collapse="")
-  #   latent_variance_str <- paste(latent_variance, collapse="")
-  #   reliability_constraint_str <- paste(reliability_constraint, collapse="")
-  #   tspaModel <- paste0(latent_var_str, error_constraint_str, latent_variance_str, model, "\n", reliability_constraint_str)
-  #
-  #   # tspa_fit, fit the model for the data
-  #   tspa_fit <- sem(model = tspaModel,
-  #   # sem(model = my2spa_lui,
-  #   #     data  = fs_lui,
-  #   #     group = "eth",
-  #   #     group.label = 1:4)
-  #                   data  = data,
-  #                   ...)
-  #
-  #   # tspaModel <- cat(tspaModel)
-  #   attributes(tspa_fit)$tspaModel <- tspaModel
-  #   # to access the attribute, use attr(x,"tspaModel")
-  #   return (tspa_fit)
-}
-
-tspaSingleGroup <- function(model, data, se = NULL) {
-  if (nrow(se) != 0){
-
-    ev <- se^2
-    var <- names(se)
-    len <- length(se)
-
-    col <- colnames(data)
-    fs <- paste0("fs_", var)
-    latent_var <- rep(NA, len)
-    error_constraint <- rep(NA, len)
-    latent_variance <- rep(NA, len)
-
-    for(x in 1:len){
-      latent_var[x] <- paste0(var[x], " =~ ", fs[x], "\n")
-      error_constraint[x] <- paste0(fs[x], " ~~ ", ev[x], " * ", fs[x], "\n")
-      latent_variance[x] <- paste0(var[x], " ~~ v", x, " * ", var[x], "\n")
-    }
-
-    latent_var_str <- paste(latent_var, collapse="")
-    error_constraint_str <- paste(error_constraint, collapse="")
-    latent_variance_str <- paste(latent_variance, collapse="")
-    tspaModel <- gsub(":", ".", paste0("# latent variables (indicated by factor scores)\n",
-                                       latent_var_str,
-                                       "# constrain the errors\n",
-                                       error_constraint_str,
-                                       "# latent variances\n",
-                                       latent_variance_str,
-                                       "# regressions\n",
-                                       paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
-                                              collapse = "\n"),
-                                       "\n"))
-    tspaModel <- gsub(".=", ":=", tspaModel, fixed = T)
-
-    return (tspaModel)
+  attr(tspa_fit, "tspaModel") <- tspaModel
+  if (!is.null(fsT)) {
+    attr(tspa_fit, "fsT") <- fsT
+    attr(tspa_fit, "fsL") <- fsL
   }
+  attr(tspa_fit, "tspa_call") <- match.call()
+  return(tspa_fit)
 }
 
-tspaMultipleGroupSe <- function(model, data, se = NULL) {
-  # if (is.list(se)) {
-  #   len <-
-  # }
-  if (nrow(se) != 0){
+tspa_sf <- function(model, data, se = NULL) {
+  if (nrow(se) != 0) {
     ev <- se^2
     var <- names(se)
     len <- length(se)
     group <- nrow(se)
-    col <- colnames(data)
+    # col <- colnames(data)
     fs <- paste0("fs_", var)
     tspaModel <- rep(NA, len)
     latent_var <- rep(NA, len)
     error_constraint <- rep(NA, len)
-    latent_variance <- rep(NA, len)
 
-    for(x in 1:len){
-      latent_var[x] <- paste0(var[x], "=~ c(", paste0(rep(1, group), collapse = ", "), ") * ", fs[x], "\n")
-      error_constraint[x] <- paste0(fs[x], "~~ c(", paste(ev[x], collapse = ", "), ") * ", fs[x], "\n")
-      latent_variance[x] <- paste0(var[x], " ~~ c(", paste0(paste0(rep(paste0("v",x), group), 1:group), collapse = ", "), ") * ", var[x], "\n")
-    }
+    latent_var <- lapply(seq_len(len), function(x) {
+      paste0(
+        var[x], "=~ c(",
+        paste0(rep(1, group), collapse = ", "), ") * ", fs[x], "\n"
+      )
+    })
 
-    latent_var_str <- paste(latent_var, collapse="")
-    error_constraint_str <- paste(error_constraint, collapse="")
-    latent_variance_str <- paste(latent_variance, collapse="")
-    tspaModel <- gsub(":", ".", paste0("# latent variables (indicated by factor scores)\n",
-                                       latent_var_str,
-                                       "# constrain the errors\n",
-                                       error_constraint_str,
-                                       "# latent variances\n",
-                                       latent_variance_str,
-                                       "# regressions\n",
-                                       paste0(gsub("^\\s+", "", unlist(strsplit(model, split = "\n"))),
-                                              collapse = "\n"),
-                                       "\n"))
-    tspaModel <- gsub(".=", ":=", tspaModel, fixed = T)
+    error_constraint <- lapply(seq_len(len), function(x) {
+      paste0(
+        fs[x], "~~ c(", paste(ev[x], collapse = ", "), ") * ", fs[x], "\n"
+      )
+    })
 
-    return (tspaModel)
+    latent_var_str <- paste(latent_var, collapse = "")
+    error_constraint_str <- paste(error_constraint, collapse = "")
+    tspaModel <- paste0(
+      c("# latent variables (indicated by factor scores)",
+        latent_var_str,
+        "# constrain the errors",
+        error_constraint_str,
+        "# structural model",
+        model),
+      collapse = "\n"
+    )
+
+    return(tspaModel)
   }
+}
+
+tspa_mf <- function(model, data, fsT, fsL, fsb) {
+  if (is.list(fsT)) {
+    ngroup <- length(fsT)
+    fsL1 <- fsL[[1]]
+    fsT_in <- !upper.tri(fsT[[1]])
+  } else {
+    ngroup <- 1
+    fsL1 <- fsL
+    fsT_in <- !upper.tri(fsT)
+  }
+  var <- colnames(fsL1)
+  nvar <- length(var)
+  fs <- rownames(fsL1)
+
+  # latent variables
+  loadings_mat <- matrix(unlist(fsL), ncol = ngroup)
+  loadings <- apply(loadings_mat, 1, function(x) {
+    paste0("c(", paste0(x, collapse = ", "), ") * ")
+  }) |>
+    paste0(fs)
+  loadings_list <- split(loadings, factor(rep(var, each = nvar),
+                                          levels = var))
+  loadings_c <- lapply(loadings_list, function(x) {
+    paste0(x, collapse = " + ")
+  })
+  latent_var_str <- paste("# latent variables (indicated by factor scores)\n",
+                          var, "=~", loadings_c)
+  # error variances
+  ev_rhs <- fs[col(fsT_in)[fsT_in]]
+  ev_lhs <- fs[row(fsT_in)[fsT_in]]
+  errors_mat <- matrix(unlist(fsT), ncol = ngroup)[as.vector(fsT_in), ,
+                                                   drop = FALSE]
+  errors <- apply(errors_mat, 1, function(x) {
+    paste0("c(", paste0(x, collapse = ", "), ")")
+  })
+  error_constraint_str <- paste0("# constrain the errors\n",
+                                 ev_lhs, " ~~ ", errors, " * ", ev_rhs)
+  if (!is.null(fsb)) {
+    # intercepts
+    intercepts_mat <- matrix(unlist(fsb), ncol = ngroup)
+    intercepts <- split(intercepts_mat, rep(seq_len(nrow(intercepts_mat)), ngroup))
+    intercept_constraint <- paste0("# constrain the intercepts\n",
+                                   fs, " ~ ", intercepts, " * 1")
+  } else {
+    intercept_constraint <- ""
+  }
+
+  tspaModel <- paste0(c(
+    latent_var_str,
+    error_constraint_str,
+    intercept_constraint,
+    "# structural model",
+    model
+  ),
+  collpase = "\n")
+
+  return(tspaModel)
 }

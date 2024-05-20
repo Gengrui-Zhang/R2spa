@@ -1,0 +1,177 @@
+---
+title: "2S-PA with Missing Data"
+author: "Mark Lai"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{missing-data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Single-Factor Model
+
+For illustration, we will create an artificial data set with two missing data pattern:
+
+```{r}
+set.seed(2225)
+library(lavaan)
+library(R2spa)
+library(umx)
+data(PoliticalDemocracy)
+pd2 <- PoliticalDemocracy
+# Add MCAR missing data
+pd2[!rbinom(75, size = 1, prob = 0.7), 9] <- NA
+```
+
+Factor scores with `lavaan::lavPredict()`:
+
+```{r}
+fit <- cfa("ind60 =~ x1 + x2 + x3", data = pd2, missing = "fiml")
+fs_lavaan <- lavPredict(fit, method = "Bartlett", se = TRUE, fsm = TRUE)
+# # extract scoring matrix
+# fsm <- attr(fs_lavaan, "fsm")[[1]]
+# # se for observations with complete data
+# th <- lavInspect(fit, what = "est")$theta
+# sqrt(diag(fsm %*% th %*% t(fsm)))
+# # se for observations missing item 1 (need conditional normal)
+# fsm_mis1 <- with(lavInspect(fit, what = "est"), {
+#     lambda <- lambda[2:3, , drop = FALSE]
+#     theta <- theta[2:3, 2:3, drop = FALSE]
+#     # covy <- (lambda %*% psi %*% t(lambda) + theta)
+#     # ginvcovy <- MASS::ginv(covy)
+#     # tlam_invcov <- crossprod(lambda, ginvcovy)
+#     # psi %*% tlam_invcov
+#     lamt_th_lam <- crossprod(lambda, solve(theta, lambda))
+#     solve(lamt_th_lam, crossprod(lambda, solve(theta)))
+# })
+# sqrt(diag(fsm_mis1 %*% th[2:3, 2:3, drop = FALSE] %*% t(fsm_mis1)))
+# From R2spa
+fs <- R2spa::get_fs_lavaan(fit, method = "Bartlett")
+# Compare factor scores
+plot(fs_lavaan, fs$fs_ind60)
+abline(a = 0, b = 1)
+```
+
+### Multiple group
+
+```{r}
+mg_fit <- cfa("ind60 =~ x1 + x2 + x3",
+  data = cbind(pd2, group = rep(1:2, c(40, 35))),
+  missing = "fiml",
+  group = "group"
+)
+R2spa::get_fs_lavaan(mg_fit)
+```
+
+## Multiple-Factor Model
+
+### Regression scores
+
+```{r}
+# Make last 10 cases completely missing on y5-y8
+pd2[66:75, 5:8] <- NA
+fit2 <- cfa("
+  dem60 =~ a * y1 + b * y2 + c * y3 + d * y4
+  dem65 =~ a * y5 + b * y6 + c * y7 + d * y8
+  y1 ~~ y5
+  y2 ~~ y6
+  y3 ~~ y7
+  y4 ~~ y8
+", data = pd2, missing = "fiml")
+fs2r <- lavPredict(fit2,
+  method = "EBM", se = TRUE,
+  acov = TRUE, fsm = TRUE
+)
+acov_r <- attr(fs2r, "acov")[[1]]
+# Obtain tidy-ed factor scores data
+fs_dat <- R2spa::augment_lav_predict(fit2)
+# Run 2spa with OpenMx
+# Build OpenMx model
+fsreg_umx <- umxLav2RAM(
+  "
+    dem65 ~ dem60
+    dem65 + dem60 ~ 1
+  ",
+  printTab = FALSE
+)
+cross_load <- matrix(c(
+  "dem60_by_fs_dem60", "dem60_by_fs_dem65",
+  "dem65_by_fs_dem60", "dem65_by_fs_dem65"
+), nrow = 2) |>
+  `dimnames<-`(list(c("fs_dem60", "fs_dem65"), c("dem60", "dem65")))
+err_cov <- matrix(c(
+  "ev_fs_dem60", "ecov_fs_dem60_fs_dem65",
+  "ecov_fs_dem60_fs_dem65", "ev_fs_dem65"
+), nrow = 2) |>
+  `dimnames<-`(rep(list(c("fs_dem60", "fs_dem65")), 2))
+# Need to make factor scores NA when loadings/error variances
+# are inadmissible
+fs_dat[66:75, "fs_dem65"] <- NA
+tspa_mx <- tspa_mx_model(fsreg_umx,
+  data = fs_dat,
+  mat_ld = cross_load, mat_ev = err_cov
+)
+# Run OpenMx
+tspa_mx_fit <- mxRun(tspa_mx)
+# Summarize the results
+summary(tspa_mx_fit)
+```
+
+### Bartlett scores
+
+```{r}
+# Obtain tidy-ed factor scores data
+fsb_dat <- augment_lav_predict(fit2, method = "Bartlett")
+tspab_mx <- tspa_mx_model(fsreg_umx,
+  data = fsb_dat,
+  mat_ld = attr(fsb_dat, which = "ld"),
+  mat_ev = attr(fsb_dat, which = "ev")
+)
+# Run OpenMx
+tspab_mx_fit <- mxRun(tspab_mx)
+# Summarize the results
+summary(tspab_mx_fit)
+```
+
+### Compared to Joint Model
+
+```{r}
+jfit <- sem("
+  dem60 =~ a * y1 + b * y2 + c * y3 + d * y4
+  dem65 =~ a * y5 + b * y6 + c * y7 + d * y8
+  y1 ~~ y5
+  y2 ~~ y6
+  y3 ~~ y7
+  y4 ~~ y8
+  dem65 ~ dem60
+", data = pd2, missing = "fiml")
+summary(jfit)
+```
+
+### Multiple group
+
+Just to demonstrate the syntax for obtaining the input data
+
+```{r}
+#| results: hide
+mg_fit2 <- cfa("
+  dem60 =~ a * y1 + b * y2 + c * y3 + d * y4
+  dem65 =~ a * y5 + b * y6 + c * y7 + d * y8
+  y1 ~~ y5
+  y2 ~~ y6
+  y3 ~~ y7
+  y4 ~~ y8
+",
+  data = cbind(pd2, group = rep(1:2, c(40, 35))),
+  missing = "fiml", group = "group"
+)
+augment_lav_predict(mg_fit2)
+```

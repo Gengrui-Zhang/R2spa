@@ -4,7 +4,17 @@
 \alias{tspa}
 \title{Two-Stage Path Analysis}
 \usage{
-tspa(model, data, reliability = NULL, se = NULL, ...)
+tspa(
+  model,
+  data,
+  reliability = NULL,
+  se = "standard",
+  se_fs = NULL,
+  fsT = NULL,
+  fsL = NULL,
+  fsb = NULL,
+  ...
+)
 }
 \arguments{
 \item{model}{A string variable describing the structural path model,
@@ -16,10 +26,28 @@ in \code{lavaan} syntax.}
 of each latent factor. Currently \code{tspa()} does not
 support the reliability argument. Please use \code{se}.}
 
-\item{se}{A numeric vector representing the standard errors of each latent
-factor for single-group 2S-PA. A list or data frame storing
-the standard errors of each group in each latent factor for
-multigroup 2S-PA.}
+\item{se}{Deprecated to avoid conflict with the argument of the same name
+in \code{\link[lavaan:lavaan]{lavaan::lavaan()}}.}
+
+\item{se_fs}{A numeric vector representing the standard errors of each
+factor score variable for single-group 2S-PA. A list or data
+frame storing the standard errors of each group in each latent
+factor for multigroup 2S-PA.}
+
+\item{fsT}{An error variance-covariance matrix of the factor scores, which
+can be obtained from the output of \code{get_fs()} using
+\code{attr()} with the argument \code{which = "fsT"}.}
+
+\item{fsL}{A matrix of loadings and cross-loadings from the
+latent variables to the factor scores \code{fs}, which
+can be obtained from the output of \code{get_fs()} using
+\code{attr()} with the argument \code{which = "fsL"}.
+For details see the multiple-factors vignette:
+\code{vignette("multiple-factors", package = "R2spa")}.}
+
+\item{fsb}{A vector of intercepts for the factor scores \code{fs}, which can
+be obtained from the output of \code{get_fs()} using \code{attr()}
+with the argument \code{which = "fsb"}.}
 
 \item{...}{Additional arguments passed to \code{\link[lavaan]{sem}}. See
 \code{\link[lavaan]{lavOptions}} for a complete list.}
@@ -33,20 +61,62 @@ Fit a two-stage path analysis (2S-PA) model.
 }
 \examples{
 library(lavaan)
-### single-group example
 
+# single-group, two-factor example, factor scores obtained separately
 # get factor scores
 fs_dat_ind60 <- get_fs(data = PoliticalDemocracy,
                        model = "ind60 =~ x1 + x2 + x3")
 fs_dat_dem60 <- get_fs(data = PoliticalDemocracy,
                        model = "dem60 =~ y1 + y2 + y3 + y4")
 fs_dat <- cbind(fs_dat_ind60, fs_dat_dem60)
-
 # tspa model
 tspa(model = "dem60 ~ ind60", data = fs_dat,
-     se = c(ind60 = 0.1213615, dem60 = 0.6756472))
+     se_fs = c(ind60 = fs_dat_ind60[1, "fs_ind60_se"],
+               dem60 = fs_dat_dem60[1, "fs_dem60_se"]))
 
-### multigroup example
+# single-group, three-factor example
+mod2 <- "
+  # latent variables
+    ind60 =~ x1 + x2 + x3
+    dem60 =~ y1 + y2 + y3 + y4
+    dem65 =~ y5 + y6 + y7 + y8
+"
+fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+tspa(model = "dem60 ~ ind60
+              dem65 ~ ind60 + dem60",
+     data = fs_dat2,
+     fsT = attr(fs_dat2, "fsT"),
+     fsL = attr(fs_dat2, "fsL"))
+
+# multigroup, two-factor example
+mod3 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    speed =~ x7 + x8 + x9
+"
+fs_dat3 <- get_fs(HolzingerSwineford1939, model = mod3, std.lv = TRUE,
+                  group = "school")
+tspa(model = "visual ~ speed",
+     data = fs_dat3,
+     fsT = attr(fs_dat3, "fsT"),
+     fsL = attr(fs_dat3, "fsL"),
+     group = "school")
+
+# multigroup, three-factor example
+mod4 <- "
+  # latent variables
+    visual =~ x1 + x2 + x3
+    textual =~ x4 + x5 + x6
+    speed =~ x7 + x8 + x9
+"
+fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
+                  group = "school")
+tspa(model = "visual ~ speed
+              textual ~ visual + speed",
+     data = fs_dat4,
+     fsT = attr(fs_dat4, "fsT"),
+     fsL = attr(fs_dat4, "fsL"),
+     group = "school")
 
 # get factor scores
 fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
@@ -55,22 +125,21 @@ fs_dat_visual <- get_fs(data = HolzingerSwineford1939,
 fs_dat_speed <- get_fs(data = HolzingerSwineford1939,
                        model = "speed =~ x7 + x8 + x9",
                        group = "school")
-fs_hs <- cbind(fs_dat_visual, fs_dat_speed)
+fs_hs <- cbind(do.call(rbind, fs_dat_visual),
+               do.call(rbind, fs_dat_speed))
 
-\dontrun{
 # tspa model
 tspa(model = "visual ~ speed",
      data = fs_hs,
-     se = data.frame(visual = c(0.3391326, 0.311828),
-                     speed = c(0.2786875, 0.2740507)),
+     se_fs = data.frame(visual = c(0.3391326, 0.311828),
+                        speed = c(0.2786875, 0.2740507)),
      group = "school",
      group.equal = "regressions")
 
 # manually adding equality constraints on the regression coefficients
 tspa(model = "visual ~ c(b1, b1) * speed",
      data = fs_hs,
-     se = list(visual = c(0.3391326, 0.311828),
-               speed = c(0.2786875, 0.2740507)),
+     se_fs = list(visual = c(0.3391326, 0.311828),
+                  speed = c(0.2786875, 0.2740507)),
      group = "school")
-}
 }
