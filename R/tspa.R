@@ -1,5 +1,3 @@
-# Interaction-branch
-
 #' Two-Stage Path Analysis
 #'
 #' Fit a two-stage path analysis (2S-PA) model.
@@ -30,7 +28,7 @@
 #'            with the argument \code{which = "fsb"}.
 #' @param ... Additional arguments passed to \code{\link[lavaan]{sem}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
-#' @return An object of classy7777777777777777777777777777777777777y \code{lavaan}, with an attribute \code{tspaModel}
+#' @return An object of class \code{lavaan}, with an attribute \code{tspaModel}
 #'         that contains the model syntax.
 #'
 #' @export
