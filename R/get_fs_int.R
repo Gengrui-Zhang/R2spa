@@ -1,6 +1,7 @@
 #' Compute interaction indicators for tspa() function
-#' @param dat A data frame containing first-order factor score indiactors with standard error.
-#' @param fs_name A vector indicating names of factor scores
+#' 
+#' @param dat A data frame containing first-order factor score indiactors.
+#' @param fs_name A character vector indicating names of factor scores variables.
 #' @param se A vector indicating standard error of factor scores
 #' @param loading A vector indicating model-implied loadings of factor scores
 #' @param model An optional string specifying the measurement model
@@ -12,7 +13,7 @@
 #'
 #' @export
 
-get_fs_int <- function (dat, fs_name, se, loading, model = NULL) {
+get_fs_int <- function(dat, fs_name, se, loading, model = NULL) {
 
   # Connect fs and se
   fs_list <- mapply(function(x, y, z) list(name = x, se = y, loading = z),
