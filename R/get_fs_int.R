@@ -1,7 +1,6 @@
 #' Compute interaction indicators for tspa() function
-#' 
-#' @param dat A data frame containing first-order factor score indiactors.
-#' @param fs_name A character vector indicating names of factor scores variables.
+#' @param dat A data frame containing first-order factor score indiactors with standard error.
+#' @param fs_name A vector indicating names of factor scores
 #' @param se A vector indicating standard error of factor scores
 #' @param loading A vector indicating model-implied loadings of factor scores
 #' @param model An optional string specifying the measurement model
@@ -13,11 +12,30 @@
 #'
 #' @export
 
-get_fs_int <- function(dat, fs_name, se, loading, model = NULL) {
+get_fs_int <- function (dat, fs_name, se_fs, loading_fs, model = NULL) {
+
+  # Helper function for input check
+  check_inputs <- function(input, input_name) {
+    if (!is.character(input)) {
+      stop(paste("The '", input_name, "' variable must be a character vector.", sep = ""))
+    }
+    if (!all(input %in% names(dat))) {
+      missing <- input[!input %in% names(dat)]
+      stop(paste("The following element(s) in '", input_name, "' do(es) not match any column name(s) in 'dat': ", paste(missing, collapse = ", "), sep = ""))
+    }
+  }
+
+  # Check inputs
+  if (!is.data.frame(dat)) {
+    stop("The the input for 'dat' must be a data frame.")
+  }
+  check_inputs(fs_name, "fs_name")
+  check_inputs(se_fs, "se_fs")
+  check_inputs(loading_fs, "loading_fs")
 
   # Connect fs and se
-  fs_list <- mapply(function(x, y, z) list(name = x, se = y, loading = z),
-                    fs_name, se, loading, SIMPLIFY = FALSE)
+  fs_list <- mapply(function(x, y, z) list(name = x, se_fs = y, loading_fs = z),
+                    fs_name, se_fs, loading_fs, SIMPLIFY = FALSE)
 
   # Create fs pairs
   if (is.null(model)) {
@@ -43,12 +61,12 @@ get_fs_int <- function(dat, fs_name, se, loading, model = NULL) {
   dat_pi <- data.frame(matrix(ncol = 2*length(fs_pairs), nrow = nrow(dat)))
   for(i in seq_along(fs_pairs)) {
     pair <- fs_pairs[[i]]
-    dat_pi[,2*i-1] <- fs_dat[[pair[1]]]*fs_dat[[pair[2]]] - mean(fs_dat[[pair[1]]]*fs_dat[[pair[2]]])
+    dat_pi[,2*i-1] <- dat[[pair[1]]]*dat[[pair[2]]] - mean(dat[[pair[1]]]*dat[[pair[2]]])
 
-    par_list <- list(loading_1 = unname(unlist(fs_dat[fs_list[[pair[1]]]$loading])),
-                     loading_2 = unname(unlist(fs_dat[fs_list[[pair[2]]]$loading])),
-                     se_1 = unname(unlist(fs_dat[fs_list[[pair[1]]]$se])),
-                     se_2 = unname(unlist(fs_dat[fs_list[[pair[2]]]$se])))
+    par_list <- list(loading_1 = unname(unlist(dat[fs_list[[pair[1]]]$loading])),
+                     loading_2 = unname(unlist(dat[fs_list[[pair[2]]]$loading])),
+                     se_1 = unname(unlist(dat[fs_list[[pair[1]]]$se])),
+                     se_2 = unname(unlist(dat[fs_list[[pair[2]]]$se])))
     par_list <- lapply(par_list, check_element)
 
     dat_pi[,2*i] <- as.data.frame(matrix(rep(sqrt(par_list$loading_2^2*par_list$se_1^2 +
