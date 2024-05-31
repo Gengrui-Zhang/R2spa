@@ -42,11 +42,11 @@ get_fs_int <- function (dat, fs_name, se_fs, loading_fs, model = NULL) {
     fs_pairs <- combn(fs_name, 2, simplify = FALSE)
   } else {
     elements <- trimws(unlist(strsplit(model, "\\+")))
-    fs_pairs <- lapply(strsplit(elements, ":"), function(pair) {
-      sapply(pair, function(element) {
-        paste0(names(element), element)
-      })})
-  }
+    fs_pairs <- lapply(unlist(strsplit(model, split = "\\+")),
+                       FUN = function(pair) {
+                         pair_nospace <- trimws(pair)
+                         unlist(strsplit(pair_nospace, split = ":"))
+                       })
 
   # Observation-specific check
   check_element <- function(x) {
