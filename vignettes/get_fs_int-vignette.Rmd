@@ -89,17 +89,25 @@ head(fs_dat)
 # With specified model
 ind_1 <- get_fs_int(dat = fs_dat,
                     fs_name = c("fs_x", "fs_m", "fs_z"),
-                    se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-                    loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"),
+                    se_fs = c("fs_x_se", "fs_m_se", "fs_z_se"),
+                    loading_fs = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"),
                     model = "fs_x:fs_m + fs_x:fs_z")
 head(ind_1)
 
 # Without specified model
 ind_2 <- get_fs_int(dat = fs_dat,
                     fs_name = c("fs_x", "fs_m", "fs_z"),
-                    se = c("fs_x_se", "fs_m_se", "fs_z_se"),
-                    loading = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
+                    se_fs = c("fs_x_se", "fs_m_se", "fs_z_se"),
+                    loading_fs = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
 head(ind_2)
+
+# With user-specified latent variance
+ind_3 <- get_fs_int(dat = fs_dat,
+                    fs_name = c("fs_x", "fs_m", "fs_z"),
+                    se_fs = c("fs_x_se", "fs_m_se", "fs_z_se"),
+                    lat_var = c(1.34, 0.9, 1.08),
+                    loading_fs = c("x_by_fs_x", "m_by_fs_m", "z_by_fs_z"))
+head(ind_3)
 ```
 
 
