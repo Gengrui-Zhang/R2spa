@@ -1,9 +1,9 @@
 #' Compute interaction indicators for tspa() function
-#' 
-#' @param dat A data frame containing first-order factor score indiactors.
-#' @param fs_name A character vector indicating names of factor scores variables.
-#' @param se A vector indicating standard error of factor scores
-#' @param loading A vector indicating model-implied loadings of factor scores
+#' @param dat A data frame containing first-order factor score indiactors with standard error.
+#' @param fs_name A vector indicating names of factor scores
+#' @param se_fs A vector indicating standard error of factor scores
+#' @param loading_fs A vector indicating model-implied loadings of factor scores
+#' @param lat_var A vector indicating latent variances
 #' @param model An optional string specifying the measurement model
 #'              in \code{lavaan} syntax.
 #' @return A data frame of product indicators for interaction terms,
@@ -13,50 +13,71 @@
 #'
 #' @export
 
-get_fs_int <- function(dat, fs_name, se, loading, model = NULL) {
+get_fs_int <- function (dat, fs_name, se_fs, loading_fs, lat_var = NULL, model = NULL) {
 
-  # Connect fs and se
-  fs_list <- mapply(function(x, y, z) list(name = x, se = y, loading = z),
-                    fs_name, se, loading, SIMPLIFY = FALSE)
+  # Helper function for input check
+  check_inputs <- function(input, input_name) {
+    if (!is.character(input)) {
+      stop(paste("The '", input_name, "' variable must be a character vector.", sep = ""))
+    }
+    if (!all(input %in% names(dat))) {
+      missing <- input[!input %in% names(dat)]
+      stop(paste("The following element(s) in '", input_name, "' do(es) not match any column name(s) in 'dat': ", paste(missing, collapse = ", "), sep = ""))
+    }
+  }
+
+  # Check inputs
+  if (!is.data.frame(dat)) {
+    stop("The the input for 'dat' must be a data frame.")
+  }
+  check_inputs(fs_name, "fs_name")
+  check_inputs(se_fs, "se_fs")
+  check_inputs(loading_fs, "loading_fs")
+  if (!is.null(lat_var)) {
+    if (!is.numeric(lat_var) || length(lat_var) != length(fs_name)) {
+      stop("The 'lat_var' must be a numeric vector with the same number of factors.")
+    }
+  } else {
+    lat_var <- matrix(1, nrow = nrow(dat), ncol = length(fs_name))
+  }
+
+  # Connect fs, se, loading, and lat_var
+  fs_list <- mapply(function(a, b, c, d) list(name = a, se_fs = b, loading_fs = c, lat_var = d),
+                    fs_name, se_fs, loading_fs, lat_var, SIMPLIFY = FALSE)
 
   # Create fs pairs
   if (is.null(model)) {
     fs_pairs <- combn(fs_name, 2, simplify = FALSE)
   } else {
     elements <- trimws(unlist(strsplit(model, "\\+")))
-    fs_pairs <- lapply(strsplit(elements, ":"), function(pair) {
-      sapply(pair, function(element) {
-        paste0(names(element), element)
-      })})
-  }
-
-  # Observation-specific check
-  check_element <- function(x) {
-    if(var(x, na.rm = TRUE) == 0) {
-      return(unlist(x[1]))
-    } else {
-      return(x)
+    fs_pairs <- lapply(unlist(strsplit(model, split = "\\+")),
+                       FUN = function(pair) {
+                         pair_nospace <- trimws(pair)
+                         unlist(strsplit(pair_nospace, split = ":"))
+                       })
     }
-  }
 
   # Create PI with SE
-  dat_pi <- data.frame(matrix(ncol = 2*length(fs_pairs), nrow = nrow(dat)))
-  for(i in seq_along(fs_pairs)) {
+  dat_pi <- dat
+  for (i in seq_along(fs_pairs)) {
     pair <- fs_pairs[[i]]
-    dat_pi[,2*i-1] <- fs_dat[[pair[1]]]*fs_dat[[pair[2]]] - mean(fs_dat[[pair[1]]]*fs_dat[[pair[2]]])
-
-    par_list <- list(loading_1 = unname(unlist(fs_dat[fs_list[[pair[1]]]$loading])),
-                     loading_2 = unname(unlist(fs_dat[fs_list[[pair[2]]]$loading])),
-                     se_1 = unname(unlist(fs_dat[fs_list[[pair[1]]]$se])),
-                     se_2 = unname(unlist(fs_dat[fs_list[[pair[2]]]$se])))
-    par_list <- lapply(par_list, check_element)
-
-    dat_pi[,2*i] <- as.data.frame(matrix(rep(sqrt(par_list$loading_2^2*par_list$se_1^2 +
-                                                    par_list$loading_1^2*par_list$se_2^2 +
-                                                    par_list$se_1^2*par_list$se_2^2),
-                                             length(dat_pi[,i]))))
-    colnames(dat_pi)[2*i-1] <- paste(pair[1], pair[2], sep = ".")
-    colnames(dat_pi)[2*i] <- paste(pair[1], pair[2], "se", sep = ".")
+    name_i <- paste(pair, collapse = ":")
+    # Mean-centered factor product score
+    dat_pi[[name_i]] <- dat[[pair[1]]] * dat[[pair[2]]] -
+      mean(dat[[pair[1]]] * dat[[pair[2]]])
+    # Compute se and loading of the product indicator
+    name_se_i <- paste0(name_i, "_se")
+    name_ld_i <- paste0(name_i, "_ld")
+    se_vars <- se_fs[match(pair, table = fs_name)]
+    loading_vars <- loading_fs[match(pair, table = fs_name)]
+    lat_vars <- lat_var[match(pair, table = fs_name)]
+    dat_pi[[name_se_i]] <- sqrt(
+      dat[[loading_vars[1]]]^2 * dat[[se_vars[2]]]^2 * lat_vars[1] +
+        dat[[loading_vars[2]]]^2 * dat[[se_vars[1]]]^2 * lat_vars[2] +
+        dat[[se_vars[1]]]^2 * dat[[se_vars[2]]]^2
+    )
+    # Also loadings
+    dat_pi[[name_ld_i]] <- dat[[loading_vars[1]]] * dat[[loading_vars[2]]]
   }
   return(dat_pi)
 }
