@@ -53,7 +53,7 @@ with the argument \code{which = "fsb"}.}
 \code{\link[lavaan]{lavOptions}} for a complete list.}
 }
 \value{
-An object of classy7777777777777777777777777777777777777y \code{lavaan}, with an attribute \code{tspaModel}
+An object of class \code{lavaan}, with an attribute \code{tspaModel}
 that contains the model syntax.
 }
 \description{

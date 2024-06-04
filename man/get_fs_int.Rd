@@ -4,16 +4,25 @@
 \alias{get_fs_int}
 \title{Compute interaction indicators for tspa() function}
 \usage{
-get_fs_int(dat, fs_name, se, loading, model = NULL)
+get_fs_int(
+  dat,
+  fs_name,
+  se_fs,
+  loading_fs,
+  lat_var = rep_len(1, length.out = length(fs_name)),
+  model = NULL
+)
 }
 \arguments{
 \item{dat}{A data frame containing first-order factor score indiactors with standard error.}
 
 \item{fs_name}{A vector indicating names of factor scores}
 
-\item{se}{A vector indicating standard error of factor scores}
+\item{se_fs}{A vector indicating standard error of factor scores}
 
-\item{loading}{A vector indicating model-implied loadings of factor scores}
+\item{loading_fs}{A vector indicating model-implied loadings of factor scores}
+
+\item{lat_var}{A vector indicating latent variances}
 
 \item{model}{An optional string specifying the measurement model
 in \code{lavaan} syntax.}
