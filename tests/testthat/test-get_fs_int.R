@@ -1,20 +1,27 @@
-# Artificial data set
-set.seed(1230)
-dd <- data.frame(
-  "a" = rnorm(5),
-  "b" = runif(5),
-  "w" = 1:5,
-  "se_a" = rep(.15, 5),
-  "se_b" = rgamma(5, 1, 1),
-  "se_w" = rep(.2, 5),
-  "ld_a" = 1,
-  "ld_b" = c(1, 1, 1, .8, .9),
-  "ld_w" = 0.7
-)
-
-get_fs_int(dd, fs_name = c("a", "b"), se = c(.15, .20),
-           loading = c(1, 1, 1))
 ########################### Test get_fs_int function ##############################
+
+test_that("get_fs_int() works with toy data set", code = {
+  # Artificial data set
+  set.seed(1230)
+  dd <- data.frame(
+    "a" = rnorm(5),
+    "b" = runif(5),
+    "w" = 1:5,
+    "se_a" = rep(.15, 5),
+    "se_b" = rgamma(5, 1, 1),
+    "se_w" = rep(.2, 5),
+    "ld_a" = 1,
+    "ld_b" = c(1, 1, 1, .8, .9),
+    "ld_w" = 0.7
+  )
+
+  fsint1 <- get_fs_int(dd,
+    fs_name = c("a", "b", "w"), se = c("se_a", "se_b", "se_w"),
+    loading = c("ld_a", "ld_b", "ld_w"), model = "a:w + a:b"
+  )
+  expect_equal(cor(fsint1[["a:b"]], dd[["a"]] * dd[["b"]]), 1)
+  expect_in(c("a:w", "a:b", "a:b_ld", "a:w_se"), names(fsint1))
+})
 
 # Simulate a dat
 sample_dat <- data.frame(
