@@ -12,10 +12,27 @@
 #' @importFrom utils combn
 #'
 #' @export
-
-get_fs_int <- function (dat, fs_name, se_fs, loading_fs,
-                        lat_var = rep_len(1, length.out = length(fs_name)),
-                        model = NULL) {
+#' 
+#' @examples
+#' library(lavaan)
+#' fs1 <- get_fs(HolzingerSwineford1939,
+#'               model = "visual  =~ x1 + x2 + x3",
+#'               std.lv = TRUE)
+#' fs2 <- get_fs(HolzingerSwineford1939,
+#'               model = "textual =~ x4 + x5 + x6",
+#'               std.lv = TRUE)
+#' fs_dat <- cbind(fs1, fs2)
+#' fs_dat2 <- get_fs_int(fs_dat,
+#'   fs_name = c("fs_visual", "fs_textual"),
+#'   se_fs = c("fs_visual_se", "fs_textual_se"),
+#'   loading_fs = c("visual_by_fs_visual",
+#'                  "textual_by_fs_textual")
+#' )
+#' head(fs_dat2[c("fs_visual", "fs_textual", "fs_visual:fs_textual",
+#'                "fs_visual:fs_textual_se", "fs_visual:fs_textual_ld")])
+get_fs_int <- function(dat, fs_name, se_fs, loading_fs,
+                       lat_var = rep_len(1, length.out = length(fs_name)),
+                       model = NULL) {
   # Check inputs
   if (!is.data.frame(dat)) {
     stop("'dat' must be a data frame.")
