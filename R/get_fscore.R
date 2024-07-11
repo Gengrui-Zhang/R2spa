@@ -278,7 +278,7 @@ get_fs_lmer <- function(object,
   score_mat_eb %*% tilde_e - c(t(ranef(object)[[1]]))
   # 5. Loading matrix (`fsL`) and error covariance (`fsT`)
   fsL_eb <- score_mat_eb %*% Matrix::t(Zt)
-  fsT_eb <- Matrix::tcrossprod(score_mat_eb) * sigma(object)^2
+  fsT_eb <- Matrix::tcrossprod(score_mat_eb) * stats::sigma(object)^2
   # 6. Convert to columns
   num_re <- length(object@cnms[[1]]) # Number of random effect
   num_clus <- nlevels(object@flist[[1]])
