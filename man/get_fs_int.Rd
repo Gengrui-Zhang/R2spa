@@ -14,7 +14,8 @@ get_fs_int(
 )
 }
 \arguments{
-\item{dat}{A data frame containing first-order factor score indiactors with standard error.}
+\item{dat}{A data frame containing first-order factor score indiactors
+with standard error.}
 
 \item{fs_name}{A vector indicating names of factor scores}
 
@@ -32,7 +33,8 @@ A data frame of product indicators for interaction terms,
 with their loadings and standard errors.
 }
 \description{
-Compute interaction indicators for tspa() function
+This function computes product indicators and the corresponding
+standard errors according to equation (3) in Hsiao et al. (2021).
 }
 \examples{
 library(lavaan)
@@ -51,4 +53,10 @@ fs_dat2 <- get_fs_int(fs_dat,
 )
 head(fs_dat2[c("fs_visual", "fs_textual", "fs_visual:fs_textual",
                "fs_visual:fs_textual_se", "fs_visual:fs_textual_ld")])
+}
+\references{
+Hsiao, Y.-Y., Kwok, O.-M., & Lai, M. H. C. (2021). Modeling
+measurement errors of the exogenous composites from congeneric measures
+in interaction models. Structural Equation Modeling: A Multidisciplinary
+Journal, 28(2), 250--260. https://doi.org/10.1080/10705511.2020.1782206
 }

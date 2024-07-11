@@ -1,5 +1,10 @@
 #' Compute interaction indicators for tspa() function
-#' @param dat A data frame containing first-order factor score indiactors with standard error.
+#'
+#' This function computes product indicators and the corresponding
+#' standard errors according to equation (3) in Hsiao et al. (2021).
+#'
+#' @param dat A data frame containing first-order factor score indiactors
+#'   with standard error.
 #' @param fs_name A vector indicating names of factor scores
 #' @param se_fs A vector indicating standard error of factor scores
 #' @param loading_fs A vector indicating model-implied loadings of factor scores
@@ -8,7 +13,11 @@
 #'              in \code{lavaan} syntax.
 #' @return A data frame of product indicators for interaction terms,
 #'         with their loadings and standard errors.
-#'
+#' @references Hsiao, Y.-Y., Kwok, O.-M., & Lai, M. H. C. (2021). Modeling
+#'   measurement errors of the exogenous composites from congeneric measures
+#'   in interaction models. Structural Equation Modeling: A Multidisciplinary
+#'   Journal, 28(2), 250--260. https://doi.org/10.1080/10705511.2020.1782206
+#' 
 #' @importFrom utils combn
 #'
 #' @export
