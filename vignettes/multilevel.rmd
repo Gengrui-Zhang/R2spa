@@ -112,7 +112,7 @@ err_cov <- matrix(c("ev_u0_eb", "ecov_u0_eb_u1_eb",
                     "ecov_u0_eb_u1_eb", "ev_u1_eb"), nrow = 2) |>
     `dimnames<-`(rep(list(c("u0_eb", "u1_eb")), 2))
 tspa1_mx <- tspa_mx_model(m1_umx, data = fs_dat1,
-                          mat_ld = cross_load, mat_vc = err_cov)
+                          mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa1_mx_fit <- mxRun(tspa1_mx)
 # Summarize the results
@@ -161,7 +161,7 @@ err_cov <- matrix(c("ev_u0_eb", "ecov_u0_eb_u1_eb",
                     "ecov_u0_eb_u1_eb", "ev_u1_eb"), nrow = 2) |>
     `dimnames<-`(rep(list(c("u0_eb", "u1_eb")), 2))
 tspa2_mx <- tspa_mx_model(m2_umx, data = fs_dat2,
-                          mat_ld = cross_load, mat_vc = err_cov)
+                          mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa2_mx_fit <- mxRun(tspa2_mx)
 # Summarize the results
@@ -209,7 +209,7 @@ err_cov <- matrix(c("ev_u0_eb_1", "ecov_u0_eb_u1_eb_1", NA, NA,
                     NA, NA, "ecov_u0_eb_u1_eb_2", "ev_u1_eb_2"), nrow = 4) |>
     `dimnames<-`(rep(list(c("u0_eb_1", "u1_eb_1", "u0_eb_2", "u1_eb_2")), 2))
 tspa3_mx <- tspa_mx_model(m3_umx, data = fs_dat,
-                          mat_ld = cross_load, mat_vc = err_cov)
+                          mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa3_mx_fit <- mxRun(tspa3_mx)
 # Summarize the results
@@ -266,7 +266,7 @@ Now run 2S-PA and compare with EB estimates without accounting for error
 
 ```{r}
 tspa3o_mx <- tspa_mx_model(m3_umx, data = fs_dat,
-                           mat_ld = cross_load, mat_vc = err_cov)
+                           mat_ld = cross_load, mat_ev = err_cov)
 # Run OpenMx
 tspa3o_mx_fit <- mxTryHard(tspa3o_mx)
 # Summarize the results
