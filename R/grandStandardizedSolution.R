@@ -33,7 +33,7 @@
 #' '
 #' fit1 <- sem(model = mod1,
 #'           data  = PoliticalDemocracy)
-#' grandStandardizedSolution(fit1)
+#' grand_standardized_solution(fit1)
 #'
 #' ## A single-group, three-factor example
 #' mod2 <- '
@@ -47,7 +47,7 @@
 #' '
 #' fit2 <- sem(model = mod2,
 #'             data  = PoliticalDemocracy)
-#' grandStandardizedSolution(fit2)
+#' grand_standardized_solution(fit2)
 #'
 #' ## A multigroup, two-factor example
 #' mod3 <- '
@@ -60,7 +60,7 @@
 #' fit3 <- sem(mod3, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStandardizedSolution(fit3)
+#' grand_standardized_solution(fit3)
 #'
 #' ## A multigroup, three-factor example
 #' mod4 <- '
@@ -75,18 +75,21 @@
 #' fit4 <- sem(mod4, data = HolzingerSwineford1939,
 #'             group = "school",
 #'             group.equal = c("loadings", "intercepts"))
-#' grandStandardizedSolution(fit4)
+#' grand_standardized_solution(fit4)
 
 
-grandStandardizedSolution <- function(object, model_list = NULL,
+grand_standardized_solution <- function(object, model_list = NULL,
                                       se = TRUE, acov_par = NULL,
                                       free_list = NULL, level = .95) {
   if (is.null(model_list)) model_list <- lavTech(object, what = "est")
   ns <- lavInspect(object, what = "nobs")
   if (length(ns) == 1) ns <- NULL
-  if (is.null(ns)) message(
-    "The grand standardized solution is equivalent to ",
-    "lavaan::standardizedSolution() for a model with a single group.")
+  if (is.null(ns)) {
+    message(
+      "The grand standardized solution is equivalent to ",
+      "lavaan::standardizedSolution() for a model with a single group."
+    )
+  }
   if (is.null(acov_par)) acov_par <- vcov(object)
   if (is.null(free_list)) free_list <- lavTech(object, what = "free")
 
@@ -102,7 +105,9 @@ grandStandardizedSolution <- function(object, model_list = NULL,
   } else {
     tmp_std_beta <- unlist(grand_std_beta_est(model_list, ns))
     group_names <- names(partable_beta)
-    all_beta_pos <- sapply(group_names, function(x) { partable_beta[[x]]$beta })
+    all_beta_pos <- sapply(group_names, function(x) {
+      partable_beta[[x]]$beta
+    })
   }
   beta_pos <- which(all_beta_pos != 0)
   out$est.std <- tmp_std_beta[beta_pos]
@@ -113,9 +118,10 @@ grandStandardizedSolution <- function(object, model_list = NULL,
       free_beta_psi <- free_list[c("beta", "psi")]
       est <- .combine_est(model_list[c("beta", "psi")],
                           free = free_beta_psi)
-      jac <- lav_func_jacobian_complex(function(x)
-        std_beta_est(model_list, free_list = free_list, est = x),
-        x = est)
+      jac <- lav_func_jacobian_complex(
+        function(x) std_beta_est(model_list, free_list = free_list, est = x),
+        x = est
+      )
       pos_par <- .combine_est(free_beta_psi, free = free_beta_psi)
     } else {
       free_beta_psi_alpha <- free_list[which(names(model_list) %in%
@@ -123,10 +129,15 @@ grandStandardizedSolution <- function(object, model_list = NULL,
       est <- .combine_est(model_list[which(names(model_list) %in%
                                              c("beta", "psi", "alpha"))],
                           free = free_beta_psi_alpha)
-      jac <- lav_func_jacobian_complex(function(x)
-        unlist(grand_std_beta_est(model_list, ns = ns,
-                                  free_list = free_list, est = x)),
-        x = est)
+      jac <- lav_func_jacobian_complex(
+        function(x) {
+          unlist(grand_std_beta_est(model_list,
+            ns = ns,
+            free_list = free_list, est = x
+          ))
+        },
+        x = est
+      )
       pos_par <- .combine_est(free_beta_psi_alpha,
                               free = free_beta_psi_alpha)
     }
@@ -135,7 +146,8 @@ grandStandardizedSolution <- function(object, model_list = NULL,
     out$se <- sqrt(diag(as.matrix(tmp_acov_std_beta[beta_pos, beta_pos])))
     out$z <- out$est.std / out$se
     out$pvalue <- 2 * (1 - pnorm(abs(out$z)))
-    ci <- out$est.std + out$se %o% qnorm(c((1 - level)/2, 1 - (1 - level)/2))
+    ci <- out$est.std +
+      out$se %o% qnorm(c((1 - level) / 2, 1 - (1 - level) / 2))
     out$ci.lower <- ci[, 1]
     out$ci.upper <- ci[, 2]
   }
@@ -244,3 +256,7 @@ grand_std_beta_est <- function(model_list, ns, free_list = NULL, est = NULL) {
     diag(inv_s_eta) %*% x %*% diag(s_eta)
   })
 }
+
+#' @rdname grand_standardized_solution
+#' @export
+grandStandardizedSolution <- grand_standardized_solution

@@ -12,14 +12,14 @@ library(umx)
 # Example 1: Single-group with two variables
 
 # CFA model
-cfa_single1 <- '
-                            # latent variables
-                            ind60 =~ x1 + x2 + x3
-                           '
-cfa_single2 <- '
-                            # latent variables
-                            dem60 =~ y1 + y2 + y3 + y4
-                           '
+cfa_single1 <- "
+# latent variables
+ind60 =~ x1 + x2 + x3
+"
+cfa_single2 <- "
+# latent variables
+dem60 =~ y1 + y2 + y3 + y4
+"
 
 # get factor scores
 fs_single1 <- get_fs(PoliticalDemocracy, cfa_single1)
@@ -54,16 +54,18 @@ tspa_single <-
 
 # Class of input
 var_len <- 2
-se = c(ind60 = 0.1213615, dem60 = 0.6756472)
+se <- c(ind60 = 0.1213615, dem60 = 0.6756472)
 
 # The tspa data should be composed of two parts: variable, and se
-test_that("test the number of columns in tspa data are multiples of the variable length",
-          {
-            expect_gt(ncol(fs_dat_single), 1)
-            expect_equal(ncol(fs_dat_single) %% var_len, 0)
-          })
+test_that(
+  "Number of columns in tspa data are multiples of the variable length",
+  {
+    expect_gt(ncol(fs_dat_single), 1)
+    expect_equal(ncol(fs_dat_single) %% var_len, 0)
+  }
+)
 
-test_that ("Test the data variable names should contain prefix (fs_)", {
+test_that("Test the data variable names should contain prefix (fs_)", {
   fs_names <- colnames(fs_dat_single)
   expect_true(all(grepl("fs_", fs_names)))
 })
@@ -72,22 +74,32 @@ test_that ("Test the data variable names should contain prefix (fs_)", {
 
 # Parameter estimates
 
-test_that("test if the regression coefficients of factors are the same for two methods",
-          {
-            expect_equal(coef(cfa_single)["dem60~ind60"],
-                         coef(tspa_single)["dem60~ind60"])
-          })
+test_that(
+  "Regression coefficients of factors are the same for two methods",
+  {
+    expect_equal(
+      coef(cfa_single)["dem60~ind60"],
+      coef(tspa_single)["dem60~ind60"]
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are the same for two methods",
-          {
-            expect_equal(
-              vcov(cfa_single)[c("dem60~ind60", "v1", "v2"),
-                               c("dem60~ind60", "v1", "v2")],
-              vcov(tspa_single)[c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
-                                c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")],
-              ignore_attr = TRUE
-            )
-          })
+test_that(
+  "se of regression coefficients are the same for two methods",
+  {
+    expect_equal(
+      vcov(cfa_single)[
+        c("dem60~ind60", "v1", "v2"),
+        c("dem60~ind60", "v1", "v2")
+      ],
+      vcov(tspa_single)[
+        c("dem60~ind60", "ind60~~ind60", "dem60~~dem60"),
+        c("dem60~ind60", "ind60~~ind60", "dem60~~dem60")
+      ],
+      ignore_attr = TRUE
+    )
+  }
+)
 
 # Fit measures
 
@@ -144,9 +156,9 @@ tspa_3var <- tspa(
 
 # Compare to Mx
 model_umx <- umxLav2RAM("
-  fs_dem60 ~ fs_ind60
-  fs_dem65 ~ fs_ind60 + fs_dem60
-  fs_dem65 + fs_dem60 + fs_ind60 ~ 1
+  dem60 ~ ind60
+  dem65 ~ ind60 + dem60
+  dem65 + dem60 + ind60 ~ 1
   ", printTab = FALSE)
 # Loading
 matL <- mxMatrix(
@@ -162,7 +174,10 @@ matE <- mxMatrix(
   name = "E"
 )
 tspa_mx <- tspa_mx_model(model_umx, data = fs_dat_3var,
-                         mat_ld = matL, mat_vc = matE)
+                         mat_ld = matL, mat_ev = matE,
+                         fs_lv_names = c(ind60 = "fs_ind60",
+                                         dem60 = "fs_dem60",
+                                         dem65 = "fs_dem65"))
 tspa_mx_fit <- mxRun(tspa_mx)
 # Check same coefficients and standard errors
 test_that("test same regression coefficients with Mx", {
@@ -184,15 +199,16 @@ test_that("test same standard errors with Mx", {
   )
 })
 # Use numeric matrices
-tspa_mx2 <- tspa_mx_model(model_umx,
-                          data = fs_dat_3var,
-                          mat_ld = diag(3) |>
-                            `dimnames<-`(list(
-                              c("fs_ind60", "fs_dem60", "fs_dem65"),
-                              c("ind60", "dem60", "dem65")
-                            )),
-                          mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
-                            `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
+tspa_mx2 <- tspa_mx_model(
+  model_umx,
+  data = fs_dat_3var,
+  mat_ld = diag(3) |>
+    `dimnames<-`(list(
+      c("fs_ind60", "fs_dem60", "fs_dem65"),
+      c("ind60", "dem60", "dem65")
+    )),
+  mat_ev = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
+    `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 )
 tspa_mx_fit2 <- mxRun(tspa_mx2)
 # Use column names for VC
@@ -201,7 +217,10 @@ err_cov <- matrix(c("ev_fs_ind60", NA, NA,
                     NA, NA, "ev_fs_dem65"), nrow = 3) |>
   `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 tspa_mx3 <- tspa_mx_model(model_umx, data = fs_dat_3var,
-                          mat_ld = matL, mat_vc = err_cov)
+                          mat_ld = matL, mat_ev = err_cov,
+                          fs_lv_names = c(ind60 = "fs_ind60",
+                                          dem60 = "fs_dem60",
+                                          dem65 = "fs_dem65"))
 tspa_mx_fit3 <- mxRun(tspa_mx3)
 test_that("Same results with different Mx matrices input", {
   expect_equal(
@@ -223,21 +242,25 @@ sem_path_3var <- subset(standardizedSolution(sem_3var),
 tspa_path_3var <- subset(standardizedSolution(tspa_3var),
                          subset = op == "~")
 
-test_that("test if the regression coefficients of factors are similar for two methods",
-          {
-            expect_lt(
-              max(abs(sem_path_3var$est.std - tspa_path_3var$est.std)),
-              expected = .05
-            )
-          })
+test_that(
+  "Regression coefficients of factors are similar for two methods",
+  {
+    expect_lt(
+      max(abs(sem_path_3var$est.std - tspa_path_3var$est.std)),
+      expected = .05
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are similar for two methods",
-          {
-            expect_lt(
-              max(abs(sem_path_3var$se - tspa_path_3var$se)),
-              expected = .01
-            )
-          })
+test_that(
+  "se of regression coefficients are similar for two methods",
+  {
+    expect_lt(
+      max(abs(sem_path_3var$se - tspa_path_3var$se)),
+      expected = .01
+    )
+  }
+)
 
 # Variance of factors
 sem_var_3var <- subset(standardizedSolution(sem_3var),
@@ -315,21 +338,22 @@ sem_path_multi <- subset(standardizedSolution(sem_multi),
 tspa_path_multi <- subset(standardizedSolution(tspa_multi),
                           subset = op == "~")
 
-test_that("test if the regression coefficients of factors are similar for two methods",
-          {
-            expect_equal(
-              sem_path_multi$est.std,
-              tspa_path_multi$est.std
-            )
-          })
+test_that(
+  "Regression coefficients of factors are similar for two methods",
+  {
+    expect_equal(
+      sem_path_multi$est.std,
+      tspa_path_multi$est.std
+    )
+  }
+)
 
-test_that("test if the se of regression coefficients are similar for two methods",
-          {
-            expect_equal(
-              sem_path_multi$se,
-              tspa_path_multi$se
-            )
-          })
+test_that("se of regression coefficients are similar for two methods", {
+  expect_equal(
+    sem_path_multi$se,
+    tspa_path_multi$se
+  )
+})
 
 # Variance of factors
 
@@ -354,41 +378,7 @@ test_that("test if the se of variance is similar for two methods", {
   )
 })
 
-# Test tspaSingleGroupMF()
-cfa_3fac <-  '
-  # latent variables
-  ind60 =~ x1 + x2 + x3
-  dem60 =~ y1 + y2 + y3 + y4
-  dem65 =~ y5 + y6 + y7 + y8
-'
-fs_dat_3fac <- get_fs(PoliticalDemocracy, model = cfa_3fac, std.lv = TRUE)
-path_mod <- '
-dem60 ~ ind60
-dem65 ~ ind60 + dem60
-'
-tspa_mod_s <- tspaSingleGroupMF(
-  model = path_mod,
-  data = fs_dat_3fac,
-  fsT = attr(fs_dat_3fac, "fsT"),
-  fsL = attr(fs_dat_3fac, "fsL")
-)
-
-factors_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "~")
-loadings_order_s <- subset(lavaan::lavaanify(tspa_mod_s), op == "=~")
-
-test_that("The order of factors in the model from tspaSingleGroupMF()", {
-  expect_equal(c("dem60", "dem65", "dem65"), factors_order_s$lhs)
-  expect_equal(c("ind60", "ind60", "dem60"), factors_order_s$rhs)
-})
-test_that("The order of loadings in the model from tspaSingleGroupMF()", {
-  expect_equal(rep(c("ind60", "dem60", "dem65"), each = 3),
-               loadings_order_s$lhs)
-  expect_equal(rep(c("fs_ind60", "fs_dem60", "fs_dem65"), 3),
-               loadings_order_s$rhs)
-})
-
-
-# Test tspaMultipleGroupMF()
+# Test tspa_mf()
 mod4 <- "
   # latent variables
     visual =~ x1 + x2 + x3
@@ -398,12 +388,13 @@ mod4 <- "
 "
 fs_dat4 <- get_fs(HolzingerSwineford1939, model = mod4, std.lv = TRUE,
                   group = "school")
-tspa_mod_m <- tspaMultipleGroupMF(
+tspa_mod_m <- tspa_mf(
   model = "visual ~ speed
            textual ~ visual + speed",
   data = fs_dat4,
   fsT = attr(fs_dat4, "fsT"),
-  fsL = attr(fs_dat4, "fsL")
+  fsL = attr(fs_dat4, "fsL"),
+  fsb = NULL
 )
 
 factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
@@ -411,13 +402,13 @@ factors_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
 loadings_order_m <- subset(lavaan::lavaanify(tspa_mod_m, ngroup = 2),
                            op == "=~")
 
-test_that("The order of factors in the model from tspaSingleGroupMF()", {
+test_that("The order of factors in the model from tspa_mf()", {
   expect_equal(rep(c("visual", "textual", "textual"), 2),
                factors_order_m$lhs)
   expect_equal(rep(c("speed", "visual", "speed"), 2),
                factors_order_m$rhs)
 })
-test_that("The order of loadings in the model from tspaSingleGroupMF()", {
+test_that("The order of loadings in the model from tspa_mf()", {
   expect_equal(rep(c("visual", "textual", "speed"), each = 3) |> rep(2),
                loadings_order_m$lhs)
   expect_equal(rep(c("fs_visual", "fs_textual", "fs_speed"), 6),
@@ -457,66 +448,158 @@ test_that("Multiple-group multiple-factor example", code = {
                tolerance = 0.0001)
 })
 
+# An example from Chapter 14 of Grimm et al. (2016)
+# https://quantdev.ssri.psu.edu/tutorials/growth-modeling-chapter-14-modeling-change-latent-variables-measured-continuous
+
+mean_vec <- c(50.99, 65.25, 84.89, 127.66, 151.09, 172.05,
+              99.72, 124.35, 142.47)
+cov_mat <- matrix(c(
+  232.71, 207.92, 188.09, 319.68, 285.26, 277.85, 260.75, 249.28, 217.96,
+  207.92, 254.88, 212.14, 331.88, 313.8, 314.91, 274.99, 281.29, 243.6,
+  188.09, 212.14, 270.46, 325.97, 308.84, 346.36, 284.9, 291.28, 281.55,
+  319.68, 331.88, 325.97, 797.86, 617.02, 581.17, 511.8, 470.36, 420.6,
+  285.26, 313.8, 308.84, 617.02, 662.41, 555.9, 448.81, 449.25, 394.63,
+  277.85, 314.91, 346.36, 581.17, 555.9, 736.45, 440.78, 439.33, 443.67,
+  260.75, 274.99, 284.9, 511.8, 448.81, 440.78, 618.23, 528.01, 437.92,
+  249.28, 281.29, 291.28, 470.36, 449.25, 439.33, 528.01, 583.24, 448.64,
+  217.96, 243.6, 281.55, 420.6, 394.63, 443.67, 437.92, 448.64, 480.57
+), nrow = 9, ncol = 9, byrow = TRUE)
+set.seed(123)
+sim_dat <- MASS::mvrnorm(n = 2000, mu = mean_vec, Sigma = cov_mat,
+                         empirical = TRUE) |>
+  `colnames<-`(c("s_g3", "s_g5", "s_g8", "r_g3", "r_g5", "r_g8",
+                 "m_g3", "m_g5", "m_g8"))
+
+strict_mod <- "
+# factor loadings
+eta1 =~ 15.1749088 * s_g3 + l2 * r_g3 + l3 * m_g3
+eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + l3 * m_g5
+eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + l3 * m_g8
+
+# factor variances/covariances
+eta1 ~~ 1 * eta1 + eta2 + eta3
+eta2 ~~ eta2 + eta3
+eta3 ~~ eta3
+
+# unique variances/covariances
+s_g3 ~~ u1 * s_g3 + s_g5 + s_g8
+s_g5 ~~ u1 * s_g5 + s_g8
+s_g8 ~~ u1 * s_g8
+r_g3 ~~ u2 * r_g3 + r_g5 + r_g8
+r_g5 ~~ u2 * r_g5 + r_g8
+r_g8 ~~ u2 * r_g8
+m_g3 ~~ u3 * m_g3 + m_g5 + m_g8
+m_g5 ~~ u3 * m_g5 + m_g8
+m_g8 ~~ u3 * m_g8
+
+# latent variable intercepts
+eta1 ~ 0 * 1
+eta2 ~ 1
+eta3 ~ 1
+
+# observed variable intercepts
+s_g3 ~ i1 * 1
+s_g5 ~ i1 * 1
+s_g8 ~ i1 * 1
+r_g3 ~ i2 * 1
+r_g5 ~ i2 * 1
+r_g8 ~ i2 * 1
+m_g3 ~ i3 * 1
+m_g5 ~ i3 * 1
+m_g8 ~ i3 * 1
+"
+fs_growth_dat <- get_fs(sim_dat, model = strict_mod)
+
+growth_mod <- "
+i =~ 1 * eta1 + 1 * eta2 + 1 * eta3
+s =~ 0 * eta1 + start(.5) * eta2 + 1 * eta3
+
+# factor variances
+eta1 ~~ psi * eta1
+eta2 ~~ psi * eta2
+eta3 ~~ psi * eta3
+
+i ~~ start(.8) * i
+s ~~ start(.5) * s
+i ~~ start(0) * s
+
+i ~ 1
+s ~ 1
+"
+growth_fit <- tspa(growth_mod, fs_growth_dat,
+                   fsT = attr(fs_growth_dat, "fsT"),
+                   fsL = attr(fs_growth_dat, "fsL"),
+                   fsb = attr(fs_growth_dat, "fsb"))
+
 ########## Error messages ##########
 
 test_that("Empty path model", {
   expect_error(
     tspa(model = 123,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT")),
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT")),
     "The structural path model provided is not a string."
   )
 })
 
 test_that("Need to provide none or both fsT and fsL", {
   expect_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT")),
+    tspa(model = growth_mod,
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT")),
     "Please provide both or none of fsT and fsL"
   )
   expect_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsL = attr(fs_dat_3fac, "fsL")),
+    tspa(model = growth_mod,
+         data = fs_growth_dat,
+         fsL = attr(fs_growth_dat, "fsL")),
     "Please provide both or none of fsT and fsL"
   )
   expect_no_error(
-    tspa(model = path_mod,
-         data = fs_dat_3fac,
-         fsT = attr(fs_dat_3fac, "fsT"),
-         fsL = attr(fs_dat_3fac, "fsL"))
+    tspa(growth_mod,
+         data = fs_growth_dat,
+         fsT = attr(fs_growth_dat, "fsT"),
+         fsL = attr(fs_growth_dat, "fsL"),
+         fsb = attr(fs_growth_dat, "fsb"))
   )
 })
 
-test_that("Names of factor score variables need to match those in the input data", {
-  data("PoliticalDemocracy", package = "lavaan")
-  mod2 <- "
+test_that(
+  "Names of factor score variables need to match those in the input data",
+  {
+    data("PoliticalDemocracy", package = "lavaan")
+    mod2 <- "
   # latent variables
     ind60 =~ x1 + x2 + x3
     dem60 =~ y1 + y2 + y3 + y4
     dem65 =~ y5 + y6 + y7 + y8
   "
-  fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
-  ecov_fs <- attr(fs_dat2, "fsT")
-  dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
-                              FUN = \(x) paste0("bs_", x))
-  expect_error(
-    tspa(model = "dem60 ~ ind60
+    fs_dat2 <- get_fs(PoliticalDemocracy, model = mod2, std.lv = TRUE)
+    ecov_fs <- attr(fs_dat2, "fsT")
+    dimnames(ecov_fs) <- lapply(dimnames(ecov_fs),
+      FUN = \(x) paste0("bs_", x)
+    )
+    expect_error(
+      tspa(
+        model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
-         data = fs_dat2,
-         fsT = ecov_fs,
-         fsL = attr(fs_dat2, "fsL")),
-    "Names of factor score variables do not match those in the input data."
-  )
-  expect_no_error(
-    tspa(model = "dem60 ~ ind60
+        data = fs_dat2,
+        fsT = ecov_fs,
+        fsL = attr(fs_dat2, "fsL")
+      ),
+      "Names of factor score variables do not match those in the input data."
+    )
+    expect_no_error(
+      tspa(
+        model = "dem60 ~ ind60
               dem65 ~ ind60 + dem60",
-         data = fs_dat2,
-         fsT = attr(fs_dat2, "fsT"),
-         fsL = attr(fs_dat2, "fsL"))
-  )
-})
+        data = fs_dat2,
+        fsT = attr(fs_dat2, "fsT"),
+        fsL = attr(fs_dat2, "fsL")
+      )
+    )
+  }
+)
 
 test_that("Test indicator names not starting with 'fs_'", {
   data("PoliticalDemocracy", package = "lavaan")
@@ -562,4 +645,3 @@ test_that("Missing group argument for a multigroup model", {
     "Please specify 'group = ' to fit a multigroup model in lavaan"
   )
 })
-

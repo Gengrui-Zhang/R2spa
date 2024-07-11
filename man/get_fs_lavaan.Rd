@@ -8,7 +8,8 @@ get_fs_lavaan(
   lavobj,
   method = c("regression", "Bartlett"),
   corrected_fsT = FALSE,
-  vfsLT = FALSE
+  vfsLT = FALSE,
+  reliability = FALSE
 )
 }
 \arguments{
@@ -20,7 +21,7 @@ get_fs_lavaan(
 \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 more desirable properties and may be preferred for 2S-PA.}
 
-\item{corrected_fsT}{Logical. Whether to correct for the the sampling
+\item{corrected_fsT}{Logical. Whether to correct for the sampling
 error in the factor score weights when computing
 the error variance estimates of factor scores.}
 
@@ -28,6 +29,9 @@ the error variance estimates of factor scores.}
 and \code{fsL}, which can be used as input for \code{\link[=vcov_corrected]{vcov_corrected()}}
 to obtain corrected covariances and standard errors for
 \code{\link[=tspa]{tspa()}} results. This is currently ignored.}
+
+\item{reliability}{Logical. Whether to return the reliability of factor
+scores.}
 }
 \value{
 A data frame containing the factor scores (with prefix \code{"fs_"}),
