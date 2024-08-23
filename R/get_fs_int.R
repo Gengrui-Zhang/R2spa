@@ -2,6 +2,9 @@
 #'
 #' This function computes product indicators and the corresponding
 #' standard errors according to equation (3) in Hsiao et al. (2021).
+#' The double-mean-centering (DMC) strategy is applied in this function,
+#' where first-order indicators are mean-centered first and product indicators
+#' for latent interaction term(s) are mean-centered again (Lin et al., 2010)
 #'
 #' @param dat A data frame containing first-order factor score indiactors
 #'   with standard error.
@@ -17,11 +20,11 @@
 #'   measurement errors of the exogenous composites from congeneric measures
 #'   in interaction models. Structural Equation Modeling: A Multidisciplinary
 #'   Journal, 28(2), 250--260. https://doi.org/10.1080/10705511.2020.1782206
-#' 
+#'
 #' @importFrom utils combn
 #'
 #' @export
-#' 
+#'
 #' @examples
 #' library(lavaan)
 #' fs1 <- get_fs(HolzingerSwineford1939,
