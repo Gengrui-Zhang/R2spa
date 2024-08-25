@@ -200,7 +200,7 @@ tspa_sf <- function(model, data, se = NULL) {
 
     error_constraint <- lapply(seq_len(len), function(x) {
       paste0(
-        fs[x], "~~ c(", paste(ev[x], collapse = ", "), ") * ", fs[x], "\n"
+        fs[x], "~~ c(", paste(ev[[x]], collapse = ", "), ") * ", fs[x], "\n"
       )
     })
 
