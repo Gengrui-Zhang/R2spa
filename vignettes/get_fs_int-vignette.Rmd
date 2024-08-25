@@ -29,7 +29,8 @@ With a specified model, the product indicator pairs will be generated based on t
 
 We will simulate a dataset with four firsr-order latent variables: x, m, z, y
 
-```{r Data Simulation}
+```{r data-simulation}
+set.seed(2116)
 ## Sample size:
 num_obs <- 5000
 
@@ -100,7 +101,7 @@ head(fs_dat)
 
 Obtain product-indicator of factor scores, and the corresponding standard errors. Double-mean-centering is used.
 
-```{r Demonstrating int_ind() function}
+```{r}
 # With specified model
 ind_1 <- get_fs_int(dat = fs_dat,
                     fs_name = c("fs_x", "fs_m", "fs_z"),
@@ -117,12 +118,36 @@ ind_2 <- get_fs_int(dat = fs_dat,
 head(ind_2)
 ```
 
+### 2S-PA with product factor score indicator
+
+```{r}
+# Rename product factor scores to be used with `tspa()`
+ind_2$fs_xm <- ind_2$`fs_x:fs_m`
+ind_2$fs_xz <- ind_2$`fs_x:fs_z`
+ind_2$fs_mz <- ind_2$`fs_m:fs_z`
+tspa_fit <- tspa("
+  y ~ x + m + z + xm + xz + mz
+", data = ind_2,
+  se_fs = c(
+    y = ind_2[1, "fs_y_se"],
+    x = ind_2[1, "fs_x_se"],
+    m = ind_2[1, "fs_m_se"],
+    z = ind_2[1, "fs_z_se"],
+    xm = ind_2[1, "fs_x:fs_m_se"],
+    xz = ind_2[1, "fs_x:fs_z_se"],
+    mz = ind_2[1, "fs_m:fs_z_se"]
+  ))
+standardizedSolution(tspa_fit)
+```
+
 The above example assumes that the factor scores are obtained from a model where the latent variances are assumed to be 1. If that is not the case, users should specify the corresponding latent variance estimate from the model, as in the following example, with the factor scores obtained from separate measurement models.
 
 ```{r}
+mody <- "y =~ y1 + y2 + y3"
 mod1 <- "x =~ x1 + x2 + x3"
 mod2 <- "m =~ m1 + m2 + m3"
 mod3 <- "z =~ z1 + z2 + z3"
+cfay <- cfa(mody, data = df)
 cfa1 <- cfa(mod1, data = df)
 cfa2 <- cfa(mod2, data = df)
 cfa3 <- cfa(mod3, data = df)
@@ -130,7 +155,7 @@ cfa3 <- cfa(mod3, data = df)
 (lat_var <- vapply(list(cfa1, cfa2, cfa3),
                    FUN = function(x) lavInspect(x, "cov.lv"),
                    FUN.VALUE = numeric(1)))
-fs_dat2 <- lapply(list(cfa1, cfa2, cfa3),
+fs_dat2 <- lapply(list(cfay, cfa1, cfa2, cfa3),
   FUN = augment_lav_predict,
   method = "Bartlett"
 ) |>
@@ -144,3 +169,27 @@ ind_3 <- get_fs_int(dat = fs_dat2,
 head(ind_3)
 ```
 
+
+### 2S-PA with product factor score indicator
+
+```{r}
+# Rename product factor scores to be used with `tspa()`
+ind_3$fs_xm <- ind_3$`fs_x:fs_m`
+ind_3$fs_xz <- ind_3$`fs_x:fs_z`
+ind_3$fs_mz <- ind_3$`fs_m:fs_z`
+tspa_fit <- tspa("
+  y ~ x + m + z + xm + xz + mz
+", data = ind_3,
+  se_fs = c(
+    y = ind_3[1, "se_fs_y"],
+    x = ind_3[1, "se_fs_x"],
+    m = ind_3[1, "se_fs_m"],
+    z = ind_3[1, "se_fs_z"],
+    xm = ind_3[1, "fs_x:fs_m_se"],
+    xz = ind_3[1, "fs_x:fs_z_se"],
+    mz = ind_3[1, "fs_m:fs_z_se"]
+  ))
+standardizedSolution(tspa_fit)
+```
+
+Note that the unstandardized coefficients are on a different scale compared to the previous example, as the latent variables are scaled differently.
