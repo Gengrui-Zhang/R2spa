@@ -35,6 +35,9 @@ with their loadings and standard errors.
 \description{
 This function computes product indicators and the corresponding
 standard errors according to equation (3) in Hsiao et al. (2021).
+The double-mean-centering (DMC) strategy is applied in this function,
+where first-order indicators are mean-centered first and product indicators
+for latent interaction term(s) are mean-centered again (Lin et al., 2010)
 }
 \examples{
 library(lavaan)
