@@ -10,13 +10,15 @@
 #'               "regression" to be consistent with
 #'               \code{\link[lavaan]{lavPredict}}, but the Bartlett scores have
 #'               more desirable properties and may be preferred for 2S-PA.
-#' @param corrected_fsT Logical. Whether to correct for the the sampling
+#' @param corrected_fsT Logical. Whether to correct for the sampling
 #'                      error in the factor score weights when computing
 #'                      the error variance estimates of factor scores.
 #' @param vfsLT Logical. Whether to return the covariance matrix of `fsT`
 #'              and `fsL`, which can be used as input for [vcov_corrected()]
 #'              to obtain corrected covariances and standard errors for
 #'              [tspa()] results. This is currently ignored.
+#' @param reliability Logical. Whether to return the reliability of factor
+#'                    scores.
 #' @param ... additional arguments passed to \code{\link[lavaan]{cfa}}. See
 #'            \code{\link[lavaan]{lavOptions}} for a complete list.
 #' @return A data frame containing the factor scores (with prefix `"fs_"`),
@@ -57,6 +59,7 @@ get_fs <- function(data, model = NULL, group = NULL,
                    method = c("regression", "Bartlett"),
                    corrected_fsT = FALSE,
                    vfsLT = FALSE,
+                   reliability = FALSE,
                    ...) {
   if (!is.data.frame(data)) data <- as.data.frame(data)
   if (is.null(model)) {
@@ -70,7 +73,8 @@ get_fs <- function(data, model = NULL, group = NULL,
   fit <- cfa(model, data = data, group = group, ...)
   get_fs_lavaan(lavobj = fit, method = method,
                 corrected_fsT = corrected_fsT,
-                vfsLT = vfsLT)
+                vfsLT = vfsLT,
+                reliability = reliability)
 }
 
 #' @inherit get_fs
@@ -79,35 +83,76 @@ get_fs <- function(data, model = NULL, group = NULL,
 get_fs_lavaan <- function(lavobj,
                           method = c("regression", "Bartlett"),
                           corrected_fsT = FALSE,
-                          vfsLT = FALSE) {
+                          vfsLT = FALSE,
+                          reliability = FALSE) {
   est <- lavInspect(lavobj, what = "est")
   y <- lavInspect(lavobj, what = "data")
+  if (reliability) corrected_fsT <- TRUE
   if (corrected_fsT) {
     add_to_evfs <- correct_evfs(lavobj, method = method)
   } else {
     add_to_evfs <- rep(0, lavInspect(lavobj, what = "ngroups"))
   }
-  prepare_fs_dat <- function(y, est, add) {
-    fscore <- compute_fscore(y,
-                             lambda = est$lambda,
-                             theta = est$theta,
-                             psi = est$psi,
-                             nu = est$nu,
-                             alpha = est$alpha,
-                             method = method,
-                             fs_matrices = TRUE)
-    augment_fs(est, fscore, attr(fscore, "fsT") + add)
+  miss_pat <- lavobj@Data@Mp
+  prepare_fs_dat <- function(y, est, add, case_idx, mp) {
+    if (is.null(mp)) {
+      fscore <-
+        compute_fscore(y,
+                       lambda = est$lambda,
+                       theta = est$theta,
+                       psi = est$psi,
+                       nu = est$nu,
+                       alpha = est$alpha,
+                       method = method,
+                       fs_matrices = TRUE
+        )
+      augment_fs(fscore, attr(fscore, which = "fsT") + add)
+    } else {
+      fscore <- matrix(NA, nrow = nrow(y), ncol = ncol(est$psi))
+      npat <- mp$npatterns
+      pats <- mp$pat
+      mis_idx <- mp$case.idx
+      for (m in seq_len(npat)) {
+        idx_m <- mis_idx[[m]]
+        pat_m <- pats[m, ]
+        fs_m <-
+          compute_fscore(y[idx_m, pat_m, drop = FALSE],
+                         lambda = est$lambda[pat_m, , drop = FALSE],
+                         theta = est$theta[pat_m, pat_m, drop = FALSE],
+                         psi = est$psi,
+                         nu = est$nu[pat_m, , drop = FALSE],
+                         alpha = est$alpha,
+                         method = method,
+                         fs_matrices = TRUE
+          )
+        fs_dat <- augment_fs(fs_m, attr(fs_m, which = "fsT") + add)
+        if (m == 1) {
+          fscore <- as.data.frame(
+            matrix(NA, nrow = nrow(y), ncol = ncol(fs_dat)))
+          attributes(fscore) <-
+            c(attributes(fs_dat)[1:2],
+              list(row.names = rownames(fscore)),
+              attributes(fs_dat)[-(1:3)])
+        }
+        fscore[idx_m, ] <- fs_dat
+      }
+      fscore
+    }
   }
   group <- lavInspect(lavobj, what = "group")
   if (length(group) == 0) {
-    out <- prepare_fs_dat(y, est, add_to_evfs[[1]])
+    out <- prepare_fs_dat(y, est = est, add = add_to_evfs[[1]],
+                          mp = miss_pat[[1]])
   } else {
     fs_lst <- setNames(
       vector("list", length = length(est)),
       lavobj@Data@group.label
     )
     for (g in seq_along(fs_lst)) {
-      fs_lst[[g]] <- prepare_fs_dat(y[[g]], est[[g]], add_to_evfs[[g]])
+      fs_lst[[g]] <- prepare_fs_dat(
+        y[[g]], est = est[[g]], add = add_to_evfs[[g]],
+        mp = miss_pat[[g]]
+      )
       fs_lst[[g]][[group]] <- names(est[g])
     }
     attr_names <- setdiff(names(attributes(fs_lst[[1]])),
@@ -129,10 +174,38 @@ get_fs_lavaan <- function(lavobj,
   if (vfsLT) {
     attr(out, "vfsLT") <- vcov_ld_evfs(lavobj, method = method)
   }
+  if (reliability) {
+    multifactor <- ifelse(inherits(attr(out, "fsb"), "list"),
+                          length(attr(out, "fsb")[[1]]) > 1,
+                          length(attr(out, "fsb")) > 1)
+    if (multifactor) {
+      warning("Compution of reliability for a multi-factor model is not ",
+              "currently supported. ")
+    } else {
+      if (length(group) == 0) {
+        is_std.lv <- est$psi == 1
+        attr(out, "reliability") <-
+          compute_fsrel(lavobj, method = method)[[1]]
+      } else {
+        is_std.lv = all(unlist(lapply(est, function(x) x$psi)) == 1)
+        rels <- compute_fsrel(lavobj, method = method)
+        group_n <- lavInspect(lavobj, what = "norig")
+        rels[g + 1] <- sum(unlist(rels) * group_n / sum(group_n))
+        attr(out, "reliability") <-
+          setNames(rels, c(lavobj@Data@group.label, "overall"))
+      }
+      if (!is_std.lv) {
+        warning(
+          "Computation of reliability may not be accurate when ",
+          "the latent variables are not standardized. "
+        )
+      }
+    }
+  }
   out
 }
 
-augment_fs <- function(est, fs, fs_ev) {
+augment_fs <- function(fs, fs_ev) {
   fs_se <- t(as.matrix(sqrt(diag(fs_ev))))
   # fs_se[is.nan(fs_se)] <- 0
   colnames(fs) <- paste0("fs_", colnames(fs))
@@ -167,6 +240,188 @@ augment_fs <- function(est, fs, fs_ev) {
   attr(fs_dat, "fsb") <- attr(fs, "fsb")
   attr(fs_dat, "scoring_matrix") <- attr(fs, "scoring_matrix")
   fs_dat
+}
+
+augment_fs2 <- function(fs, fsL, fsT, fsb = NULL) {
+  fs_se <- sqrt(diag(fsT))
+  fs_lds <- c(fsL)
+  fs_evs <- fsT[upper.tri(fsT, diag = TRUE)]
+  fs_vec <- c(fs_se, fs_lds, fs_evs)
+  if (!is.null(fsb)) {
+    fs_vec <- c(fs_vec, fsb)
+  }
+  cbind(as.data.frame(fs), matrix(fs_vec, nrow = 1))
+}
+
+compute_lav_fs_matrices <- function(
+  acov, psi = NULL, alpha = NULL,
+  method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  if (method == "regression") {
+    fsL <- diag(nrow(acov)) - acov %*% solve(psi)
+    fsT <- fsL %*% acov
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- alpha - fsL %*% alpha
+    }
+  } else if (method == "Bartlett") {
+    fsL <- diag(nrow(acov))
+    fsT <- acov
+    if (is.null(alpha)) {
+      fsb <- NULL
+    } else {
+      fsb <- rep(0, nrow(acov))
+    }
+  }
+  return(list(fsL = fsL, fsT = fsT, fsb = fsb))
+}
+
+create_fsT_names <- function(fs_names) {
+  out <- outer(fs_names,
+    Y = fs_names,
+    FUN = paste, sep = "_"
+  )
+  out[lower.tri(out)] <- t(out)[lower.tri(out)]
+  out[] <- paste0("ecov_", out)
+  diag(out) <- paste0("ev_", fs_names)
+  out
+}
+
+create_fsL_names <- function(lv_names, fs_names) {
+  out <- outer(lv_names,
+    Y = fs_names, FUN = paste,
+    sep = "_by_"
+  )
+  t(out)
+}
+
+get_fs_mat_names <- function(lv_names, int = TRUE) {
+  # Initialize data frame
+  fs_names <- paste0("fs_", lv_names)
+  se_names <- paste0("se_", fs_names)
+  ev_names <- create_fsT_names(fs_names)
+  dimnames(ev_names) <- rep(list(fs_names), 2)
+  ld_names <- create_fsL_names(lv_names, fs_names = fs_names)
+  dimnames(ld_names) <- list(fs_names, lv_names)
+  out <- list(
+    fs = fs_names, se = se_names, ld = ld_names, ev = ev_names
+  )
+  if (int) {
+    return(c(out, int = paste0("int_", fs_names)))
+  } else {
+    return(out)
+  }
+}
+
+#' Obtain factor scores and related definition variables from
+#' a `lavaan` object for 2S-PA analyses.
+#'
+#' This function obtained the factor scores, standard errors,
+#' loading matrix, and variance covariance matrix by calling
+#' the [lavaan::lavPredict()] function.
+#'
+#' @param lavobj A fitted [`lavaan::lavaan-class`] object
+#' @param method A character string indicating the scoring method to use.
+#'               Must be either `"regression"` or `"Bartlett"`.
+#' @param drop_list_single logical. Should the results be unlisted
+#'                         for single-group models?
+#' @param ... Additional arguments passed to [lavaan::lavPredict()]
+#' @return A `data.frame` containing the factor scores, the corresponding
+#'         standard errors, the loadings and cross-loadings of the factor
+#'         scores as indicators of the latent variables, the 
+#'         error variance-covariance matrix of the factor scores,
+#'         and the measurement intercepts.
+#'         In addition, three character matrices are added as attributes
+#'         that can be used as input to [tspa_mx_model()]:
+#' * `ld`: cross-loading matrix
+#' * `ev`: error variance-covariance matrix
+#' * `int`: measurement intercepts
+#' @export
+#' @examples
+#' library(lavaan)
+#' hs_model <- ' visual  =~ x1 + x2 + x3 '
+#' fit <- cfa(hs_model,
+#'            data = HolzingerSwineford1939,
+#'            group = "school")
+#' augment_lav_predict(fit)
+augment_lav_predict <- function(
+    lavobj, method = c("regression", "Bartlett"),
+    drop_list_single = TRUE, ...) {
+  method <- match.arg(method)
+  mp_lst <- lavobj@Data@Mp
+  fs_lst <- lavaan::lavPredict(
+    lavobj,
+    type = "lv", method = method,
+    acov = TRUE,
+    ...
+  )
+  if (lavInspect(lavobj, what = "ngroups") == 1) {
+    fs_lst <- list(fs_lst)
+    attr(fs_lst, "acov") <- attr(fs_lst[[1]], "acov")
+  }
+  pars <- lavInspect(lavobj, what = "est",
+                     drop.list.single.group = FALSE)
+  out <- vector("list", length = length(fs_lst))
+  names(out) <- names(fs_lst)
+  has_means <- lavInspect(lavobj, what = "meanstructure")
+  for (g in seq_along(fs_lst)) {
+    mp <- mp_lst[[g]]
+    fs <- fs_lst[[g]]
+    if (is.null(mp)) {
+      case_idx <- list(seq_len(nrow(fs)))
+      acov_g <- list(attr(fs_lst, "acov")[[g]])
+      acov_rank <- 1
+    } else {
+      case_idx <- mp$case.idx
+      # Somehow lavaan sort the `acov` output by the missing data pattern and
+      # does not match the order of the missing pattern
+      # So need to find the order first
+      acov_g <- attr(fs_lst, "acov")[[g]]
+      acov_rank <- rank(mp$id)
+    }
+    # Initialize empty data frame
+    fs_matnames <- get_fs_mat_names(colnames(fs),
+                                    int = has_means)
+    fs_colnames <- unlist(
+      within(fs_matnames, expr = {
+        ld <- c(ld)
+        ev <- ev[upper.tri(ev, diag = TRUE)]
+      })
+    )
+    fs_dat <- data.frame(
+      matrix(NA,
+        nrow = nrow(fs),
+        ncol = length(fs_colnames),
+        dimnames = list(NULL, fs_colnames)
+      )
+    )
+    psi <- pars[[g]]$psi
+    alpha <- pars[[g]]$alpha
+    for (i in seq_along(case_idx)) {
+      mat_idx <- acov_rank[i]
+      fs_matrices <- compute_lav_fs_matrices(
+        acov = acov_g[[mat_idx]],
+        psi = psi,
+        alpha = alpha,
+        method = method
+      )
+      fs_dat[case_idx[[i]], ] <- augment_fs2(
+        fs[case_idx[[i]], , drop = FALSE],
+        fsL = fs_matrices$fsL,
+        fsT = fs_matrices$fsT,
+        fsb = fs_matrices$fsb
+      )
+    }
+    out[[g]] <- fs_dat
+  }
+  if (drop_list_single && length(out) == 1) {
+    out <- out[[1]]
+  }
+  attr(out, "ld") <- fs_matnames$ld
+  attr(out, "ev") <- fs_matnames$ev
+  attr(out, "int") <- fs_matnames$int
+  out
 }
 
 #' Compute factor scores
@@ -272,6 +527,7 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
     mats <- list(mats)
   }
   out <- vector("list", ngrp)
+  mp <- lavobj@Data@Mp
   for (g in seq_len(ngrp)) {
     free <- frees[[g]]
     mat <- mats[[g]]
@@ -281,14 +537,27 @@ compute_fspars <- function(par, lavobj, method = c("regression", "Bartlett"),
         mat[[l]][which(free[[l]] == i)] <- par[i]
       }
     }
-    a <- do.call(compute_a_from_mat,
-                 args = c(method, mat[c("lambda", "psi", "theta")]))
-    if (what == "a") {
-      out[[g]] <- a
-    } else if (what == "evfs") {
-      out[[g]] <- a %*% mat$theta %*% t(a)
-    } else if (what == "ldfs") {
-      out[[g]] <- a %*% mat$lambda
+    pat <- mp[[g]]$pat
+    if (is.null(pat)) {
+      pat <- matrix(TRUE, nrow = 1, ncol = ncol(mat$theta))
+    }
+    num_mp <- nrow(pat)
+    out[[g]] <- vector("list", num_mp)
+    for (m in seq_len(num_mp)) {
+      idx <- which(pat[m, ])
+      a <- do.call(compute_a_from_mat,
+                   args = c(method, mat[c("lambda", "psi", "theta")],
+                            idx = list(idx)))
+      if (what == "a") {
+        out[[g]][[m]] <- a
+      } else if (what == "evfs") {
+        out[[g]][[m]] <- a %*% mat$theta[idx, idx, drop = FALSE] %*% t(a)
+      } else if (what == "ldfs") {
+        out[[g]][[m]] <- a %*% mat$lambda[idx, , drop = FALSE]
+      }
+      if (num_mp == 1) {
+        out[[g]] <- out[[g]][[1]]
+      }
     }
   }
   out
@@ -299,7 +568,11 @@ compute_a <- function(par, lavobj, method = c("regression", "Bartlett")) {
 }
 
 compute_a_from_mat <- function(method = c("regression", "Bartlett"),
-                               lambda, theta, psi = NULL) {
+                               lambda, theta, psi = NULL, idx = NULL) {
+  if (!is.null(idx)) {
+    lambda <- lambda[idx, , drop = FALSE]
+    theta <- theta[idx, idx, drop = FALSE]
+  }
   method <- match.arg(method)
   if (method == "regression") {
     if (is.null(psi)) {
@@ -389,4 +662,39 @@ vcov_ld_evfs <- function(fit, method = c("regression", "Bartlett")) {
   method <- match.arg(method)
   jac <- compute_grad_ld_evfs(fit, method = method)
   jac %*% lavaan::vcov(fit) %*% t(jac)
+}
+
+compute_fsrel <- function(fit, method = c("regression", "Bartlett")) {
+  method <- match.arg(method)
+  ngrp <- lavInspect(fit, what = "ngroups")
+  est_fits <- lavInspect(fit, what = "est")
+  sigmas <- lavInspect(fit, "implied")
+  if (ngrp == 1) {
+    est_fits <- list(est_fits)
+    sigmas <- list(sigmas)
+  }
+  vc_fit <- vcov(fit)
+  a <- compute_a(coef(fit), lavobj = fit, method = method)
+  outs <- vector("list", ngrp)
+  for (g in seq_len(ngrp)) {
+    est_fit <- est_fits[[g]]
+    lam <- est_fit$lambda
+    psi <- est_fit$psi
+    if (ncol(lam) > 1) {
+      stop("reliability is only supported for unidimensional models.")
+    }
+    jac_a <- lavaan::lav_func_jacobian_complex(
+      function(x, fit, method) {
+        compute_a(x, lavobj = fit, method = method)[[g]]
+      },
+      coef(fit),
+      fit = fit,
+      method = method
+    )
+    va <- jac_a %*% vc_fit %*% t(jac_a)
+    aa <- crossprod(a[[g]]) + va
+    outs[[g]] <- sum(diag(lam %*% psi %*% t(lam) %*% aa)) /
+      sum(diag(sigmas[[g]]$cov %*% aa))
+  }
+  outs
 }

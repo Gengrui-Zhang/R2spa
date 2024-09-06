@@ -156,9 +156,9 @@ tspa_3var <- tspa(
 
 # Compare to Mx
 model_umx <- umxLav2RAM("
-  fs_dem60 ~ fs_ind60
-  fs_dem65 ~ fs_ind60 + fs_dem60
-  fs_dem65 + fs_dem60 + fs_ind60 ~ 1
+  dem60 ~ ind60
+  dem65 ~ ind60 + dem60
+  dem65 + dem60 + ind60 ~ 1
   ", printTab = FALSE)
 # Loading
 matL <- mxMatrix(
@@ -174,7 +174,10 @@ matE <- mxMatrix(
   name = "E"
 )
 tspa_mx <- tspa_mx_model(model_umx, data = fs_dat_3var,
-                         mat_ld = matL, mat_vc = matE)
+                         mat_ld = matL, mat_ev = matE,
+                         fs_lv_names = c(ind60 = "fs_ind60",
+                                         dem60 = "fs_dem60",
+                                         dem65 = "fs_dem65"))
 tspa_mx_fit <- mxRun(tspa_mx)
 # Check same coefficients and standard errors
 test_that("test same regression coefficients with Mx", {
@@ -204,7 +207,7 @@ tspa_mx2 <- tspa_mx_model(
       c("fs_ind60", "fs_dem60", "fs_dem65"),
       c("ind60", "dem60", "dem65")
     )),
-  mat_vc = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
+  mat_ev = diag(c(0.1213615, 0.6756472, 0.5724405)^2) |>
     `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 )
 tspa_mx_fit2 <- mxRun(tspa_mx2)
@@ -214,7 +217,10 @@ err_cov <- matrix(c("ev_fs_ind60", NA, NA,
                     NA, NA, "ev_fs_dem65"), nrow = 3) |>
   `dimnames<-`(rep(list(c("fs_ind60", "fs_dem60", "fs_dem65")), 2))
 tspa_mx3 <- tspa_mx_model(model_umx, data = fs_dat_3var,
-                          mat_ld = matL, mat_vc = err_cov)
+                          mat_ld = matL, mat_ev = err_cov,
+                          fs_lv_names = c(ind60 = "fs_ind60",
+                                          dem60 = "fs_dem60",
+                                          dem65 = "fs_dem65"))
 tspa_mx_fit3 <- mxRun(tspa_mx3)
 test_that("Same results with different Mx matrices input", {
   expect_equal(
@@ -445,8 +451,8 @@ test_that("Multiple-group multiple-factor example", code = {
 # An example from Chapter 14 of Grimm et al. (2016)
 # https://quantdev.ssri.psu.edu/tutorials/growth-modeling-chapter-14-modeling-change-latent-variables-measured-continuous
 
-mean_vec <- c(248.83, 270.6, 278.84, 486.26, 448.44, 459.6,
-              422.91, 415.63, 374.35)
+mean_vec <- c(50.99, 65.25, 84.89, 127.66, 151.09, 172.05,
+              99.72, 124.35, 142.47)
 cov_mat <- matrix(c(
   232.71, 207.92, 188.09, 319.68, 285.26, 277.85, 260.75, 249.28, 217.96,
   207.92, 254.88, 212.14, 331.88, 313.8, 314.91, 274.99, 281.29, 243.6,
@@ -459,15 +465,16 @@ cov_mat <- matrix(c(
   217.96, 243.6, 281.55, 420.6, 394.63, 443.67, 437.92, 448.64, 480.57
 ), nrow = 9, ncol = 9, byrow = TRUE)
 set.seed(123)
-sim_dat <- MASS::mvrnorm(n = 2000, mu = mean_vec, Sigma = cov_mat) |>
+sim_dat <- MASS::mvrnorm(n = 2000, mu = mean_vec, Sigma = cov_mat,
+                         empirical = TRUE) |>
   `colnames<-`(c("s_g3", "s_g5", "s_g8", "r_g3", "r_g5", "r_g8",
                  "m_g3", "m_g5", "m_g8"))
 
 strict_mod <- "
 # factor loadings
 eta1 =~ 15.1749088 * s_g3 + l2 * r_g3 + l3 * m_g3
-eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + L3 * m_g5
-eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + L3 * m_g8
+eta2 =~ 15.1749088 * s_g5 + l2 * r_g5 + l3 * m_g5
+eta3 =~ 15.1749088 * s_g8 + l2 * r_g8 + l3 * m_g8
 
 # factor variances/covariances
 eta1 ~~ 1 * eta1 + eta2 + eta3
@@ -501,7 +508,7 @@ m_g3 ~ i3 * 1
 m_g5 ~ i3 * 1
 m_g8 ~ i3 * 1
 "
-fs_growth_dat <- get_fs(sim_dat, model = strict_mod, std.lv = TRUE)
+fs_growth_dat <- get_fs(sim_dat, model = strict_mod)
 
 growth_mod <- "
 i =~ 1 * eta1 + 1 * eta2 + 1 * eta3
@@ -516,7 +523,7 @@ i ~~ start(.8) * i
 s ~~ start(.5) * s
 i ~~ start(0) * s
 
-i ~ 0 * 1
+i ~ 1
 s ~ 1
 "
 growth_fit <- tspa(growth_mod, fs_growth_dat,

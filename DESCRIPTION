@@ -1,6 +1,6 @@
 Package: R2spa
 Title: An R package for two-stage path analysis (2S-PA) to adjust for measurement errors
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
   c(
     person(given = "Mark Hok Chio",
@@ -33,7 +33,7 @@ Description: `R2spa` is a free and open source R package that performs two-stage
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Imports: 
     lavaan,
     MASS,
@@ -41,6 +41,7 @@ Imports:
 Suggests: 
     boot,
     DiagrammeR,
+    ggplot2,
     knitr,
     magrittr,
     Matrix,
@@ -49,6 +50,7 @@ Suggests:
     rmarkdown,
     psych,
     testthat (>= 3.0.0),
+    tidyr,
     umx
 VignetteBuilder: knitr
 Config/testthat/edition: 3
