@@ -1,19 +1,21 @@
 pandoc: 3.1.11
-pkgdown: 2.0.7
+pkgdown: 2.1.0
 pkgdown_sha: ~
 articles:
-  R2spa: R2spa.html
   categorical-interaction: categorical-interaction.html
   corrected-se: corrected-se.html
   correction-error: correction-error.html
   efa-score: efa-score.html
+  get_fs_int-vignette: get_fs_int-vignette.html
   gr-std-coef: gr-std-coef.html
+  missing-data: missing-data.html
   multiple-factors: multiple-factors.html
+  R2spa: R2spa.html
+  reliability: reliability.html
   tspa-growth-vignette: tspa-growth-vignette.html
   tspa-plot-vignette: tspa-plot-vignette.html
   tspa-vignette-mx: tspa-vignette-mx.html
-last_built: 2024-03-21T20:54Z
+last_built: 2024-09-06T04:07Z
 urls:
   reference: https://gengrui-zhang.github.io/R2spa/reference
   article: https://gengrui-zhang.github.io/R2spa/articles
-
